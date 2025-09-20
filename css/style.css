@@ -185,3 +185,76 @@ select::-ms-expand { display: none; }
 
 .theme-switcher button { margin-right:8px; background:var(--card); color:var(--text); border-radius:10px; padding:10px 14px; border:none; cursor:pointer; }
 .theme-switcher button.active { background:var(--accent); color:var(--text-invert); }
+
+.news-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+  max-height: calc(100vh - 150px); /* или высота блока */
+  overflow-y: auto; /* включаем вертикальный скролл */
+  padding: 10px;
+}
+.news-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px 16px;       /* чуть меньше отступы */
+  box-shadow: var(--card-shadow);
+  color: var(--text);
+  font-size: 14px;           /* уменьшили шрифт */
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.news-date {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.news-author {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.news-content {
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+.news-feed::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  border-radius: 4px;
+  border: 2px solid var(--scroll-track);
+}
+.news-feed::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 4px;
+}
+.news-feed::-webkit-scrollbar {
+  width: 8px;
+}
+.news-attachment img {
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-top: 6px;
+}
+.news-footer .footer-center {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.news-footer {
+  display: flex;
+  justify-content: space-between; /* дата слева, ник справа */
+  align-items: center;
+  margin-top: 8px;
+}
+.news-footer img.author-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}

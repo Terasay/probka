@@ -12,4 +12,8 @@
   --card-shadow: 0 6px 18px rgba(0,0,0,0.06);
   --table-border: rgba(0,0,0,0.06);
   --nav-height: 64px;
+
+  /* Scrollbar */
+  --scroll-track: #e5e7eb;
+  --scroll-thumb: #2563eb;
 }
