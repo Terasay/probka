@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>О сервере — ZXC</title>
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <script>
+    (function(){
+      let t = 'dark';
+      try {
+        t = localStorage.getItem('theme') || 'dark';
+      } catch(e) {}
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.id = 'theme-link';
+      l.href = 'css/theme-' + t + '.css';
+      document.head.appendChild(l);
+    })();
+  </script>
+  <script defer src="js/theme.js"></script>
+</head>
+<body>
+
+  <nav class="master-menu" role="navigation" aria-label="Главная навигация">
+      <div class="nav-inner">
+        <div class="nav-left">
+          <a href="index.html" class="nav-link">Главная</a>
+          <a href="exchange.html" class="nav-link">Биржа</a>
+          <a href="news.html" class="nav-link">Новости</a>
+          <a href="forum.html" class="nav-link">Форум</a>
+          <a href="about.html" class="nav-link active">О сервере</a>
+        </div>
+        <div class="nav-right">
+          <a href="account.html" class="nav-link account-link">Аккаунт</a>
+        </div>
+      </div>
+    </nav>
+  <div class="page-wrap">
+    <div class="container about">
+      <img src="assets/img/kakoedelo.jpeg" alt="О сервере" class="about-img">
+      <p class="about-text">а твоё какое дело дружок</p>
+      <a href="index.html" class="back-btn">← На главную</a>
+    </div>
+  </div>
+
+</body>
+</html>

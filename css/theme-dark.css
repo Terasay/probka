@@ -1,0 +1,15 @@
+:root {
+  --bg: linear-gradient(180deg,#071020 0%, #071426 100%);
+  --card: rgba(255,255,255,0.05);
+  --muted: #9ca3af;
+  --accent: #60a5fa;
+  --text: #e6eef8;
+  --text-invert: #0b1220;
+  --input-bg: #1c2535;
+  --input-border: rgba(255,255,255,0.08);
+  --menu-bg: rgba(7,20,34,0.65);
+  --menu-border: rgba(255,255,255,0.03);
+  --card-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  --table-border: rgba(255,255,255,0.06);
+  --nav-height: 64px;
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Аккаунт — ZXC</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    (function(){
+      let t = 'dark';
+      try {
+        t = localStorage.getItem('theme') || 'dark';
+      } catch(e) {}
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.id = 'theme-link';
+      l.href = 'css/theme-' + t + '.css';
+      document.head.appendChild(l);
+    })();
+  </script>
+</head>
+<body>
+  <nav class="master-menu" role="navigation" aria-label="Главная навигация">
+    <div class="nav-inner">
+      <div class="nav-left">
+        <a href="index.html" class="nav-link">Главная</a>
+        <a href="exchange.html" class="nav-link">Биржа</a>
+        <a href="news.html" class="nav-link">Новости</a>
+        <a href="forum.html" class="nav-link">Форум</a>
+        <a href="about.html" class="nav-link">О сервере</a>
+      </div>
+      <div class="nav-right">
+        <a href="account.html" class="nav-link account-link">Аккаунт</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="container">
+      <h1>Настройки аккаунта</h1>
+      <p>Здесь вы можете выбрать тему сайта:</p>
+
+      <div class="theme-switcher">
+        <button id="theme-dark">Тёмная тема</button>
+        <button id="theme-light">Светлая тема</button>
+        <button id="theme-gray">Серая</button>
+        <button id="theme-red">Красная</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/theme.js"></script>
+</body>
+</html>

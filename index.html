@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Главная — Мирок</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <script>
+    (function(){
+      let t = 'dark';
+      try {
+        t = localStorage.getItem('theme') || 'dark';
+      } catch(e) {}
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.id = 'theme-link';
+      l.href = 'css/theme-' + t + '.css';
+      document.head.appendChild(l);
+    })();
+  </script>
+  <script defer src="js/theme.js"></script>
+</head>
+<body>
+  <div class="container center">
+    <header>
+      <img src="assets/img/logo.webp" alt="Лого" class="logo">
+      <h1 class="server-title">Сервер ZXC</h1>
+    </header>
+
+    <main class="menu">
+      <a href="exchange.html" class="menu-btn">Биржа</a>
+      <a href="news.html" class="menu-btn">Новости</a>
+      <a href="forum.html" class="menu-btn">Форум</a>
+      <a href="about.html" class="menu-btn">О сервере</a>
+      <a href="account.html" class="menu-btn">Аккаунт</a>
+    </main>
+    <footer>
+      Создатель сайта: <strong>Terasayka</strong>
+    </footer>
+  </div>
+</body>
+</html>
