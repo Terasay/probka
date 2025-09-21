@@ -6,17 +6,17 @@
   <title>Аккаунт — ZXC</title>
   <link rel="stylesheet" href="css/style.css">
   <script>
-    (function(){
+    document.addEventListener('DOMContentLoaded', function() {
       let t = 'dark';
-      try {
-        t = localStorage.getItem('theme') || 'dark';
-      } catch(e) {}
+      try { t = localStorage.getItem('theme') || 'dark'; } catch(e) {}
       const l = document.createElement('link');
       l.rel = 'stylesheet';
       l.id = 'theme-link';
       l.href = 'css/theme-' + t + '.css';
       document.head.appendChild(l);
-    })();
+      document.body.classList.remove('theme-dark', 'theme-pink', 'theme-light', 'theme-gray', 'theme-red');
+      document.body.classList.add('theme-' + t);
+    });
   </script>
 </head>
 <body>
@@ -45,8 +45,12 @@
         <button id="theme-light">Светлая тема</button>
         <button id="theme-gray">Серая</button>
         <button id="theme-red">Красная</button>
+        <button id="theme-pink">Розовая</button>
       </div>
     </div>
+    <footer class="footer">
+      Terasay Corporation © 2025
+    </footer>
   </div>
 
   <script src="js/theme.js"></script>

@@ -1,0 +1,57 @@
+:root {
+  --bg-top: linear-gradient(rgba(40, 10, 30, 0.65), rgba(40, 10, 30, 0.65)), url('../assets/img/sakura.png');
+  --bg-bottom: #1a0a14;
+  --card: rgba(50, 15, 35, 0.85);
+  --menu-bg: rgba(30, 10, 25, 0.85);
+  --footer-bg: rgba(25, 5, 20, 0.9);
+  --button-bg: #d97aaa;
+  --button-bg-hover: #f78ac8;
+  --text: #f8ddec;
+  --muted: #d9a8c3;
+  --accent: #f78ac8;
+  --text-invert: #1a0a14;
+  --input-bg: rgba(70, 25, 55, 0.9);
+  --input-border: #b64a85;
+  --menu-border: rgba(255, 182, 193, 0.15);
+  --card-shadow: 0 6px 18px rgba(180, 60, 120, 0.2);
+  --table-border: rgba(255, 182, 193, 0.1);
+  --nav-height: 64px;
+  --scroll-track: #2a0f20;
+  --scroll-thumb: #f78ac8;
+}
+body.theme-pink .news-card {
+  background: #e8a5c2;
+  color: #4b243a;
+  box-shadow: 0 6px 18px rgba(247, 138, 200, 0.12);
+  border-radius: 12px;
+}
+body.theme-pink .news-content,
+body.theme-pink .news-footer {
+  background: transparent;
+  color: #4b243a;
+}
+body.theme-pink .menu-btn,
+body.theme-pink button,
+body.theme-pink input[type="submit"],
+body.theme-pink input[type="button"],
+body.theme-pink .back-btn {
+  background: var(--button-bg);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(247, 138, 200, 0.15);
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+body.theme-pink .menu-btn:hover,
+body.theme-pink button:hover,
+body.theme-pink input[type="submit"]:hover,
+body.theme-pink input[type="button"]:hover,
+body.theme-pink .back-btn:hover {
+  background: var(--button-bg-hover);
+  color: #fff;
+  transform: translateY(-2px);
+}

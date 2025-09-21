@@ -4,13 +4,11 @@ async function loadNews() {
     const res = await fetch('http://localhost:8000/api/news');
     const data = await res.json();
 
-    feed.innerHTML = ''; // очистка
+    feed.innerHTML = '';
 
     data.forEach(item => {
       const card = document.createElement('article');
       card.className = 'news-card';
-
-      // Разделяем заголовок и остальной текст
       let title = '';
       let content = item.content;
       const lines = item.content.split('\n');
@@ -19,22 +17,18 @@ async function loadNews() {
         content = lines.slice(1).join('\n').trim();
       }
 
-      // Обрабатываем вложения в виде [Файл: filename]
       let attachmentHTML = '';
       const fileMatches = content.match(/\[Файл: (.*?)\]/g);
       if (fileMatches) {
         fileMatches.forEach(f => {
           const filename = f.match(/\[Файл: (.*?)\]/)[1];
-          // Локальный путь: uploads/{message.id}/{filename}
           attachmentHTML += `<div class="news-attachment">
                                <img src="uploads/${item.id}/${filename}" class="news-image">
                              </div>`;
         });
-        // Убираем [Файл: ...] из текста
         content = content.replace(/\[Файл: .*?\]/g, '').trim();
       }
 
-      // Формируем HTML новости
       card.innerHTML = `
         ${title ? `<h2 class="news-title">${title}</h2>` : ''}
         <div class="news-content">${content.replace(/\n/g, '<br>')}</div>

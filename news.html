@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Новости — ZXC</title>
 
-  <!-- Подключаем базовые стили -->
   <link rel="stylesheet" href="css/style.css">
   <script defer src="js/news.js"></script>
 
-  <!-- Подключаем тему (как на остальных страницах) -->
   <script>
-    (function(){
+    document.addEventListener('DOMContentLoaded', function() {
       let t = 'dark';
       try { t = localStorage.getItem('theme') || 'dark'; } catch(e) {}
       const l = document.createElement('link');
@@ -19,12 +17,14 @@
       l.id = 'theme-link';
       l.href = 'css/theme-' + t + '.css';
       document.head.appendChild(l);
-    })();
+      document.body.classList.remove('theme-dark', 'theme-pink', 'theme-light', 'theme-gray', 'theme-red');
+      document.body.classList.add('theme-' + t);
+    });
   </script>
   <script defer src="js/theme.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="page-wrap">
     <!-- Master Menu -->
     <nav class="master-menu" role="navigation" aria-label="Главная навигация">
       <div class="nav-inner">
@@ -41,16 +41,19 @@
       </div>
     </nav>
 
-    <!-- Заголовок -->
-    <header>
-      <h1>Новости</h1>
-      <a href="index.html" class="back-btn">← На главную</a>
-    </header>
+    <!-- Контент -->
+    <div class="container">
+      <header>
+        <h1>Новости</h1>
+        <a href="index.html" class="back-btn">← На главную</a>
+      </header>
 
-    <!-- Лента новостей -->
-    <section id="news-feed" class="news-feed">
-    <!-- Новости будут динамически вставляться сюда -->
-    </section>
+      <section id="news-feed" class="news-feed">
+      </section>
+    </div>
+  <footer class="footer">
+    Terasay corporation 2025
+  </footer>
   </div>
 
   <script>

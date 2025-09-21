@@ -1,5 +1,8 @@
 :root {
-  --bg: linear-gradient(180deg,#2e2e2e 0%, #1f1f1f 100%);
+  --bg-top: #2e2e2e;
+  --bg-bottom: #1f1f1f;
+  --bg: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+
   --card: #3a3a3a;
   --muted: #b0b0b0;
   --accent: #9aa0a6;
@@ -12,8 +15,10 @@
   --card-shadow: 0 6px 18px rgba(0,0,0,0.12);
   --table-border: rgba(255,255,255,0.04);
   --nav-height: 64px;
+  --menu-bg: rgba(30,30,30,0.85);
+  --menu-border: rgba(255,255,255,0.02);
+  --footer-bg: rgba(24,24,24,0.95);
 
-  /* Scrollbar */
   --scroll-track: #1f1f1f;
   --scroll-thumb: #9aa0a6;
 }

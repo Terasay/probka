@@ -8,74 +8,79 @@
   <link rel="stylesheet" href="css/style.css">
 
   <script>
-    (function(){
-      var t = 'dark';
+    document.addEventListener('DOMContentLoaded', function() {
+      let t = 'dark';
       try { t = localStorage.getItem('theme') || 'dark'; } catch(e) {}
-      var l = document.createElement('link');
+      const l = document.createElement('link');
       l.rel = 'stylesheet';
       l.id = 'theme-link';
       l.href = 'css/theme-' + t + '.css';
       document.head.appendChild(l);
-    })();
+      document.body.classList.remove('theme-dark', 'theme-pink', 'theme-light', 'theme-gray', 'theme-red');
+      document.body.classList.add('theme-' + t);
+    });
   </script>
-
   <script defer src="js/theme.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 <body>
-  <div class="container">
-    <nav class="master-menu" role="navigation" aria-label="Главная навигация">
-      <div class="nav-inner">
-        <div class="nav-left">
-          <a href="index.html" class="nav-link">Главная</a>
-          <a href="exchange.html" class="nav-link active">Биржа</a>
-          <a href="news.html" class="nav-link">Новости</a>
-          <a href="forum.html" class="nav-link">Форум</a>
-          <a href="about.html" class="nav-link">О сервере</a>
+  <div class="page-wrap"></div>
+    <div class="container">
+      <nav class="master-menu" role="navigation" aria-label="Главная навигация">
+        <div class="nav-inner">
+          <div class="nav-left">
+            <a href="index.html" class="nav-link">Главная</a>
+            <a href="exchange.html" class="nav-link active">Биржа</a>
+            <a href="news.html" class="nav-link">Новости</a>
+            <a href="forum.html" class="nav-link">Форум</a>
+            <a href="about.html" class="nav-link">О сервере</a>
+          </div>
+          <div class="nav-right">
+            <a href="account.html" class="nav-link account-link">Аккаунт</a>
+          </div>
         </div>
-        <div class="nav-right">
-          <a href="account.html" class="nav-link account-link">Аккаунт</a>
-        </div>
-      </div>
-    </nav>
+      </nav>
 
-    <header>
-      <h1>Биржа — ZXC</h1>
-      <a href="index.html" class="back-btn">← На главную</a>
-    </header>
+      <header>
+        <h1>Биржа — ZXC</h1>
+        <a href="index.html" class="back-btn">← На главную</a>
+      </header>
 
-    <section class="grid columns">
-      <aside class="card">
-        <h2>Курсы валют</h2>
-        <table id="ratesTable">
-          <thead>
-            <tr><th>Валюта</th><th>Код</th><th>Курс</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <section class="grid columns">
+        <aside class="card">
+          <h2>Курсы валют</h2>
+          <table id="ratesTable">
+            <thead>
+              <tr><th>Валюта</th><th>Код</th><th>Курс</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
 
-        <hr>
+          <hr>
 
-        <h2>Конвертер</h2>
-        <div class="converter">
-          <input id="amount" type="number" value="100">
-          <select id="from"></select>
-          <select id="to"></select>
-          <button id="convert">Конвертировать</button>
-          <div id="converted"></div>
-        </div>
-      </aside>
+          <h2>Конвертер</h2>
+          <div class="converter">
+            <input id="amount" type="number" value="100">
+            <select id="from"></select>
+            <select id="to"></select>
+            <button id="convert">Конвертировать</button>
+            <div id="converted"></div>
+          </div>
+        </aside>
 
-      <main class="card">
-        <h2>График валюты</h2>
-        <select id="chartCurrency"></select>
-        <canvas id="priceChart"></canvas>
-      </main>
-    </section>
+        <main class="card">
+          <h2>График валюты</h2>
+          <select id="chartCurrency"></select>
+          <canvas id="priceChart"></canvas>
+        </main>
+      </section>
+    <footer class="footer">
+      Terasay Corporation © 2025
+    </footer>
+    </div>
   </div>
-
   <script src="js/exchange.js"></script>
 </body>
 </html>

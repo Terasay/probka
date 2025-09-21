@@ -1,5 +1,6 @@
 :root {
-  --bg: linear-gradient(180deg,#1a0000 0%, #330000 100%);
+  --bg-top: #1a0000;
+  --bg-bottom: #330000;
   --card: #330000;
   --muted: #ff9999;
   --accent: #b30000;
@@ -12,8 +13,10 @@
   --card-shadow: 0 6px 18px rgba(0,0,0,0.16);
   --table-border: rgba(255,200,200,0.06);
   --nav-height: 64px;
+  --menu-bg: rgba(60,10,10,0.85);
+  --menu-border: rgba(0,0,0,0.06);
+  --footer-bg: rgba(50,8,8,0.95);
 
-  /* Scrollbar */
   --scroll-track: #330000;
   --scroll-thumb: #b30000;
 }
