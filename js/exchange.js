@@ -1,9 +1,10 @@
-const currencies = [
-  {id:'GOLD', name:'Золото', rate:1.0},
-  {id:'GEM', name:'Камни', rate:0.025},
-  {id:'WOOD', name:'Древесина', rate:0.0023},
-  {id:'IRON', name:'Железо', rate:0.0045}
+const currencies = [ 
+  { id: 'GOLD', name: 'Золото', rate: 1.0 },
+  { id: 'GEM', name: 'Камни', rate: 0.025 },
+  { id: 'WOOD', name: 'Древесина', rate: 0.0023 },
+  { id: 'IRON', name: 'Железо', rate: 0.0045 }
 ];
+
 const tbody = document.querySelector("#ratesTable tbody");
 
 function renderRates() {
@@ -45,6 +46,13 @@ document.getElementById("convert").addEventListener("click", () => {
 const ctx = document.getElementById("priceChart").getContext("2d");
 let chart;
 
+// берём цвет из CSS переменной
+function getVar(name) {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+}
+
 function drawChart(currencyId) {
   const data = [];
   let value = currencies.find(c => c.id === currencyId).rate;
@@ -57,19 +65,56 @@ function drawChart(currencyId) {
   chart = new Chart(ctx, {
     type: "line",
     data: {
-      labels: Array.from({length: 30}, (_,i) => i+1),
+      labels: Array.from({ length: 30 }, (_, i) => i + 1),
       datasets: [{
         label: currencyId,
         data,
-        borderColor: "#60a5fa",
+        borderColor: getVar('--chart-line'),
+        borderWidth: 2,
         tension: 0.3
       }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: getVar('--text')
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: getVar('--muted') },
+          grid: { color: getVar('--table-border') }
+        },
+        y: {
+          ticks: { color: getVar('--muted') },
+          grid: { color: getVar('--table-border') }
+        }
+      }
     }
   });
 }
 
+// слушаем смену валюты
 chartSel.addEventListener("change", () => drawChart(chartSel.value));
 
+// слушаем смену темы (чтобы цвет менялся сразу)
+const themeLink = document.getElementById("theme-link");
+if (themeLink) {
+  const observer = new MutationObserver(() => {
+    drawChart(chartSel.value);
+  });
+  observer.observe(themeLink, { attributes: true, attributeFilter: ['href'] });
+}
+
+// начальный рендер
 renderRates();
 populateSelects();
-drawChart("GEM");
+
+// ждём пока тема загрузится, потом строим график с актуальным цветом
+window.addEventListener("load", () => {
+  drawChart(chartSel.value);
+});

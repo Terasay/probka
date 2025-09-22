@@ -480,3 +480,41 @@ select::-ms-expand {
   backdrop-filter: none;
 }
 
+
+.forum-input {
+  width: 100%;
+  min-height: 60px;
+  max-height: 200px;
+  resize: none;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--input-bg, #1c2535);
+  border: 1.5px solid var(--accent);
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.forum-input:focus {
+  outline: none;
+  border-color: var(--chart-line);
+  box-shadow: 0 0 8px var(--accent);
+  background: var(--card);
+}
+
+.forum-send-btn {
+  background: var(--accent);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text-invert);
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.forum-send-btn:hover {
+  background: #3b82f6;
+}

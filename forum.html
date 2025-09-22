@@ -1,0 +1,66 @@
+
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Форум — ZXC</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let t = 'dark';
+      try { t = localStorage.getItem('theme') || 'dark'; } catch(e) {}
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.id = 'theme-link';
+      l.href = 'css/theme-' + t + '.css';
+      document.head.appendChild(l);
+      document.body.classList.remove('theme-dark', 'theme-pink', 'theme-light', 'theme-gray', 'theme-red', 'theme-cyberpank', 'theme-deep-dark');
+      document.body.classList.add('theme-' + t);
+    });
+  </script>
+  <script defer src="js/theme.js"></script>
+</head>
+<body>
+  <div class="page-wrap">
+    <nav class="master-menu" role="navigation" aria-label="Главная навигация">
+      <div class="nav-inner">
+        <div class="nav-left">
+          <a href="index.html" class="nav-link">Главная</a>
+          <a href="exchange.html" class="nav-link">Биржа</a>
+          <a href="news.html" class="nav-link">Новости</a>
+          <a href="forum.html" class="nav-link active">Форум</a>
+          <a href="about.html" class="nav-link">О сервере</a>
+        </div>
+        <div class="nav-right">
+          <a href="account.html" class="nav-link account-link">Аккаунт</a>
+        </div>
+      </div>
+    </nav>
+    <div class="container">
+      <header>
+        <h1>Форум</h1>
+        <a href="index.html" class="back-btn">← На главную</a>
+      </header>
+      <section id="forum-topics" class="news-feed">
+        <!-- Темы форума будут загружены сюда -->
+      </section>
+      <section id="forum-messages" class="news-feed" style="display:none;">
+        <div class="card">
+          <button class="back-btn" id="back-to-topics">← К темам</button>
+          <h2 id="topic-title"></h2>
+          <div id="message-list"></div>
+          <div style="margin-top:20px;">
+            <textarea id="reply-text" class="forum-input" placeholder="Ваш ответ..."></textarea>
+            <button id="send-reply" class="menu-btn">Отправить</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <footer class="footer">
+      Terasay Corporation © 2025
+    </footer>
+  </div>
+  <script src="js/forum.js"></script>
+</body>
+</html>
