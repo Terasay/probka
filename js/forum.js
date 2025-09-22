@@ -34,6 +34,16 @@ async function loadTopics() {
   }
 }
 
+// Экранирование HTML для защиты от XSS
+function escapeHTML(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Открытие темы и загрузка сообщений
 async function openTopic(id, title) {
   currentTopic = id;
@@ -52,7 +62,7 @@ async function openTopic(id, title) {
     list.innerHTML = msgs.map(m => `
       <article class="news-card forum-message">
         <div class="news-date">${new Date(m.date).toLocaleString()}</div>
-        <div class="news-content">${m.content.replace(/\n/g, '<br>')}</div>
+        <div class="news-content">${escapeHTML(m.content).replace(/\n/g, '<br>')}</div>
         <div class="news-footer">
           <div class="footer-center">
             ${m.avatar ? `<img class="author-avatar" src="${m.avatar}" alt="аватар">` : ''}
