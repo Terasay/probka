@@ -1,0 +1,22 @@
+:root {
+  --bg-top: #000000;
+  --bg-bottom: #0a0a0a;
+  --bg: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+
+  --card: rgba(255,255,255,0.04);
+  --muted: #8e8e8e;
+  --accent: #3b82f6; 
+  --text: #e5e5e5;
+  --text-invert: #000000;
+  --input-bg: #111111;
+  --input-border: rgba(255,255,255,0.08);
+  --menu-bg: rgba(15,15,15,0.9);
+  --menu-border: rgba(255,255,255,0.05);
+  --card-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  --table-border: rgba(255,255,255,0.06);
+  --nav-height: 64px;
+  --footer-bg: rgba(10,10,10,0.95);
+
+  --scroll-track: #0a0a0a;
+  --scroll-thumb: #3b82f6;
+}
