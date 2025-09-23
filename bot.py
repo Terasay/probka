@@ -10,15 +10,16 @@ import asyncio
 from dotenv import load_dotenv
 from aiohttp_socks import ProxyConnector
 
+# ====== ENV ======
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://127.0.0.1:9050
+PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://192.252.211.193:4145
 
 NEWS_CHANNEL_ID = 1215953926919163956
 FORUM_CHANNEL_ID = 1419703714691944538
 
-# --- База данных ---
+# ====== БАЗА ДАННЫХ ======
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
@@ -54,7 +55,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS forum_messages (
 
 conn.commit()
 
-# --- Discord бот ---
+# ====== DISCORD BOT ======
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
@@ -62,7 +63,7 @@ intents.guilds = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-session: aiohttp.ClientSession | None = None  # создаём позже
+session: aiohttp.ClientSession | None = None
 
 
 @bot.event
@@ -173,7 +174,7 @@ async def on_message(message: discord.Message):
         await process_forum_message(message, message.channel.id)
 
 
-# --- FastAPI ---
+# ====== FASTAPI ======
 app = FastAPI()
 
 app.add_middleware(
@@ -258,7 +259,7 @@ async def send_message_to_discord(topic_id: str, content: str):
     return None
 
 
-# --- Общий запуск ---
+# ====== ЗАПУСК ======
 async def main():
     config = uvicorn.Config(app, host="0.0.0.0", port=8080, loop="asyncio", lifespan="on")
     server = uvicorn.Server(config)
