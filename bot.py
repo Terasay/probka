@@ -260,7 +260,7 @@ async def send_message_to_discord(topic_id: str, content: str):
 
 # --- Общий запуск ---
 async def main():
-    config = uvicorn.Config(app, host="0.0.0.0", port=8000, loop="asyncio", lifespan="on")
+    config = uvicorn.Config(app, host="0.0.0.0", port=8080, loop="asyncio", lifespan="on")
     server = uvicorn.Server(config)
 
     api_task = asyncio.create_task(server.serve())
