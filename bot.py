@@ -62,7 +62,8 @@ intents.guilds = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-session: aiohttp.ClientSession | None = None
+connector = ProxyConnector.from_url(PROXY_URL)
+session = aiohttp.ClientSession(connector=connector)
 
 
 @bot.event
