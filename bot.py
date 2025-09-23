@@ -9,10 +9,13 @@ import os
 import aiohttp
 import asyncio
 from dotenv import load_dotenv
+from aiohttp_socks import ProxyConnector  # для прокси
 
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
+PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://192.252.211.193:4145
+
 NEWS_CHANNEL_ID = 1215953926919163956  # ID канала с новостями
 FORUM_CHANNEL_ID = 1419703714691944538 # ID канала форума
 
@@ -20,7 +23,6 @@ FORUM_CHANNEL_ID = 1419703714691944538 # ID канала форума
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
-# Новости
 cur.execute("""
 CREATE TABLE IF NOT EXISTS news (
     id TEXT PRIMARY KEY,
@@ -33,7 +35,6 @@ CREATE TABLE IF NOT EXISTS news (
 )
 """)
 
-# Форум: темы
 cur.execute("""
 CREATE TABLE IF NOT EXISTS forum_topics (
     id TEXT PRIMARY KEY,
@@ -45,7 +46,6 @@ CREATE TABLE IF NOT EXISTS forum_topics (
 )
 """)
 
-# Форум: сообщения
 cur.execute("""
 CREATE TABLE IF NOT EXISTS forum_messages (
     id TEXT PRIMARY KEY,
@@ -69,10 +69,24 @@ intents.guilds = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+session: aiohttp.ClientSession | None = None
+
+
+@bot.event
+async def setup_hook():
+    """Создание aiohttp-сессии с поддержкой прокси"""
+    global session
+    if PROXY_URL:
+        connector = ProxyConnector.from_url(PROXY_URL)
+        session = aiohttp.ClientSession(connector=connector)
+        print(f"[+] Используется прокси: {PROXY_URL}")
+    else:
+        session = aiohttp.ClientSession()
+        print("[+] Прокси не используется")
+
 
 # ====== НОВОСТИ ======
-async def process_news_message(message):
-    """Обработка сообщения из канала новостей"""
+async def process_news_message(message: discord.Message):
     if message.author.bot:
         return
 
@@ -93,11 +107,10 @@ async def process_news_message(message):
         folder = f"uploads/{message.id}"
         os.makedirs(folder, exist_ok=True)
         file_path = f"{folder}/{attachment.filename}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(attachment.url) as resp:
-                if resp.status == 200:
-                    with open(file_path, "wb") as f:
-                        f.write(await resp.read())
+        async with session.get(attachment.url) as resp:
+            if resp.status == 200:
+                with open(file_path, "wb") as f:
+                    f.write(await resp.read())
 
     attachments = ",".join([f"{message.id}/{a.filename}" for a in message.attachments])
 
@@ -108,9 +121,9 @@ async def process_news_message(message):
     )
     conn.commit()
 
+
 # ====== ФОРУМ ======
 async def process_thread(thread: discord.Thread):
-    """Обработка темы форума"""
     owner = thread.owner or thread.guild.me
     avatar = owner.avatar.url if owner and owner.avatar else ""
 
@@ -123,8 +136,8 @@ async def process_thread(thread: discord.Thread):
     async for message in thread.history(limit=50, oldest_first=True):
         await process_forum_message(message, thread.id)
 
+
 async def process_forum_message(message: discord.Message, topic_id: int):
-    """Обработка сообщения форума"""
     if message.author.bot and message.author != bot.user:
         return
 
@@ -138,6 +151,7 @@ async def process_forum_message(message: discord.Message, topic_id: int):
          str(message.created_at), attachments)
     )
     conn.commit()
+
 
 # ====== EVENTS ======
 @bot.event
@@ -156,15 +170,15 @@ async def on_ready():
         for thread in forum.threads:
             await process_thread(thread)
 
+
 @bot.event
 async def on_message(message: discord.Message):
-    # Новости
     if message.channel.id == NEWS_CHANNEL_ID:
         await process_news_message(message)
 
-    # Форум (треды)
     if isinstance(message.channel, discord.Thread):
         await process_forum_message(message, message.channel.id)
+
 
 # --- FastAPI ---
 app = FastAPI()
@@ -177,7 +191,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Новости API
+
 @app.get("/api/news")
 def get_news():
     conn = sqlite3.connect("site.db")
@@ -191,7 +205,7 @@ def get_news():
         for r in rows
     ]
 
-# Форум API
+
 @app.get("/api/forum/topics")
 def get_topics():
     cur.execute("SELECT * FROM forum_topics ORDER BY date DESC")
@@ -201,6 +215,7 @@ def get_topics():
          "avatar": r[4], "date": r[5]}
         for r in rows
     ]
+
 
 @app.get("/api/forum/topic/{topic_id}")
 def get_messages(topic_id: str):
@@ -212,6 +227,7 @@ def get_messages(topic_id: str):
         for r in rows
     ]
 
+
 @app.post("/api/forum/reply/{topic_id}")
 async def reply(topic_id: str, request: Request):
     data = await request.json()
@@ -219,7 +235,6 @@ async def reply(topic_id: str, request: Request):
     if not content:
         return {"status": "error", "message": "Пустое сообщение"}
 
-    # Отправляем сообщение в Discord через event loop бота
     future = asyncio.run_coroutine_threadsafe(
         send_message_to_discord(topic_id, content),
         bot.loop
@@ -242,12 +257,13 @@ async def reply(topic_id: str, request: Request):
 
     return {"status": "error", "message": "Не удалось отправить"}
 
+
 async def send_message_to_discord(topic_id: str, content: str):
-    """Отправка сообщения в Discord"""
     channel = bot.get_channel(int(topic_id))
     if channel and isinstance(channel, discord.Thread):
         return await channel.send(content)
     return None
+
 
 # --- Запуск ---
 if __name__ == "__main__":
