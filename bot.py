@@ -8,13 +8,11 @@ import os
 import aiohttp
 import asyncio
 from dotenv import load_dotenv
-from aiohttp_socks import ProxyConnector
 
 # ====== ENV ======
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://192.252.211.193:4145
 
 NEWS_CHANNEL_ID = 1215953926919163956
 FORUM_CHANNEL_ID = 1419703714691944538
@@ -68,15 +66,10 @@ session: aiohttp.ClientSession | None = None
 
 @bot.event
 async def setup_hook():
-    """Создание aiohttp-сессии с поддержкой прокси"""
+    """Создание aiohttp-сессии без прокси — будет работать через redsocks"""
     global session
-    if PROXY_URL:
-        connector = ProxyConnector.from_url(PROXY_URL)
-        session = aiohttp.ClientSession(connector=connector)
-        print(f"[+] Используется прокси: {PROXY_URL}")
-    else:
-        session = aiohttp.ClientSession()
-        print("[+] Прокси не используется")
+    session = aiohttp.ClientSession()
+    print("[+] aiohttp сессия готова, трафик будет идти через redsocks")
 
 
 # ====== НОВОСТИ ======
