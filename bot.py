@@ -12,7 +12,7 @@ from aiohttp_socks import ProxyConnector
 
 load_dotenv()
 
-TOKEN = os.getenv("DISCORD_TOKEN") #123
+TOKEN = os.getenv("DISCORD_TOKEN")
 PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://127.0.0.1:9050
 
 NEWS_CHANNEL_ID = 1215953926919163956
@@ -62,8 +62,7 @@ intents.guilds = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-connector = ProxyConnector.from_url(PROXY_URL)
-session = aiohttp.ClientSession(connector=connector)
+session: aiohttp.ClientSession | None = None  # создаём позже
 
 
 @bot.event
