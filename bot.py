@@ -8,8 +8,11 @@ import threading
 import os
 import aiohttp
 import asyncio
+from dotenv import load_dotenv
 
-TOKEN = "MTI3OTA1Mzk5MDIxMzk4MDI3MA.G9juxN.p4psPumwZyCTdmsFj6E-VUKS_8apclRUrQ_Wk4"
+load_dotenv()
+
+TOKEN = os.getenv("DISCORD_TOKEN")
 NEWS_CHANNEL_ID = 1215953926919163956  # ID канала с новостями
 FORUM_CHANNEL_ID = 1419703714691944538 # ID канала форума
 
