@@ -4,27 +4,25 @@ import sqlite3
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import threading
 import os
 import aiohttp
 import asyncio
 from dotenv import load_dotenv
-from aiohttp_socks import ProxyConnector  # для прокси
+from aiohttp_socks import ProxyConnector
 
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://192.252.211.193:4145
+PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://127.0.0.1:9050
 
-NEWS_CHANNEL_ID = 1215953926919163956  # ID канала с новостями
-FORUM_CHANNEL_ID = 1419703714691944538 # ID канала форума
+NEWS_CHANNEL_ID = 1215953926919163956
+FORUM_CHANNEL_ID = 1419703714691944538
 
 # --- База данных ---
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS news (
+cur.execute("""CREATE TABLE IF NOT EXISTS news (
     id TEXT PRIMARY KEY,
     author TEXT,
     content TEXT,
@@ -32,22 +30,18 @@ CREATE TABLE IF NOT EXISTS news (
     author_id TEXT,
     avatar TEXT,
     attachments TEXT
-)
-""")
+)""")
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS forum_topics (
+cur.execute("""CREATE TABLE IF NOT EXISTS forum_topics (
     id TEXT PRIMARY KEY,
     title TEXT,
     author TEXT,
     author_id TEXT,
     avatar TEXT,
     date TEXT
-)
-""")
+)""")
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS forum_messages (
+cur.execute("""CREATE TABLE IF NOT EXISTS forum_messages (
     id TEXT PRIMARY KEY,
     topic_id TEXT,
     author TEXT,
@@ -56,8 +50,7 @@ CREATE TABLE IF NOT EXISTS forum_messages (
     content TEXT,
     date TEXT,
     attachments TEXT
-)
-""")
+)""")
 
 conn.commit()
 
@@ -265,7 +258,16 @@ async def send_message_to_discord(topic_id: str, content: str):
     return None
 
 
-# --- Запуск ---
+# --- Общий запуск ---
+async def main():
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000, loop="asyncio", lifespan="on")
+    server = uvicorn.Server(config)
+
+    api_task = asyncio.create_task(server.serve())
+    bot_task = asyncio.create_task(bot.start(TOKEN))
+
+    await asyncio.gather(api_task, bot_task)
+
+
 if __name__ == "__main__":
-    threading.Thread(target=lambda: bot.run(TOKEN), daemon=True).start()
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    asyncio.run(main())
