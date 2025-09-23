@@ -12,7 +12,7 @@ from aiohttp_socks import ProxyConnector
 
 load_dotenv()
 
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = os.getenv("DISCORD_TOKEN") #123
 PROXY_URL = os.getenv("PROXY_URL")  # например: socks5://127.0.0.1:9050
 
 NEWS_CHANNEL_ID = 1215953926919163956
