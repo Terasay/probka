@@ -1,3 +1,16 @@
+body.theme-dark .auth-input {
+  background: #1c2535;
+  color: #e6eef8;
+  border: 2px solid #60a5fa;
+  box-shadow: 0 2px 8px rgba(96, 165, 250, 0.18);
+  font-size: 18px;
+  font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
+}
+body.theme-dark .auth-input:focus {
+  border-color: #3b82f6;
+  background: #222c3a;
+  color: #e6eef8;
+}
 :root {
   --bg-top: #071020;
   --bg-bottom: #071426;

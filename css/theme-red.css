@@ -1,3 +1,16 @@
+body.theme-red .auth-input {
+  background: #330000;
+  color: #ffcccc;
+  border: 2px solid #b30000;
+  box-shadow: 0 2px 8px rgba(179, 0, 0, 0.15);
+  font-size: 18px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+body.theme-red .auth-input:focus {
+  border-color: #e60026;
+  background: #660000;
+  color: #fff;
+}
 :root {
   --bg-top: #1a0000;
   --bg-bottom: #330000;

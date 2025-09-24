@@ -1,3 +1,17 @@
+body.theme-cyberpank .auth-input {
+  background: #1a1a28;
+  color: #ff00ff;
+  border: 2px solid #13ded8;
+  box-shadow: 0 2px 8px rgba(19, 222, 216, 0.18);
+  font-size: 18px;
+  font-family: 'Share Tech Mono', 'Consolas', monospace;
+  letter-spacing: 1px;
+}
+body.theme-cyberpank .auth-input:focus {
+  border-color: #ff00ff;
+  background: #141422;
+  color: #13ded8;
+}
 :root {
   --bg-top: #0a0a0f;
   --bg-bottom: #141422;
