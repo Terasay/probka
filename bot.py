@@ -5,6 +5,10 @@ import uvicorn
 import os
 
 
+
+from passlib.hash import bcrypt
+from datetime import datetime
+
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
@@ -38,7 +42,50 @@ cur.execute("""CREATE TABLE IF NOT EXISTS forum_messages (
     attachments TEXT
 )""")
 
+# Таблица пользователей
+cur.execute("""CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password_hash TEXT,
+    role TEXT DEFAULT 'user',
+    created_at TEXT
+)""")
 conn.commit()
+from fastapi.responses import JSONResponse
+
+# === Регистрация ===
+@app.post("/api/register")
+async def register(request: Request):
+    data = await request.json()
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    if not username or not password:
+        return JSONResponse({"error": "Пустой логин или пароль"}, status_code=400)
+    if len(username) < 3 or len(password) < 4:
+        return JSONResponse({"error": "Слишком короткий логин или пароль"}, status_code=400)
+    cur.execute("SELECT id FROM users WHERE username = ?", (username,))
+    if cur.fetchone():
+        return JSONResponse({"error": "Пользователь уже существует"}, status_code=400)
+    password_hash = bcrypt.hash(password)
+    cur.execute(
+        "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
+        (username, password_hash, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    return {"status": "ok"}
+
+# === Вход ===
+@app.post("/api/login")
+async def login(request: Request):
+    data = await request.json()
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    cur.execute("SELECT id, username, password_hash, role FROM users WHERE username = ?", (username,))
+    row = cur.fetchone()
+    if not row or not bcrypt.verify(password, row[2]):
+        return JSONResponse({"error": "Неверный логин или пароль"}, status_code=401)
+    user = {"id": row[0], "username": row[1], "role": row[3]}
+    return {"status": "ok", "user": user}
 
 app = FastAPI()
 
