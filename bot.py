@@ -1,23 +1,10 @@
-import discord
-from discord.ext import commands
 import sqlite3
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import os
-import aiohttp
-import asyncio
-from dotenv import load_dotenv
 
-# ====== ENV ======
-load_dotenv()
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-
-NEWS_CHANNEL_ID = 1215953926919163956
-FORUM_CHANNEL_ID = 1419703714691944538
-
-# ====== БАЗА ДАННЫХ ======
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
@@ -53,121 +40,6 @@ cur.execute("""CREATE TABLE IF NOT EXISTS forum_messages (
 
 conn.commit()
 
-# ====== DISCORD BOT ======
-intents = discord.Intents.default()
-intents.messages = True
-intents.message_content = True
-intents.guilds = True
-intents.members = True
-
-bot = commands.Bot(command_prefix="!", intents=intents)
-session: aiohttp.ClientSession | None = None
-
-
-@bot.event
-async def setup_hook():
-    """Создание aiohttp-сессии без прокси — будет работать через redsocks"""
-    global session
-    session = aiohttp.ClientSession()
-    print("[+] aiohttp сессия готова, трафик будет идти через redsocks")
-
-
-# ====== НОВОСТИ ======
-async def process_news_message(message: discord.Message):
-    if message.author.bot:
-        return
-
-    cur.execute("SELECT 1 FROM news WHERE id = ?", (str(message.id),))
-    if cur.fetchone():
-        return
-
-    content = message.content
-    if message.embeds:
-        content += "\n".join(e.description for e in message.embeds if e.description)
-    if message.attachments:
-        content += "\n" + "\n".join(f"[Файл: {a.filename}]" for a in message.attachments)
-
-    avatar_url = message.author.avatar.url if message.author.avatar else ""
-
-    # скачивание вложений
-    for attachment in message.attachments:
-        folder = f"uploads/{message.id}"
-        os.makedirs(folder, exist_ok=True)
-        file_path = f"{folder}/{attachment.filename}"
-        async with session.get(attachment.url) as resp:
-            if resp.status == 200:
-                with open(file_path, "wb") as f:
-                    f.write(await resp.read())
-
-    attachments = ",".join([f"{message.id}/{a.filename}" for a in message.attachments])
-
-    cur.execute(
-        "INSERT OR IGNORE INTO news VALUES (?,?,?,?,?,?,?)",
-        (str(message.id), str(message.author), content, str(message.created_at),
-         str(message.author.id), avatar_url, attachments)
-    )
-    conn.commit()
-
-
-# ====== ФОРУМ ======
-async def process_thread(thread: discord.Thread):
-    owner = thread.owner or thread.guild.me
-    avatar = owner.avatar.url if owner and owner.avatar else ""
-
-    cur.execute(
-        "INSERT OR IGNORE INTO forum_topics VALUES (?,?,?,?,?,?)",
-        (str(thread.id), thread.name, str(owner), str(owner.id), avatar, str(thread.created_at))
-    )
-    conn.commit()
-
-    async for message in thread.history(limit=50, oldest_first=True):
-        await process_forum_message(message, thread.id)
-
-
-async def process_forum_message(message: discord.Message, topic_id: int):
-    if message.author.bot and message.author != bot.user:
-        return
-
-    avatar_url = message.author.avatar.url if message.author.avatar else ""
-    attachments = ",".join([a.url for a in message.attachments])
-
-    cur.execute(
-        "INSERT OR IGNORE INTO forum_messages VALUES (?,?,?,?,?,?,?,?)",
-        (str(message.id), str(topic_id), str(message.author),
-         str(message.author.id), avatar_url, message.content,
-         str(message.created_at), attachments)
-    )
-    conn.commit()
-
-
-# ====== EVENTS ======
-@bot.event
-async def on_ready():
-    print(f"Бот готов! Подключен как {bot.user}")
-
-    # Новости
-    channel = bot.get_channel(NEWS_CHANNEL_ID)
-    if channel:
-        async for message in channel.history(limit=10):
-            await process_news_message(message)
-
-    # Форум
-    forum = bot.get_channel(FORUM_CHANNEL_ID)
-    if forum and hasattr(forum, "threads"):
-        for thread in forum.threads:
-            await process_thread(thread)
-
-
-@bot.event
-async def on_message(message: discord.Message):
-    if message.channel.id == NEWS_CHANNEL_ID:
-        await process_news_message(message)
-
-    if isinstance(message.channel, discord.Thread):
-        await process_forum_message(message, message.channel.id)
-
-
-# ====== FASTAPI ======
 app = FastAPI()
 
 app.add_middleware(
@@ -178,19 +50,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/api/news")
 def get_news():
-    conn = sqlite3.connect("site.db")
-    cur = conn.cursor()
     cur.execute("SELECT * FROM news ORDER BY date DESC")
     rows = cur.fetchall()
-    conn.close()
     return [
         {"id": r[0], "author": r[1], "content": r[2], "date": r[3],
          "author_id": r[4], "avatar": r[5], "attachments": r[6]}
         for r in rows
     ]
+
+@app.post("/api/news/create")
+async def create_news(request: Request):
+    data = await request.json()
+    news_id = data.get("id", os.urandom(8).hex())
+    cur.execute(
+        "INSERT OR IGNORE INTO news VALUES (?,?,?,?,?,?,?)",
+        (
+            news_id,
+            data.get("author", "site-admin"),
+            data.get("content", ""),
+            data.get("date", ""),
+            data.get("author_id", "0"),
+            data.get("avatar", ""),
+            data.get("attachments", ""),
+        ),
+    )
+    conn.commit()
+    return {"status": "ok", "id": news_id}
 
 
 @app.get("/api/forum/topics")
@@ -204,6 +91,25 @@ def get_topics():
     ]
 
 
+@app.post("/api/forum/topics/create")
+async def create_topic(request: Request):
+    data = await request.json()
+    topic_id = data.get("id", os.urandom(8).hex())
+    cur.execute(
+        "INSERT OR IGNORE INTO forum_topics VALUES (?,?,?,?,?,?)",
+        (
+            topic_id,
+            data.get("title", "Без названия"),
+            data.get("author", "site-admin"),
+            data.get("author_id", "0"),
+            data.get("avatar", ""),
+            data.get("date", ""),
+        ),
+    )
+    conn.commit()
+    return {"status": "ok", "id": topic_id}
+
+
 @app.get("/api/forum/topic/{topic_id}")
 def get_messages(topic_id: str):
     cur.execute("SELECT * FROM forum_messages WHERE topic_id = ? ORDER BY date ASC", (topic_id,))
@@ -214,54 +120,27 @@ def get_messages(topic_id: str):
         for r in rows
     ]
 
-
-@app.post("/api/forum/reply/{topic_id}")
-async def reply(topic_id: str, request: Request):
+@app.post("/api/forum/topic/{topic_id}/reply")
+async def reply_topic(topic_id: str, request: Request):
     data = await request.json()
-    content = data.get("content", "").strip()
-    if not content:
+    msg_id = os.urandom(8).hex()
+    if not data.get("content", "").strip():
         return {"status": "error", "message": "Пустое сообщение"}
-
-    future = asyncio.run_coroutine_threadsafe(
-        send_message_to_discord(topic_id, content),
-        bot.loop
+    cur.execute(
+        "INSERT OR IGNORE INTO forum_messages VALUES (?,?,?,?,?,?,?,?)",
+        (
+            msg_id,
+            topic_id,
+            data.get("author", "site-admin"),
+            data.get("author_id", "0"),
+            data.get("avatar", ""),
+            data.get("content", ""),
+            data.get("date", ""),
+            data.get("attachments", ""),
+        ),
     )
-
-    try:
-        msg = future.result(timeout=10)
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-    if msg:
-        avatar_url = bot.user.avatar.url if bot.user.avatar else ""
-        cur.execute(
-            "INSERT OR IGNORE INTO forum_messages VALUES (?,?,?,?,?,?,?,?)",
-            (str(msg.id), topic_id, str(bot.user), str(bot.user.id),
-             avatar_url, content, str(msg.created_at), "")
-        )
-        conn.commit()
-        return {"status": "ok"}
-
-    return {"status": "error", "message": "Не удалось отправить"}
-
-
-async def send_message_to_discord(topic_id: str, content: str):
-    channel = bot.get_channel(int(topic_id))
-    if channel and isinstance(channel, discord.Thread):
-        return await channel.send(content)
-    return None
-
-
-# ====== ЗАПУСК ======
-async def main():
-    config = uvicorn.Config(app, host="0.0.0.0", port=8080, loop="asyncio", lifespan="on")
-    server = uvicorn.Server(config)
-
-    api_task = asyncio.create_task(server.serve())
-    bot_task = asyncio.create_task(bot.start(TOKEN))
-
-    await asyncio.gather(api_task, bot_task)
-
+    conn.commit()
+    return {"status": "ok", "id": msg_id}
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    uvicorn.run(app, host="0.0.0.0", port=8080)
