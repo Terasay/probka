@@ -1,3 +1,25 @@
+/* Стили для полей авторизации (базовые, переопределяются темами) */
+.auth-input {
+  width: 100%;
+  max-width: 320px;
+  margin: 8px auto 16px auto;
+  display: block;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--input-bg, #1c2535);
+  border: 2px solid var(--input-border, #60a5fa);
+  color: var(--text, #e6eef8);
+  font-size: 18px;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.auth-input:focus {
+  border-color: var(--accent, #60a5fa);
+  box-shadow: 0 0 8px var(--accent, #60a5fa);
+  background: var(--card, #222);
+}
 :root {
   --bg: #0f1724;
   --card: rgba(255,255,255,0.05);

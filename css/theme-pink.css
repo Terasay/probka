@@ -1,3 +1,16 @@
+body.theme-pink .auth-input {
+  background: #f8ddec;
+  color: #b64a85;
+  border: 2px solid #f78ac8;
+  box-shadow: 0 2px 8px rgba(247, 138, 200, 0.18);
+  font-size: 18px;
+  font-family: 'Comic Sans MS', 'Inter', Arial, sans-serif;
+}
+body.theme-pink .auth-input:focus {
+  border-color: #d97aaa;
+  background: #fff0f7;
+  color: #b64a85;
+}
 :root {
   --bg-top: linear-gradient(rgba(40, 10, 30, 0.65), rgba(40, 10, 30, 0.65)), url('../assets/img/sakura.png');
   --bg-bottom: #1a0a14;
