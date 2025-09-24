@@ -34,10 +34,64 @@ async function register() {
   }
 }
 
+
 function showAccount(user) {
   document.getElementById("account-info").style.display = "block";
   document.getElementById("account-name").innerText = user.username;
   document.getElementById("account-role").innerText = user.role;
+  // Если админ — показать панель
+  if (user.role === "admin") {
+    document.getElementById("admin-panel").style.display = "block";
+    loadUsers();
+  } else {
+    document.getElementById("admin-panel").style.display = "none";
+  }
+}
+
+async function loadUsers() {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const table = document.getElementById("users-table").querySelector("tbody");
+  table.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
+  try {
+    const res = await fetch(`${API_URL}/api/users`, {
+      headers: {"x-user-role": user.role}
+    });
+    if (!res.ok) throw new Error("Ошибка загрузки пользователей");
+    const data = await res.json();
+    table.innerHTML = data.users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.username}</td>
+        <td>${u.role}</td>
+        <td>${u.created_at ? new Date(u.created_at).toLocaleString() : ''}</td>
+        <td>${u.role !== 'admin' ? `<button class="delete-user-btn" data-id="${u.id}">Удалить</button>` : ''}</td>
+      </tr>
+    `).join("");
+    // Навесить обработчики на кнопки удаления
+    document.querySelectorAll('.delete-user-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm('Удалить пользователя?')) {
+          await deleteUser(btn.dataset.id);
+        }
+      });
+    });
+  } catch (err) {
+    table.innerHTML = '<tr><td colspan="5">Ошибка :(</td></tr>';
+  }
+}
+
+async function deleteUser(id) {
+  const user = JSON.parse(localStorage.getItem("user"));
+  try {
+    const res = await fetch(`${API_URL}/api/users/${id}`, {
+      method: "DELETE",
+      headers: {"x-user-role": user.role}
+    });
+    if (!res.ok) throw new Error("Ошибка удаления");
+    await loadUsers();
+  } catch (err) {
+    alert("Ошибка удаления пользователя");
+  }
 }
 
 function logout() {
