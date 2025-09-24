@@ -20,7 +20,7 @@
   </script>
 </head>
 <body>
-  <nav class="master-menu" role="navigation" aria-label="Главная навигация">
+  <nav class="master-menu">
     <div class="nav-inner">
       <div class="nav-left">
         <a href="index.html" class="nav-link">Главная</a>
@@ -37,17 +37,32 @@
 
   <div class="page-wrap">
     <div class="container">
-      <h1>Настройки аккаунта</h1>
-      <p>Здесь вы можете выбрать тему сайта:</p>
+      <h1>Аккаунт</h1>
 
+      <!-- Форма входа и регистрации -->
+      <div id="auth-forms">
+        <input type="text" id="login-username" placeholder="Имя пользователя">
+        <input type="password" id="login-password" placeholder="Пароль">
+        <button id="login-btn">Войти</button>
+        <button id="register-btn">Регистрация</button>
+      </div>
+
+      <!-- Данные аккаунта -->
+      <div id="account-info" style="display:none;">
+        <p>Вы вошли как: <span id="account-name"></span></p>
+        <p>Ваша роль: <span id="account-role"></span></p>
+        <button id="logout-btn">Выйти</button>
+      </div>
+
+      <h2>Темы</h2>
       <div class="theme-switcher">
-  <button id="theme-dark">Тёмная тема</button>
-  <button id="theme-light">Светлая тема</button>
-  <button id="theme-gray">Серая</button>
-  <button id="theme-red">Красная</button>
-  <button id="theme-pink">Розовая</button>
-  <button id="theme-cyberpank">Киберпанк</button>
-  <button id="theme-deep-dark">Deep Dark</button>
+        <button id="theme-dark">Тёмная</button>
+        <button id="theme-light">Светлая</button>
+        <button id="theme-gray">Серая</button>
+        <button id="theme-red">Красная</button>
+        <button id="theme-pink">Розовая</button>
+        <button id="theme-cyberpank">Киберпанк</button>
+        <button id="theme-deep-dark">Deep Dark</button>
       </div>
     </div>
     <footer class="footer">
@@ -55,6 +70,7 @@
     </footer>
   </div>
 
+  <script src="js/account.js"></script>
   <script src="js/theme.js"></script>
 </body>
 </html>
