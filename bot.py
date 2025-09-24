@@ -54,6 +54,30 @@ cur.execute("""CREATE TABLE IF NOT EXISTS users (
 )""")
 conn.commit()
 from fastapi.responses import JSONResponse
+from fastapi import HTTPException
+# === Получить всех пользователей (только для админа) ===
+@app.get("/api/users")
+async def get_users(request: Request):
+    # Проверка роли через заголовок X-User-Role (можно доработать под JWT)
+    role = request.headers.get("x-user-role", "user")
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Только для админа")
+    cur.execute("SELECT id, username, role, created_at FROM users ORDER BY id")
+    users = [
+        {"id": r[0], "username": r[1], "role": r[2], "created_at": r[3]}
+        for r in cur.fetchall()
+    ]
+    return {"users": users}
+
+# === Удалить пользователя (только для админа) ===
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: int, request: Request):
+    role = request.headers.get("x-user-role", "user")
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Только для админа")
+    cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    return {"status": "ok"}
 
 # === Регистрация ===
 @app.post("/api/register")
