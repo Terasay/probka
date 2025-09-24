@@ -9,6 +9,8 @@ import os
 from passlib.hash import bcrypt
 from datetime import datetime
 
+app = FastAPI()
+
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
@@ -87,7 +89,6 @@ async def login(request: Request):
     user = {"id": row[0], "username": row[1], "role": row[3]}
     return {"status": "ok", "user": user}
 
-app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
