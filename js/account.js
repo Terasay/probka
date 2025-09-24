@@ -35,10 +35,14 @@ async function register() {
 }
 
 
+
 function showAccount(user) {
   document.getElementById("account-info").style.display = "block";
   document.getElementById("account-name").innerText = user.username;
   document.getElementById("account-role").innerText = user.role;
+  // Меняем текст кнопки в меню
+  const navBtn = document.querySelector('.nav-link.account-link');
+  if (navBtn) navBtn.innerText = user.username;
   // Если админ — показать панель
   if (user.role === "admin") {
     document.getElementById("admin-panel").style.display = "block";
@@ -94,14 +98,19 @@ async function deleteUser(id) {
   }
 }
 
+
 function logout() {
   localStorage.removeItem("user");
   document.getElementById("account-info").style.display = "none";
+  // Возвращаем текст кнопки
+  const navBtn = document.querySelector('.nav-link.account-link');
+  if (navBtn) navBtn.innerText = "Аккаунт";
 }
 
 document.getElementById("login-btn").addEventListener("click", login);
 document.getElementById("register-btn").addEventListener("click", register);
 document.getElementById("logout-btn").addEventListener("click", logout);
+
 
 // Проверка при загрузке
 const savedUser = localStorage.getItem("user");

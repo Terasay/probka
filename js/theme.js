@@ -1,3 +1,23 @@
+// Глобальная замена текста кнопки 'Аккаунт' на имя пользователя
+function updateAccountMenuButton() {
+  const navBtn = document.querySelector('.nav-link.account-link');
+  if (!navBtn) return;
+  const savedUser = localStorage.getItem("user");
+  if (savedUser) {
+    try {
+      const user = JSON.parse(savedUser);
+      if (user && user.username) navBtn.innerText = user.username;
+    } catch {}
+  } else {
+    navBtn.innerText = "Аккаунт";
+  }
+}
+
+// Вызываем при загрузке страницы
+document.addEventListener('DOMContentLoaded', updateAccountMenuButton);
+
+// Для динамического обновления (например, после входа/выхода)
+window.updateAccountMenuButton = updateAccountMenuButton;
 document.addEventListener("DOMContentLoaded", function () {
   const themeLink = document.getElementById("theme-link");
 
