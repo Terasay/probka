@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', updateAccountMenuButton);
 
 // Для динамического обновления (например, после входа/выхода)
 window.updateAccountMenuButton = updateAccountMenuButton;
+
 document.addEventListener("DOMContentLoaded", function () {
   const themeLink = document.getElementById("theme-link");
 
@@ -25,19 +26,22 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!themeLink) return;
     themeLink.href = "css/theme-" + theme + ".css";
     localStorage.setItem("theme", theme);
-      // Удаляем все классы тем с body
-      document.body.classList.remove(
-        "theme-dark",
-        "theme-pink",
-        "theme-light",
-        "theme-gray",
-        "theme-red",
-        "theme-cyberpank",
-        "theme-deep-dark"
-      );
-      document.body.classList.add("theme-" + theme);
+
+    // Удаляем все классы тем с body
+    document.body.classList.remove(
+      "theme-dark",
+      "theme-pink",
+      "theme-light",
+      "theme-gray",
+      "theme-red",
+      "theme-cyberpank",
+      "theme-deep-dark",
+      "theme-terminal"
+    );
+    document.body.classList.add("theme-" + theme);
   }
 
+  // кнопки переключения тем
   const btnDark = document.getElementById("theme-dark");
   const btnLight = document.getElementById("theme-light");
   const btnGray = document.getElementById("theme-gray");
@@ -45,6 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const btnPink = document.getElementById("theme-pink");
   const btnCyberpank = document.getElementById("theme-cyberpank");
   const btnDeepDark = document.getElementById("theme-deep-dark");
+  const btnTerminal = document.getElementById("theme-terminal");
 
   if (btnDark) btnDark.addEventListener("click", () => setTheme("dark"));
   if (btnLight) btnLight.addEventListener("click", () => setTheme("light"));
@@ -53,4 +58,5 @@ document.addEventListener("DOMContentLoaded", function () {
   if (btnPink) btnPink.addEventListener("click", () => setTheme("pink"));
   if (btnCyberpank) btnCyberpank.addEventListener("click", () => setTheme("cyberpank"));
   if (btnDeepDark) btnDeepDark.addEventListener("click", () => setTheme("deep-dark"));
+  if (btnTerminal) btnTerminal.addEventListener("click", () => setTheme("terminal"));
 });

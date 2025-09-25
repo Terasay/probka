@@ -1,0 +1,64 @@
+body.theme-terminal .auth-input { 
+  background: #000000;
+  color: #33ff66;
+  border: 2px solid #00cc44;
+  box-shadow: 0 0 10px rgba(0, 255, 128, 0.25);
+  font-size: 18px;
+  font-family: "Courier New", monospace;
+}
+body.theme-terminal .auth-input:focus {
+  border-color: #33ff66;
+  background: #001100;
+  color: #66ff99;
+  box-shadow: 0 0 15px rgba(51, 255, 102, 0.4);
+}
+
+/* Глобальные переменные для темы */
+:root {
+  --bg-top: #000000;
+  --bg-bottom: #001a00;
+  --card: #000000;
+  --muted: #1aff66;
+  --accent: #00cc44;
+  --chart-line: #33ff66;
+  --text: #33ff66;
+  --text-invert: #000000;
+  --input-bg: #000000;
+  --input-border: #00cc44;
+  --menu-bg: rgba(0, 20, 0, 0.85);
+  --menu-border: rgba(0, 255, 128, 0.1);
+  --card-shadow: 0 0 20px rgba(0, 255, 128, 0.15);
+  --table-border: rgba(51, 255, 102, 0.2);
+  --nav-height: 64px;
+  --footer-bg: rgba(0, 10, 0, 0.95);
+
+  --scroll-track: #000000;
+  --scroll-thumb: #00cc44;
+}
+
+/* Эффект старого монитора */
+body.theme-terminal {
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+  color: var(--text);
+  font-family: "Courier New", monospace;
+  text-shadow: 0 0 4px rgba(51, 255, 102, 0.75);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Лёгкие "сканлайны" */
+body.theme-terminal::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 255, 128, 0.05) 0px,
+    rgba(0, 255, 128, 0.05) 1px,
+    transparent 2px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.25;
+}
