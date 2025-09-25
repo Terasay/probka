@@ -1,3 +1,8 @@
+/* ===================== */
+/* Fallout Terminal Theme */
+/* ===================== */
+
+/* Инпуты */
 body.theme-terminal .auth-input { 
   background: #000000;
   color: #33ff66;
@@ -36,7 +41,7 @@ body.theme-terminal .auth-input:focus {
   --scroll-thumb: #00cc44;
 }
 
-/* Эффект старого монитора */
+/* Основные стили */
 body.theme-terminal {
   background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   color: var(--text);
@@ -61,4 +66,43 @@ body.theme-terminal::before {
   pointer-events: none;
   z-index: 9999;
   opacity: 0.25;
+}
+
+/* Эффект мерцания экрана */
+body.theme-terminal::after {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 255, 128, 0.02);
+  pointer-events: none;
+  z-index: 9998;
+  animation: screen-flicker 2s infinite;
+}
+
+/* Анимация лёгкого мерцания */
+@keyframes screen-flicker {
+  0%   { opacity: 0.03; }
+  20%  { opacity: 0.07; }
+  40%  { opacity: 0.02; }
+  60%  { opacity: 0.06; }
+  80%  { opacity: 0.04; }
+  100% { opacity: 0.05; }
+}
+
+/* Эффект дрожания текста */
+body.theme-terminal h1,
+body.theme-terminal h2,
+body.theme-terminal h3,
+body.theme-terminal button,
+body.theme-terminal .auth-input,
+body.theme-terminal .nav-link {
+  animation: text-jitter 0.15s infinite;
+}
+
+@keyframes text-jitter {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(0.3px, 0); }
+  50%  { transform: translate(-0.3px, 0.3px); }
+  75%  { transform: translate(0.2px, -0.2px); }
+  100% { transform: translate(0, 0); }
 }
