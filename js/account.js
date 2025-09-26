@@ -44,6 +44,8 @@ async function login() {
       }
     }
 
+    // Очищаем старые данные
+    localStorage.removeItem("access_token");
     localStorage.setItem("user", JSON.stringify(data.user));
     localStorage.setItem("token", data.token);
     console.log("[login] saved token (length):", data.token.length);  // Длина, чтобы не логгировать полный токен
@@ -100,6 +102,7 @@ function showAccount(user) {
 function logout() {
   localStorage.removeItem("user");
   localStorage.removeItem("token");
+  localStorage.removeItem("access_token");  // Удаляем старый JWT если есть
   document.getElementById("account-info").style.display = "none";
   document.getElementById("admin-panel").style.display = "none";
   const navBtn = document.querySelector('.nav-link.account-link');
@@ -120,7 +123,7 @@ async function loadUsers() {
   tableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
   try {
     const res = await fetch(`${API_URL}/api/users`, {
-      headers: { "Authorization": `Bearer ${token}` }  // Исправил на шаблон
+      headers: { "Authorization": `Bearer ${token}` }  // Только Authorization, без x-user-role
     });
     console.log("[loadUsers] status:", res.status, "headers sent: Authorization Bearer (length)", token.length);
 
@@ -173,7 +176,7 @@ async function deleteUser(id) {
   try {
     const res = await fetch(`${API_URL}/api/users/${id}`, {
       method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
+      headers: { "Authorization": `Bearer ${token}` }  // Только Authorization
     });
     console.log("[deleteUser] status:", res.status);
     if (!res.ok) {
@@ -204,4 +207,6 @@ if (savedUser && savedToken) {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
   }
+} else {
+  localStorage.removeItem("access_token");  // Удаляем старый если есть
 }
