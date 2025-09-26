@@ -52,14 +52,17 @@ function showAccount(user) {
 
 async function loadUsers() {
   const token = localStorage.getItem("access_token");
+  console.log("Sending request to /api/users with token:", !!token);
   const table = document.getElementById("users-table").querySelector("tbody");
   table.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
   try {
     const res = await fetch(`${API_URL}/api/users`, {
       headers: {"Authorization": `Bearer ${token}`}
     });
+    console.log("Response status:", res.status);
     if (res.status === 403 || res.status === 401) {
-      document.getElementById("admin-panel").style.display = "none";  // Скрываем если нет прав
+      console.log("Access denied or unauthorized");
+      document.getElementById("admin-panel").style.display = "none";
       throw new Error("Нет доступа");
     }
     if (!res.ok) throw new Error("Ошибка загрузки пользователей");
@@ -81,21 +84,25 @@ async function loadUsers() {
       });
     });
   } catch (err) {
+    console.error("Error:", err.message);
     table.innerHTML = '<tr><td colspan="5">Ошибка :(</td></tr>';
   }
 }
 
 async function deleteUser(id) {
   const token = localStorage.getItem("access_token");
+  console.log("Sending DELETE to /api/users/", id, "with token:", !!token);
   try {
     const res = await fetch(`${API_URL}/api/users/${id}`, {
       method: "DELETE",
       headers: {"Authorization": `Bearer ${token}`}
     });
+    console.log("Delete response status:", res.status);
     if (res.status === 403 || res.status === 401) throw new Error("Нет доступа");
     if (!res.ok) throw new Error("Ошибка удаления");
     await loadUsers();
   } catch (err) {
+    console.error("Delete error:", err.message);
     alert("Ошибка удаления пользователя: " + err.message);
   }
 }
