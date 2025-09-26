@@ -136,7 +136,6 @@ async def login(request: Request):
     if not row or not bcrypt.verify(password, row[2]):
         return JSONResponse({"error": "Неверный логин или пароль"}, status_code=401)
 
-    # создаём токен
     token = secrets.token_hex(16)
     cur.execute("INSERT INTO sessions (token, user_id, created_at) VALUES (?,?,?)",
                 (token, row[0], datetime.now(timezone.utc).isoformat()))

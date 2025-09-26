@@ -187,12 +187,10 @@ async function deleteUser(id) {
   }
 }
 
-// ===== Привязка кнопок =====
 document.getElementById("login-btn").addEventListener("click", login);
 document.getElementById("register-btn").addEventListener("click", register);
 document.getElementById("logout-btn").addEventListener("click", logout);
 
-// ===== Проверка сохранённого входа =====
 const savedUser = localStorage.getItem("user");
 const savedToken = localStorage.getItem("token");
 if (savedUser && savedToken) {
