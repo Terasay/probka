@@ -260,6 +260,6 @@ async def reply_topic(topic_id: str, request: Request):
     )
     conn.commit()
     return {"status": "ok", "id": msg_id}
-
+# Запуск сервера
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
