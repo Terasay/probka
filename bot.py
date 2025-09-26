@@ -150,8 +150,8 @@ async def login(request: Request, response: Response):
     httponly=True,
     max_age=3600,
     path="/",
-    samesite="none",   # важно!
-    secure=False       # пока http, поэтому False
+    samesite="lax",   # вместо none
+    secure=False
     )
 
     return {"status": "ok", "user": user}
