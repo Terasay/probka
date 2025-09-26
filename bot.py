@@ -83,7 +83,7 @@ async def get_current_user(request: Request):
     token = auth.split(" ")[1]
     logger.info(f"Extracted token (length): {len(token)}")  # Для отладки
 
-    # Optional: cleanup старых сессий (удаляем >1 часа)
+    # Cleanup старых сессий (удаляем >1 часа)
     one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
     cur.execute("DELETE FROM sessions WHERE created_at < ?", (one_hour_ago.isoformat(),))
     conn.commit()
