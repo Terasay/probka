@@ -53,9 +53,26 @@ async function logout() {
 async function loadUsers() {
   const tableBody = document.querySelector("#users-table tbody");
   tableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
-
   try {
-    const users = await apiFetch("/api/users");
+    const res = await fetch(`${API_URL}/api/users`, {
+      credentials: "include"
+    });
+    console.log("[loadUsers] status:", res.status);
+
+    if (res.status === 401) {
+      alert("Сессия истекла, войдите снова");
+      logout();
+      return;
+    }
+    if (res.status === 403) {
+      document.getElementById("admin-panel").style.display = "none";
+      throw new Error("Нет доступа");
+    }
+    if (!res.ok) throw new Error(`Ошибка (${res.status})`);
+
+    const users = await res.json();  // тут сразу массив
+    console.log("[loadUsers] got users:", users);
+
     if (!users.length) {
       tableBody.innerHTML = '<tr><td colspan="5">Пользователей нет</td></tr>';
       return;
@@ -71,50 +88,17 @@ async function loadUsers() {
       </tr>
     `).join("");
 
-    tableBody.querySelectorAll(".delete-user-btn").forEach(btn =>
-      btn.addEventListener("click", () => deleteUser(btn.dataset.id))
-    );
+    // навесить обработчики кнопок
+    document.querySelectorAll('.delete-user-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Удалить пользователя?')) return;
+        await deleteUser(btn.dataset.id);
+      });
+    });
+
   } catch (err) {
-    console.error("[loadUsers]", err);
-    tableBody.innerHTML = `<tr><td colspan="5">Ошибка: ${err.message}</td></tr>`;
-  }
-}
-
-async function deleteUser(id) {
-  if (!confirm("Удалить пользователя?")) return;
-  try {
-    await apiFetch(`/api/users/${id}`, { method: "DELETE" });
-    await loadUsers();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-// ===== UI =====
-function updateUI(user) {
-  const accountInfo = document.getElementById("account-info");
-  const adminPanel = document.getElementById("admin-panel");
-  const navBtn = document.querySelector(".nav-link.account-link");
-
-  if (user) {
-    accountInfo.style.display = "block";
-    accountInfo.innerHTML = `
-      <p>Вы вошли как <b>${user.username}</b> (${user.role})</p>
-      <button id="logout-btn">Выйти</button>
-    `;
-    navBtn && (navBtn.innerText = user.username);
-    document.getElementById("logout-btn").addEventListener("click", logout);
-
-    if (user.role === "admin") {
-      adminPanel.style.display = "block";
-      loadUsers();
-    } else {
-      adminPanel.style.display = "none";
-    }
-  } else {
-    accountInfo.style.display = "none";
-    adminPanel.style.display = "none";
-    navBtn && (navBtn.innerText = "Аккаунт");
+    console.error("[loadUsers] error:", err);
+    tableBody.innerHTML = '<tr><td colspan="5">Ошибка загрузки :( ' + err.message + '</td></tr>';
   }
 }
 
