@@ -108,7 +108,7 @@ async def register(request: Request):
     )
     conn.commit()
     return {"status": "ok"}
-
+#qqrqrq
 
 @app.post("/api/login")
 async def login(request: Request):
