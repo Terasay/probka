@@ -5,7 +5,10 @@ const API_URL = "http://79.174.78.128:8080";
 async function login() {
   const username = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value.trim();
+<<<<<<< HEAD
   console.log("[login] trying", { username });
+=======
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
   if (!username || !password) { alert("Введите логин и пароль"); return; }
 
   try {
@@ -15,6 +18,7 @@ async function login() {
       body: JSON.stringify({ username, password }),
       credentials: "omit"
     });
+<<<<<<< HEAD
 
     console.log("[login] response status:", res.status, "ok:", res.ok);
 
@@ -54,6 +58,20 @@ async function login() {
   } catch (err) {
     alert("Неверный логин или пароль или ошибка сервера");
     console.error("[login] error:", err);
+=======
+    if (!res.ok) {
+      const err = await res.json().catch(()=>null);
+      throw new Error((err && err.error) ? err.error : "Ошибка входа");
+    }
+    const data = await res.json();
+    // сохраняем пользователя и токен
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("token", data.token);
+    showAccount(data.user);
+  } catch (err) {
+    alert("Неверный логин или пароль");
+    console.error("login error:", err);
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
   }
 }
 
@@ -69,15 +87,25 @@ async function register() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
+<<<<<<< HEAD
     const data = await res.json().catch(()=>null);
     console.log("[register] res:", res.status, data);
     if (!res.ok) {
       throw new Error((data && (data.error || data.detail)) || "Ошибка регистрации");
+=======
+    if (!res.ok) {
+      const err = await res.json().catch(()=>null);
+      throw new Error((err && err.error) ? err.error : "Ошибка регистрации");
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
     }
     alert("Регистрация успешна, теперь войдите");
   } catch (err) {
     alert("Ошибка: " + (err.message || err));
+<<<<<<< HEAD
     console.error("[register] error:", err);
+=======
+    console.error("register error:", err);
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
   }
 }
 
@@ -91,6 +119,14 @@ function showAccount(user) {
   const navBtn = document.querySelector('.nav-link.account-link');
   if (navBtn) navBtn.innerText = user.username;
 
+<<<<<<< HEAD
+=======
+  // обновим кнопку меню
+  const navBtn = document.querySelector('.nav-link.account-link');
+  if (navBtn) navBtn.innerText = user.username;
+
+  // показываем панель только админу
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
   if (user.role === "admin") {
     document.getElementById("admin-panel").style.display = "block";
     loadUsers();
@@ -123,15 +159,24 @@ async function loadUsers() {
     const res = await fetch(`${API_URL}/api/users`, {
       headers: { "Authorization": "Bearer " + token }
     });
+<<<<<<< HEAD
     console.log("[loadUsers] status:", res.status);
     if (res.status === 401) {
       alert("Сессия истекла или недействительна, войдите снова");
+=======
+    if (res.status === 401) {
+      alert("Сессия истекла, войдите снова");
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
       logout();
       return;
     }
     if (!res.ok) throw new Error("Нет доступа");
 
     const data = await res.json();
+<<<<<<< HEAD
+=======
+    // сервер может вернуть массив (users) или объект { users: [...] }
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
     const users = Array.isArray(data) ? data : (data.users || []);
     if (!users.length) {
       tableBody.innerHTML = '<tr><td colspan="5">Пользователей нет</td></tr>';
@@ -156,7 +201,11 @@ async function loadUsers() {
     });
 
   } catch (err) {
+<<<<<<< HEAD
     console.error("[loadUsers] error:", err);
+=======
+    console.error("loadUsers error:", err);
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
     tableBody.innerHTML = '<tr><td colspan="5">Ошибка загрузки :(</td></tr>';
   }
 }
@@ -169,6 +218,7 @@ async function deleteUser(id) {
       method: "DELETE",
       headers: { "Authorization": "Bearer " + token }
     });
+<<<<<<< HEAD
     if (!res.ok) {
       const txt = await res.text().catch(()=>null);
       throw new Error("Ошибка удаления: " + (txt || res.status));
@@ -177,6 +227,13 @@ async function deleteUser(id) {
   } catch (err) {
     alert("Ошибка удаления пользователя");
     console.error("[deleteUser] error:", err);
+=======
+    if (!res.ok) throw new Error("Ошибка удаления");
+    await loadUsers();
+  } catch (err) {
+    alert("Ошибка удаления пользователя");
+    console.error("deleteUser error:", err);
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
   }
 }
 
@@ -192,8 +249,13 @@ if (savedUser && savedToken) {
   try {
     const user = JSON.parse(savedUser);
     showAccount(user);
+<<<<<<< HEAD
     console.log("[init] found saved user and token");
   } catch(e) {
+=======
+  } catch(e) {
+    // сломанные данные — чистим
+>>>>>>> cbb8d1823a555e967a1a87a6680e8944c5b6c13d
     localStorage.removeItem("user");
     localStorage.removeItem("token");
   }
