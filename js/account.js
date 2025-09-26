@@ -1,5 +1,6 @@
 const API_URL = "http://79.174.78.128:8080";
 
+// ==== Авторизация ====
 async function login() {
   const username = document.getElementById("login-username").value;
   const password = document.getElementById("login-password").value;
@@ -12,13 +13,13 @@ async function login() {
     if (!res.ok) throw new Error("Ошибка входа");
     const data = await res.json();
     localStorage.setItem("user", JSON.stringify(data.user));
-    localStorage.setItem("access_token", data.access_token);
     showAccount(data.user);
   } catch (err) {
     alert("Неверный логин или пароль");
   }
 }
 
+// ==== Регистрация ====
 async function register() {
   const username = document.getElementById("login-username").value;
   const password = document.getElementById("login-password").value;
@@ -28,98 +29,68 @@ async function register() {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({username, password})
     });
-    if (!res.ok) throw new Error(await res.json().error || "Ошибка регистрации");
+    if (!res.ok) throw new Error("Ошибка регистрации");
     alert("Регистрация успешна, теперь войдите");
   } catch (err) {
     alert("Ошибка: " + err.message);
   }
 }
 
+// ==== Отображение аккаунта ====
 function showAccount(user) {
   document.getElementById("account-info").style.display = "block";
   document.getElementById("account-name").innerText = user.username;
   document.getElementById("account-role").innerText = user.role;
-  const navBtn = document.querySelector('.nav-link.account-link');
-  if (navBtn) navBtn.innerText = user.username;
-  // Показываем панель только если роль admin (для UX, но сервер защитит)
+
+  // Скрываем или показываем админ-панель
+  const adminPanel = document.getElementById("admin-panel");
   if (user.role === "admin") {
-    document.getElementById("admin-panel").style.display = "block";
-    loadUsers();
+    adminPanel.style.display = "block";
+    loadAllUsers(); // загрузим список пользователей
   } else {
-    document.getElementById("admin-panel").style.display = "none";
+    adminPanel.style.display = "none";
   }
 }
 
-async function loadUsers() {
-  const token = localStorage.getItem("access_token");
-  console.log("Sending request to /api/users with token:", !!token);
-  const table = document.getElementById("users-table").querySelector("tbody");
-  table.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
-  try {
-    const res = await fetch(`${API_URL}/api/users`, {
-      headers: {"Authorization": `Bearer ${token}`}
-    });
-    console.log("Response status:", res.status);
-    if (res.status === 403 || res.status === 401) {
-      console.log("Access denied or unauthorized");
-      document.getElementById("admin-panel").style.display = "none";
-      throw new Error("Нет доступа");
-    }
-    if (!res.ok) throw new Error("Ошибка загрузки пользователей");
-    const data = await res.json();
-    table.innerHTML = data.users.map(u => `
-      <tr>
-        <td>${u.id}</td>
-        <td>${u.username}</td>
-        <td>${u.role}</td>
-        <td>${u.created_at ? new Date(u.created_at).toLocaleString() : ''}</td>
-        <td>${u.role !== 'admin' ? `<button class="delete-user-btn" data-id="${u.id}">Удалить</button>` : ''}</td>
-      </tr>
-    `).join("");
-    document.querySelectorAll('.delete-user-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (confirm('Удалить пользователя?')) {
-          await deleteUser(btn.dataset.id);
-        }
-      });
-    });
-  } catch (err) {
-    console.error("Error:", err.message);
-    table.innerHTML = '<tr><td colspan="5">Ошибка :(</td></tr>';
-  }
-}
-
-async function deleteUser(id) {
-  const token = localStorage.getItem("access_token");
-  console.log("Sending DELETE to /api/users/", id, "with token:", !!token);
-  try {
-    const res = await fetch(`${API_URL}/api/users/${id}`, {
-      method: "DELETE",
-      headers: {"Authorization": `Bearer ${token}`}
-    });
-    console.log("Delete response status:", res.status);
-    if (res.status === 403 || res.status === 401) throw new Error("Нет доступа");
-    if (!res.ok) throw new Error("Ошибка удаления");
-    await loadUsers();
-  } catch (err) {
-    console.error("Delete error:", err.message);
-    alert("Ошибка удаления пользователя: " + err.message);
-  }
-}
-
+// ==== Выход ====
 function logout() {
   localStorage.removeItem("user");
-  localStorage.removeItem("access_token");
   document.getElementById("account-info").style.display = "none";
   document.getElementById("admin-panel").style.display = "none";
-  const navBtn = document.querySelector('.nav-link.account-link');
-  if (navBtn) navBtn.innerText = "Аккаунт";
 }
 
+// ==== Загрузка всех аккаунтов (только для админа) ====
+async function loadAllUsers() {
+  const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  if (savedUser.role !== "admin") return; // защита на клиенте
+
+  try {
+    const res = await fetch(`${API_URL}/api/admin/users`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": savedUser.token || "" // на будущее
+      }
+    });
+    if (!res.ok) throw new Error("Ошибка загрузки пользователей");
+    const users = await res.json();
+
+    const list = document.getElementById("users-list");
+    list.innerHTML = "";
+    users.forEach(u => {
+      const li = document.createElement("li");
+      li.textContent = `${u.username} (${u.role})`;
+      list.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Ошибка:", err.message);
+  }
+}
+
+// ==== Вешаем события ====
 document.getElementById("login-btn").addEventListener("click", login);
 document.getElementById("register-btn").addEventListener("click", register);
 document.getElementById("logout-btn").addEventListener("click", logout);
 
-// Проверка при загрузке
+// ==== Проверка при загрузке ====
 const savedUser = localStorage.getItem("user");
 if (savedUser) showAccount(JSON.parse(savedUser));
