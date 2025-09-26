@@ -66,17 +66,21 @@ conn.commit()
 # Утилита: получение юзера по токену
 # -----------------------
 async def get_current_user(request: Request):
-    token = request.headers.get("x-auth-token")
-    if not token:
+    auth = request.headers.get("Authorization")
+    if not auth or not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Нет токена")
+
+    token = auth.split(" ")[1]
     cur.execute("SELECT user_id FROM sessions WHERE token = ?", (token,))
     row = cur.fetchone()
     if not row:
         raise HTTPException(status_code=401, detail="Неверный токен")
+
     cur.execute("SELECT id, username, role FROM users WHERE id = ?", (row[0],))
     user = cur.fetchone()
     if not user:
         raise HTTPException(status_code=401, detail="Пользователь не найден")
+
     return {"id": user[0], "username": user[1], "role": user[2]}
 
 # -----------------------
@@ -138,7 +142,7 @@ async def get_users(request: Request):
         {"id": r[0], "username": r[1], "role": r[2], "created_at": r[3]}
         for r in cur.fetchall()
     ]
-    return {"users": users}
+    return users
 
 
 @app.delete("/api/users/{user_id}")
@@ -175,7 +179,7 @@ async def create_news(request: Request):
             news_id,
             data.get("author", "site-admin"),
             data.get("content", ""),
-            data.get("date", ""),
+            data.get("date", datetime.utcnow().isoformat()),
             data.get("author_id", "0"),
             data.get("avatar", ""),
             data.get("attachments", ""),
@@ -210,7 +214,7 @@ async def create_topic(request: Request):
             data.get("author", "site-admin"),
             data.get("author_id", "0"),
             data.get("avatar", ""),
-            data.get("date", ""),
+            data.get("date", datetime.utcnow().isoformat()),
         ),
     )
     conn.commit()
@@ -243,7 +247,7 @@ async def reply_topic(topic_id: str, request: Request):
             data.get("author_id", "0"),
             data.get("avatar", ""),
             data.get("content", ""),
-            data.get("date", ""),
+            data.get("date", datetime.utcnow().isoformat()),
             data.get("attachments", ""),
         ),
     )
