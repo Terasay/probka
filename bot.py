@@ -1,8 +1,7 @@
 import sqlite3
-import secrets
 import os
-from datetime import datetime, timezone, timedelta
-from fastapi import FastAPI, Request, HTTPException
+from datetime import datetime, timezone
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
@@ -15,15 +14,16 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Middleware для логирования запросов и headers
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    logger.info(f"Request path: {request.url.path}")
-    logger.info(f"Request headers: {dict(request.headers)}")  # Покажет все headers, включая Cookie
-    response = await call_next(request)
-    logger.info(f"Response status: {response.status_code}")
-    return response
+# CORS (разрешаем доступ с твоего IP)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://79.174.78.128"],  # твой фронтенд
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# DB
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
@@ -65,41 +65,9 @@ cur.execute("""CREATE TABLE IF NOT EXISTS users (
     created_at TEXT
 )""")
 
-cur.execute("""CREATE TABLE IF NOT EXISTS sessions (
-    token TEXT PRIMARY KEY,
-    user_id INTEGER,
-    created_at TEXT
-)""")
-
 conn.commit()
 
-# Утилита: получение юзера по токену из cookie
-async def get_current_user(request: Request):
-    token = request.cookies.get("token")
-    if not token:
-        logger.warning("No token in cookie")
-        raise HTTPException(status_code=401, detail="Нет токена")
-
-    logger.info(f"Extracted token from cookie (length): {len(token)}")
-
-    # Cleanup старых сессий (удаляем >1 часа)
-    one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
-    cur.execute("DELETE FROM sessions WHERE created_at < ?", (one_hour_ago.isoformat(),))
-    conn.commit()
-
-    cur.execute("SELECT user_id FROM sessions WHERE token = ?", (token,))
-    row = cur.fetchone()
-    if not row:
-        logger.warning("Token not found in sessions")
-        raise HTTPException(status_code=401, detail="Неверный токен")
-
-    cur.execute("SELECT id, username, role FROM users WHERE id = ?", (row[0],))
-    user = cur.fetchone()
-    if not user:
-        logger.warning("User not found for token")
-        raise HTTPException(status_code=401, detail="Пользователь не найден")
-
-    return {"id": user[0], "username": user[1], "role": user[2]}
+# ===================== AUTH =====================
 
 @app.post("/api/register")
 async def register(request: Request):
@@ -135,60 +103,25 @@ async def login(request: Request):
     if not row or not bcrypt.verify(password, row[2]):
         return JSONResponse({"error": "Неверный логин или пароль"}, status_code=401)
 
-    # создаём токен
-    token = secrets.token_hex(16)
-    cur.execute("INSERT INTO sessions (token, user_id, created_at) VALUES (?,?,?)",
-                (token, row[0], datetime.now(timezone.utc).isoformat()))
-    conn.commit()
-
     user = {"id": row[0], "username": row[1], "role": row[3]}
-
-    # Делаем JSONResponse и ставим cookie в нём
-    response = JSONResponse({"status": "ok", "user": user})
-    response.set_cookie(
-        key="token",
-        value=token,
-        httponly=True,
-        max_age=3600,
-        path="/",
-        samesite="lax",   # вместо none
-        secure=False
-    )
-    return response
-
-@app.post("/api/logout")
-async def logout(request: Request):
-    token = request.cookies.get("token")
-    if token:
-        cur.execute("DELETE FROM sessions WHERE token = ?", (token,))
-        conn.commit()
-
-    response = JSONResponse({"status": "ok"})
-    response.delete_cookie("token")
-    return response
+    return {"status": "ok", "user": user}
 
 @app.get("/api/users")
-async def get_users(request: Request):
-    user = await get_current_user(request)
-    if user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Только для админа")
-
+async def get_users():
     cur.execute("SELECT id, username, role, created_at FROM users ORDER BY id")
     users = [
         {"id": r[0], "username": r[1], "role": r[2], "created_at": r[3]}
         for r in cur.fetchall()
     ]
-    return users
+    return {"status": "ok", "users": users}
 
 @app.delete("/api/users/{user_id}")
-async def delete_user(user_id: int, request: Request):
-    user = await get_current_user(request)
-    if user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Только для админа")
-
+async def delete_user(user_id: int):
     cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
     conn.commit()
     return {"status": "ok"}
+
+# ===================== NEWS =====================
 
 @app.get("/api/news")
 def get_news():
@@ -218,6 +151,8 @@ async def create_news(request: Request):
     )
     conn.commit()
     return {"status": "ok", "id": news_id}
+
+# ===================== FORUM =====================
 
 @app.get("/api/forum/topics")
 def get_topics():
@@ -279,13 +214,7 @@ async def reply_topic(topic_id: str, request: Request):
     conn.commit()
     return {"status": "ok", "id": msg_id}
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://79.174.78.128"],  # вместо "*"
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# ===================== START =====================
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

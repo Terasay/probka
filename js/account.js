@@ -1,109 +1,61 @@
-const API_URL = ""; // пусто => будет работать через nginx (тот же домен)
+const API_URL = ""; // пусто => работаем через nginx (тот же домен)
+
+// ===== Универсальный запрос к API =====
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API_URL}${path}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Сервер вернул невалидный JSON (status ${res.status})`);
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || data.detail || `Ошибка (${res.status})`);
+  }
+  return data;
+}
 
 // ===== Вход =====
 async function login() {
   const username = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value.trim();
-  console.log("[login] trying", { username });
-  if (!username || !password) { alert("Введите логин и пароль"); return; }
+  if (!username || !password) return alert("Введите логин и пароль");
 
   try {
-    const res = await fetch(`${API_URL}/api/login`, {
+    const data = await apiFetch("/api/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-      credentials: "include"  // Отправляем cookies
+      body: JSON.stringify({ username, password })
     });
-
-    console.log("[login] response status:", res.status, "ok:", res.ok);
-    const text = await res.text();
-    console.log("[login] raw response text:", text);
-
-    let data = null;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error("[login] response is not json:", e);
-      throw new Error("Ошибка сервера: невалидный JSON");
-    }
-
-    if (!res.ok) {
-      const msg = (data.error || data.detail || `Ошибка входа (${res.status})`);
-      throw new Error(msg);
-    }
-
     localStorage.setItem("user", JSON.stringify(data.user));
-    console.log("[login] logged in, user:", data.user);
-    showAccount(data.user);
+    updateUI(data.user);
   } catch (err) {
     alert(err.message);
-    console.error("[login] error:", err);
-  }
-}
-
-// ===== Отображение аккаунта =====
-function showAccount(user) {
-  const accountInfo = document.getElementById("account-info");
-  accountInfo.style.display = "block";
-  accountInfo.innerHTML = `
-    <p>Вы вошли как <b>${user.username}</b> (${user.role})</p>
-    <button id="logout-btn">Выйти</button>
-  `;
-
-  // навигационная кнопка
-  const navBtn = document.querySelector('.nav-link.account-link');
-  if (navBtn) navBtn.innerText = user.username;
-
-  // кнопка выхода
-  document.getElementById("logout-btn").addEventListener("click", logout);
-
-  // админ-панель
-  if (user.role === "admin") {
-    document.getElementById("admin-panel").style.display = "block";
-    loadUsers();
-  } else {
-    document.getElementById("admin-panel").style.display = "none";
+    console.error("[login]", err);
   }
 }
 
 // ===== Выход =====
 async function logout() {
   try {
-    await fetch(`${API_URL}/api/logout`, {
-      method: "POST",
-      credentials: "include"
-    });
-  } catch (e) {}
+    await apiFetch("/api/logout", { method: "POST" });
+  } catch {}
   localStorage.removeItem("user");
-  document.getElementById("account-info").style.display = "none";
-  document.getElementById("admin-panel").style.display = "none";
-  const navBtn = document.querySelector('.nav-link.account-link');
-  if (navBtn) navBtn.innerText = "Аккаунт";
+  updateUI(null);
 }
 
 // ===== Загрузка списка пользователей =====
 async function loadUsers() {
   const tableBody = document.querySelector("#users-table tbody");
   tableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
+
   try {
-    const res = await fetch(`${API_URL}/api/users`, {
-      credentials: "include"
-    });
-    console.log("[loadUsers] status:", res.status);
-
-    if (res.status === 401) {
-      alert("Сессия истекла, войдите снова");
-      logout();
-      return;
-    }
-    if (res.status === 403) {
-      document.getElementById("admin-panel").style.display = "none";
-      throw new Error("Нет доступа");
-    }
-    if (!res.ok) throw new Error(`Ошибка (${res.status})`);
-
-    const data = await res.json();
-    const users = Array.isArray(data) ? data : (data.users || []);
+    const users = await apiFetch("/api/users");
     if (!users.length) {
       tableBody.innerHTML = '<tr><td colspan="5">Пользователей нет</td></tr>';
       return;
@@ -119,56 +71,62 @@ async function loadUsers() {
       </tr>
     `).join("");
 
-    document.querySelectorAll('.delete-user-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Удалить пользователя?')) return;
-        await deleteUser(btn.dataset.id);
-      });
-    });
-
+    tableBody.querySelectorAll(".delete-user-btn").forEach(btn =>
+      btn.addEventListener("click", () => deleteUser(btn.dataset.id))
+    );
   } catch (err) {
-    console.error("[loadUsers] error:", err);
-    tableBody.innerHTML = '<tr><td colspan="5">Ошибка загрузки :( ' + err.message + '</td></tr>';
+    console.error("[loadUsers]", err);
+    tableBody.innerHTML = `<tr><td colspan="5">Ошибка: ${err.message}</td></tr>`;
   }
 }
 
 async function deleteUser(id) {
+  if (!confirm("Удалить пользователя?")) return;
   try {
-    const res = await fetch(`${API_URL}/api/users/${id}`, {
-      method: "DELETE",
-      credentials: "include"
-    });
-    console.log("[deleteUser] status:", res.status);
-    if (res.status === 401) {
-      alert("Сессия истекла, войдите снова");
-      logout();
-      return;
-    }
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ detail: "Unknown" }));
-      throw new Error("Ошибка удаления: " + (data.detail || res.status));
-    }
+    await apiFetch(`/api/users/${id}`, { method: "DELETE" });
     await loadUsers();
   } catch (err) {
     alert(err.message);
-    console.error("[deleteUser] error:", err);
   }
 }
 
-// ===== Привязка кнопок =====
+// ===== UI =====
+function updateUI(user) {
+  const accountInfo = document.getElementById("account-info");
+  const adminPanel = document.getElementById("admin-panel");
+  const navBtn = document.querySelector(".nav-link.account-link");
+
+  if (user) {
+    accountInfo.style.display = "block";
+    accountInfo.innerHTML = `
+      <p>Вы вошли как <b>${user.username}</b> (${user.role})</p>
+      <button id="logout-btn">Выйти</button>
+    `;
+    navBtn && (navBtn.innerText = user.username);
+    document.getElementById("logout-btn").addEventListener("click", logout);
+
+    if (user.role === "admin") {
+      adminPanel.style.display = "block";
+      loadUsers();
+    } else {
+      adminPanel.style.display = "none";
+    }
+  } else {
+    accountInfo.style.display = "none";
+    adminPanel.style.display = "none";
+    navBtn && (navBtn.innerText = "Аккаунт");
+  }
+}
+
+// ===== События =====
 document.getElementById("login-btn").addEventListener("click", login);
 
-// регистрация пока не реализована → убираем
-// document.getElementById("register-btn").addEventListener("click", register);
-
-// ===== Проверка сохранённого входа =====
+// ===== Автовход =====
 const savedUser = localStorage.getItem("user");
 if (savedUser) {
   try {
-    const user = JSON.parse(savedUser);
-    showAccount(user);
-    console.log("[init] found saved user");
-  } catch(e) {
+    updateUI(JSON.parse(savedUser));
+  } catch {
     localStorage.removeItem("user");
   }
 }
