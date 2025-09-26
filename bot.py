@@ -144,7 +144,15 @@ async def login(request: Request, response: Response):
     user = {"id": row[0], "username": row[1], "role": row[3]}
 
     # Устанавливаем cookie с токеном
-    response.set_cookie(key="token", value=token, httponly=True, max_age=3600, path="/", samesite="lax")  # 1 час
+    response.set_cookie(
+    key="token",
+    value=token,
+    httponly=True,
+    max_age=3600,
+    path="/",
+    samesite="none",   # важно!
+    secure=False       # пока http, поэтому False
+    )
 
     return {"status": "ok", "user": user}
 
