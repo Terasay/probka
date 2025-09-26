@@ -39,6 +39,7 @@
     <div class="container">
       <h1>Аккаунт</h1>
 
+      <!-- Форма входа и регистрации -->
       <div id="auth-forms">
         <input type="text" id="login-username" class="auth-input" placeholder="Имя пользователя">
         <input type="password" id="login-password" class="auth-input" placeholder="Пароль">
@@ -47,12 +48,14 @@
       </div>
 
 
+      <!-- Данные аккаунта -->
       <div id="account-info" style="display:none;">
         <p>Вы вошли как: <span id="account-name"></span></p>
         <p>Ваша роль: <span id="account-role"></span></p>
         <button id="logout-btn">Выйти</button>
       </div>
 
+      <!-- Панель администратора -->
       <div id="admin-panel" style="display:none; margin-top:32px;">
         <h2>Пользователи</h2>
         <table id="users-table" style="width:100%; border-collapse:collapse;">

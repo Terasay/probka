@@ -1,21 +1,32 @@
 import sqlite3
 import secrets
 import os
-from datetime import datetime
-
+from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
 import uvicorn
+import logging
+
+# Логирование
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Подключение к базе
+# Middleware для логирования запросов и headers
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Request path: {request.url.path}")
+    logger.info(f"Request headers: {dict(request.headers)}")  # Покажет все headers, включая Authorization
+    response = await call_next(request)
+    logger.info(f"Response status: {response.status_code}")
+    return response
+
 conn = sqlite3.connect("site.db", check_same_thread=False)
 cur = conn.cursor()
 
-# Таблицы
 cur.execute("""CREATE TABLE IF NOT EXISTS news (
     id TEXT PRIMARY KEY,
     author TEXT,
@@ -62,30 +73,35 @@ cur.execute("""CREATE TABLE IF NOT EXISTS sessions (
 
 conn.commit()
 
-# -----------------------
 # Утилита: получение юзера по токену
-# -----------------------
 async def get_current_user(request: Request):
-    auth = request.headers.get("Authorization")
+    auth = request.headers.get("authorization")  # Нижний регистр, на случай если прокси меняет
     if not auth or not auth.startswith("Bearer "):
+        logger.warning("No or invalid Authorization header")
         raise HTTPException(status_code=401, detail="Нет токена")
 
     token = auth.split(" ")[1]
+    logger.info(f"Extracted token (length): {len(token)}")  # Для отладки
+
+    # Optional: cleanup старых сессий (удаляем >1 часа)
+    one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+    cur.execute("DELETE FROM sessions WHERE created_at < ?", (one_hour_ago.isoformat(),))
+    conn.commit()
+
     cur.execute("SELECT user_id FROM sessions WHERE token = ?", (token,))
     row = cur.fetchone()
     if not row:
+        logger.warning("Token not found in sessions")
         raise HTTPException(status_code=401, detail="Неверный токен")
 
     cur.execute("SELECT id, username, role FROM users WHERE id = ?", (row[0],))
     user = cur.fetchone()
     if not user:
+        logger.warning("User not found for token")
         raise HTTPException(status_code=401, detail="Пользователь не найден")
 
     return {"id": user[0], "username": user[1], "role": user[2]}
 
-# -----------------------
-# Аккаунты
-# -----------------------
 @app.post("/api/register")
 async def register(request: Request):
     data = await request.json()
@@ -104,11 +120,10 @@ async def register(request: Request):
     password_hash = bcrypt.hash(password)
     cur.execute(
         "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
-        (username, password_hash, datetime.utcnow().isoformat())
+        (username, password_hash, datetime.now(timezone.utc).isoformat())
     )
     conn.commit()
     return {"status": "ok"}
-#qqrqrq
 
 @app.post("/api/login")
 async def login(request: Request):
@@ -124,12 +139,11 @@ async def login(request: Request):
     # создаём токен
     token = secrets.token_hex(16)
     cur.execute("INSERT INTO sessions (token, user_id, created_at) VALUES (?,?,?)",
-                (token, row[0], datetime.utcnow().isoformat()))
+                (token, row[0], datetime.now(timezone.utc).isoformat()))
     conn.commit()
 
     user = {"id": row[0], "username": row[1], "role": row[3]}
     return {"status": "ok", "user": user, "token": token}
-
 
 @app.get("/api/users")
 async def get_users(request: Request):
@@ -144,7 +158,6 @@ async def get_users(request: Request):
     ]
     return users
 
-
 @app.delete("/api/users/{user_id}")
 async def delete_user(user_id: int, request: Request):
     user = await get_current_user(request)
@@ -155,9 +168,6 @@ async def delete_user(user_id: int, request: Request):
     conn.commit()
     return {"status": "ok"}
 
-# -----------------------
-# Новости
-# -----------------------
 @app.get("/api/news")
 def get_news():
     cur.execute("SELECT * FROM news ORDER BY date DESC")
@@ -167,7 +177,6 @@ def get_news():
          "author_id": r[4], "avatar": r[5], "attachments": r[6]}
         for r in rows
     ]
-
 
 @app.post("/api/news/create")
 async def create_news(request: Request):
@@ -179,7 +188,7 @@ async def create_news(request: Request):
             news_id,
             data.get("author", "site-admin"),
             data.get("content", ""),
-            data.get("date", datetime.utcnow().isoformat()),
+            data.get("date", datetime.now(timezone.utc).isoformat()),
             data.get("author_id", "0"),
             data.get("avatar", ""),
             data.get("attachments", ""),
@@ -188,9 +197,6 @@ async def create_news(request: Request):
     conn.commit()
     return {"status": "ok", "id": news_id}
 
-# -----------------------
-# Форум
-# -----------------------
 @app.get("/api/forum/topics")
 def get_topics():
     cur.execute("SELECT * FROM forum_topics ORDER BY date DESC")
@@ -200,7 +206,6 @@ def get_topics():
          "avatar": r[4], "date": r[5]}
         for r in rows
     ]
-
 
 @app.post("/api/forum/topics/create")
 async def create_topic(request: Request):
@@ -214,12 +219,11 @@ async def create_topic(request: Request):
             data.get("author", "site-admin"),
             data.get("author_id", "0"),
             data.get("avatar", ""),
-            data.get("date", datetime.utcnow().isoformat()),
+            data.get("date", datetime.now(timezone.utc).isoformat()),
         ),
     )
     conn.commit()
     return {"status": "ok", "id": topic_id}
-
 
 @app.get("/api/forum/topic/{topic_id}")
 def get_messages(topic_id: str):
@@ -230,7 +234,6 @@ def get_messages(topic_id: str):
          "avatar": r[4], "content": r[5], "date": r[6], "attachments": r[7]}
         for r in rows
     ]
-
 
 @app.post("/api/forum/topic/{topic_id}/reply")
 async def reply_topic(topic_id: str, request: Request):
@@ -247,22 +250,19 @@ async def reply_topic(topic_id: str, request: Request):
             data.get("author_id", "0"),
             data.get("avatar", ""),
             data.get("content", ""),
-            data.get("date", datetime.utcnow().isoformat()),
+            data.get("date", datetime.now(timezone.utc).isoformat()),
             data.get("attachments", ""),
         ),
     )
     conn.commit()
     return {"status": "ok", "id": msg_id}
 
-# -----------------------
-# Настройки сервера
-# -----------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "Authorization"],
 )
 
 if __name__ == "__main__":
