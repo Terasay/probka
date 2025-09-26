@@ -267,7 +267,7 @@ async def reply_topic(topic_id: str, request: Request):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Для теста, в проде укажи конкретный origin, например ["http://79.174.78.128"]
+    allow_origins=["http://79.174.78.128"],  # вместо "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
