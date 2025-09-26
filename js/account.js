@@ -66,12 +66,17 @@ function logout() {
   localStorage.removeItem("token");
   document.getElementById("account-info").style.display = "none";
   document.getElementById("admin-panel").style.display = "none";
+  const navBtn = document.querySelector('.nav-link.account-link');
+  if (navBtn) navBtn.innerText = "Аккаунт";
 }
 
 // ===== Загрузка списка пользователей (только админ) =====
 async function loadUsers() {
   const token = localStorage.getItem("token");
   if (!token) return;
+
+  const table = document.getElementById("users-table").querySelector("tbody");
+  table.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
 
   try {
     const res = await fetch(`${API_URL}/api/users`, {
@@ -80,17 +85,47 @@ async function loadUsers() {
 
     if (!res.ok) throw new Error("Нет доступа");
 
-    const users = await res.json();
-    const container = document.getElementById("users-list");
-    container.innerHTML = "";
+    const data = await res.json(); // {"users": [...]}
 
-    users.forEach(u => {
-      const div = document.createElement("div");
-      div.textContent = `${u.username} (${u.role})`;
-      container.appendChild(div);
+    table.innerHTML = (data.users || []).map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.username}</td>
+        <td>${u.role}</td>
+        <td>${u.created_at ? new Date(u.created_at).toLocaleString() : ''}</td>
+        <td>${u.role !== 'admin' ? `<button class="delete-user-btn" data-id="${u.id}">Удалить</button>` : ''}</td>
+      </tr>
+    `).join("");
+
+    // Навесить обработчики на кнопки удаления
+    document.querySelectorAll('.delete-user-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm('Удалить пользователя?')) {
+          await deleteUser(btn.dataset.id);
+        }
+      });
     });
   } catch (err) {
     console.warn("Ошибка загрузки пользователей:", err.message);
+    table.innerHTML = '<tr><td colspan="5">Ошибка :(</td></tr>';
+  }
+}
+
+// ===== Удаление пользователя =====
+async function deleteUser(id) {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/users/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error("Ошибка удаления");
+    await loadUsers();
+  } catch (err) {
+    alert("Ошибка удаления пользователя");
   }
 }
 
