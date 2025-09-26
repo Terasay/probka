@@ -1,8 +1,3 @@
-/* ===================== */
-/* Fallout Terminal Theme */
-/* ===================== */
-
-/* Инпуты */
 body.theme-terminal .auth-input { 
   background: #000000;
   color: #33ff66;
@@ -18,7 +13,6 @@ body.theme-terminal .auth-input:focus {
   box-shadow: 0 0 15px rgba(51, 255, 102, 0.4);
 }
 
-/* Глобальные переменные для темы */
 :root {
   --bg-top: #000000;
   --bg-bottom: #001a00;
@@ -41,7 +35,6 @@ body.theme-terminal .auth-input:focus {
   --scroll-thumb: #00cc44;
 }
 
-/* Основные стили */
 body.theme-terminal {
   background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   color: var(--text);
@@ -51,7 +44,6 @@ body.theme-terminal {
   overflow-x: hidden;
 }
 
-/* Лёгкие "сканлайны" */
 body.theme-terminal::before {
   content: "";
   position: fixed;
@@ -68,7 +60,6 @@ body.theme-terminal::before {
   opacity: 0.25;
 }
 
-/* Эффект мерцания экрана */
 body.theme-terminal::after {
   content: "";
   position: fixed;
@@ -79,7 +70,6 @@ body.theme-terminal::after {
   animation: screen-flicker 2s infinite;
 }
 
-/* Анимация лёгкого мерцания */
 @keyframes screen-flicker {
   0%   { opacity: 0.03; }
   20%  { opacity: 0.07; }
@@ -89,7 +79,6 @@ body.theme-terminal::after {
   100% { opacity: 0.05; }
 }
 
-/* Эффект дрожания текста */
 body.theme-terminal h1,
 body.theme-terminal h2,
 body.theme-terminal h3,
