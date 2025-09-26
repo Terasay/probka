@@ -1,4 +1,4 @@
-const API_URL = "http://79.174.78.128:8080";
+const API_URL = ""; // пусто => будет работать через nginx (тот же домен)
 
 // ===== Вход =====
 async function login() {
@@ -12,11 +12,10 @@ async function login() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
-      credentials: "include"  // Включаем cookies
+      credentials: "include"  // Отправляем cookies
     });
 
     console.log("[login] response status:", res.status, "ok:", res.ok);
-
     const text = await res.text();
     console.log("[login] raw response text:", text);
 
@@ -42,9 +41,30 @@ async function login() {
   }
 }
 
-// ===== Регистрация ===== (без изменений)
+// ===== Отображение аккаунта =====
+function showAccount(user) {
+  const accountInfo = document.getElementById("account-info");
+  accountInfo.style.display = "block";
+  accountInfo.innerHTML = `
+    <p>Вы вошли как <b>${user.username}</b> (${user.role})</p>
+    <button id="logout-btn">Выйти</button>
+  `;
 
-// ===== Отображение аккаунта ===== (без изменений)
+  // навигационная кнопка
+  const navBtn = document.querySelector('.nav-link.account-link');
+  if (navBtn) navBtn.innerText = user.username;
+
+  // кнопка выхода
+  document.getElementById("logout-btn").addEventListener("click", logout);
+
+  // админ-панель
+  if (user.role === "admin") {
+    document.getElementById("admin-panel").style.display = "block";
+    loadUsers();
+  } else {
+    document.getElementById("admin-panel").style.display = "none";
+  }
+}
 
 // ===== Выход =====
 async function logout() {
@@ -67,7 +87,7 @@ async function loadUsers() {
   tableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
   try {
     const res = await fetch(`${API_URL}/api/users`, {
-      credentials: "include"  // Отправляем cookies
+      credentials: "include"
     });
     console.log("[loadUsers] status:", res.status);
 
@@ -137,8 +157,9 @@ async function deleteUser(id) {
 
 // ===== Привязка кнопок =====
 document.getElementById("login-btn").addEventListener("click", login);
-document.getElementById("register-btn").addEventListener("click", register);
-document.getElementById("logout-btn").addEventListener("click", logout);
+
+// регистрация пока не реализована → убираем
+// document.getElementById("register-btn").addEventListener("click", register);
 
 // ===== Проверка сохранённого входа =====
 const savedUser = localStorage.getItem("user");
