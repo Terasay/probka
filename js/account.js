@@ -12,7 +12,7 @@ async function login() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
-      credentials: "omit"
+      credentials: "include"  // Включаем cookies
     });
 
     console.log("[login] response status:", res.status, "ok:", res.ok);
@@ -33,22 +33,8 @@ async function login() {
       throw new Error(msg);
     }
 
-    if (!data.token) {
-      console.warn("[login] В ответе нет 'token'. Полный ответ:", data);
-      const altToken = data.access_token || data.session || data.id_token;
-      if (altToken) {
-        data.token = altToken;
-        console.warn("[login] Используем альтернативный токен:", altToken);
-      } else {
-        throw new Error("В ответе сервера нет токена");
-      }
-    }
-
-    // Очищаем старые данные
-    localStorage.removeItem("access_token");
     localStorage.setItem("user", JSON.stringify(data.user));
-    localStorage.setItem("token", data.token);
-    console.log("[login] saved token (length):", data.token.length);  // Длина, чтобы не логгировать полный токен
+    console.log("[login] logged in, user:", data.user);
     showAccount(data.user);
   } catch (err) {
     alert(err.message);
@@ -56,85 +42,45 @@ async function login() {
   }
 }
 
-// ===== Регистрация =====
-async function register() {
-  const username = document.getElementById("login-username").value.trim();
-  const password = document.getElementById("login-password").value.trim();
-  if (!username || !password) { alert("Введите логин и пароль"); return; }
+// ===== Регистрация ===== (без изменений)
 
-  try {
-    const res = await fetch(`${API_URL}/api/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json().catch(()=>null);
-    console.log("[register] res:", res.status, data);
-    if (!res.ok) {
-      throw new Error((data && (data.error || data.detail)) || "Ошибка регистрации");
-    }
-    alert("Регистрация успешна, теперь войдите");
-  } catch (err) {
-    alert("Ошибка: " + (err.message || err));
-    console.error("[register] error:", err);
-  }
-}
-
-// ===== Отображение аккаунта =====
-function showAccount(user) {
-  if (!user) return;
-  document.getElementById("account-info").style.display = "block";
-  document.getElementById("account-name").innerText = user.username;
-  document.getElementById("account-role").innerText = user.role || "user";
-
-  const navBtn = document.querySelector('.nav-link.account-link');
-  if (navBtn) navBtn.innerText = user.username;
-
-  if (user.role === "admin") {
-    document.getElementById("admin-panel").style.display = "block";
-    loadUsers();
-  } else {
-    document.getElementById("admin-panel").style.display = "none";
-  }
-}
+// ===== Отображение аккаунта ===== (без изменений)
 
 // ===== Выход =====
-function logout() {
+async function logout() {
+  try {
+    await fetch(`${API_URL}/api/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+  } catch (e) {}
   localStorage.removeItem("user");
-  localStorage.removeItem("token");
-  localStorage.removeItem("access_token");  // Удаляем старый JWT если есть
   document.getElementById("account-info").style.display = "none";
   document.getElementById("admin-panel").style.display = "none";
   const navBtn = document.querySelector('.nav-link.account-link');
   if (navBtn) navBtn.innerText = "Аккаунт";
 }
 
-// ===== Загрузка списка пользователей (только админ) =====
+// ===== Загрузка списка пользователей =====
 async function loadUsers() {
-  const token = localStorage.getItem("token");
-  console.log("[loadUsers] token from storage (exists/length):", !!token, token ? token.length : 0);
   const tableBody = document.querySelector("#users-table tbody");
-  if (!token) {
-    tableBody.innerHTML = '<tr><td colspan="5">Нет токена — войдите заново</td></tr>';
-    logout();  // Авто-логаут если нет token
-    return;
-  }
-
   tableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
   try {
     const res = await fetch(`${API_URL}/api/users`, {
-      headers: { "Authorization": `Bearer ${token}` }  // Только Authorization, без x-user-role
+      credentials: "include"  // Отправляем cookies
     });
-    console.log("[loadUsers] status:", res.status, "headers sent: Authorization Bearer (length)", token.length);
+    console.log("[loadUsers] status:", res.status);
 
     if (res.status === 401) {
-      const detail = await res.json().catch(() => ({ detail: "Unknown" }));
-      console.warn("[loadUsers] 401 detail:", detail);
-      alert("Сессия истекла или недействительна, войдите снова");
+      alert("Сессия истекла, войдите снова");
       logout();
       return;
     }
-    if (!res.ok) throw new Error(`Нет доступа (${res.status})`);
+    if (res.status === 403) {
+      document.getElementById("admin-panel").style.display = "none";
+      throw new Error("Нет доступа");
+    }
+    if (!res.ok) throw new Error(`Ошибка (${res.status})`);
 
     const data = await res.json();
     const users = Array.isArray(data) ? data : (data.users || []);
@@ -167,18 +113,17 @@ async function loadUsers() {
 }
 
 async function deleteUser(id) {
-  const token = localStorage.getItem("token");
-  console.log("[deleteUser] token (exists/length):", !!token, token ? token.length : 0);
-  if (!token) {
-    alert("Войдите как админ");
-    return;
-  }
   try {
     const res = await fetch(`${API_URL}/api/users/${id}`, {
       method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }  // Только Authorization
+      credentials: "include"
     });
     console.log("[deleteUser] status:", res.status);
+    if (res.status === 401) {
+      alert("Сессия истекла, войдите снова");
+      logout();
+      return;
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({ detail: "Unknown" }));
       throw new Error("Ошибка удаления: " + (data.detail || res.status));
@@ -197,16 +142,12 @@ document.getElementById("logout-btn").addEventListener("click", logout);
 
 // ===== Проверка сохранённого входа =====
 const savedUser = localStorage.getItem("user");
-const savedToken = localStorage.getItem("token");
-if (savedUser && savedToken) {
+if (savedUser) {
   try {
     const user = JSON.parse(savedUser);
     showAccount(user);
-    console.log("[init] found saved user and token");
+    console.log("[init] found saved user");
   } catch(e) {
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
   }
-} else {
-  localStorage.removeItem("access_token");  // Удаляем старый если есть
 }

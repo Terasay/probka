@@ -2,7 +2,7 @@ import sqlite3
 import secrets
 import os
 from datetime import datetime, timezone, timedelta
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
@@ -19,7 +19,7 @@ app = FastAPI()
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info(f"Request path: {request.url.path}")
-    logger.info(f"Request headers: {dict(request.headers)}")  # Покажет все headers, включая Authorization
+    logger.info(f"Request headers: {dict(request.headers)}")  # Покажет все headers, включая Cookie
     response = await call_next(request)
     logger.info(f"Response status: {response.status_code}")
     return response
@@ -73,15 +73,14 @@ cur.execute("""CREATE TABLE IF NOT EXISTS sessions (
 
 conn.commit()
 
-# Утилита: получение юзера по токену
+# Утилита: получение юзера по токену из cookie
 async def get_current_user(request: Request):
-    auth = request.headers.get("authorization")  # Нижний регистр, на случай если прокси меняет
-    if not auth or not auth.startswith("Bearer "):
-        logger.warning("No or invalid Authorization header")
+    token = request.cookies.get("token")
+    if not token:
+        logger.warning("No token in cookie")
         raise HTTPException(status_code=401, detail="Нет токена")
 
-    token = auth.split(" ")[1]
-    logger.info(f"Extracted token (length): {len(token)}")  # Для отладки
+    logger.info(f"Extracted token from cookie (length): {len(token)}")
 
     # Cleanup старых сессий (удаляем >1 часа)
     one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
@@ -126,7 +125,7 @@ async def register(request: Request):
     return {"status": "ok"}
 
 @app.post("/api/login")
-async def login(request: Request):
+async def login(request: Request, response: Response):
     data = await request.json()
     username = data.get("username", "").strip()
     password = data.get("password", "").strip()
@@ -143,7 +142,16 @@ async def login(request: Request):
     conn.commit()
 
     user = {"id": row[0], "username": row[1], "role": row[3]}
-    return {"status": "ok", "user": user, "token": token}
+
+    # Устанавливаем cookie с токеном
+    response.set_cookie(key="token", value=token, httponly=True, max_age=3600, path="/", samesite="lax")  # 1 час
+
+    return {"status": "ok", "user": user}
+
+@app.post("/api/logout")
+async def logout(response: Response):
+    response.delete_cookie("token")
+    return {"status": "ok"}
 
 @app.get("/api/users")
 async def get_users(request: Request):
@@ -259,10 +267,10 @@ async def reply_topic(topic_id: str, request: Request):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Для теста, в проде укажи конкретный origin, например ["http://79.174.78.128"]
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*", "Authorization"],
+    allow_headers=["*"],
 )
 
 if __name__ == "__main__":
