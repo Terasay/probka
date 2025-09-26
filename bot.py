@@ -2,7 +2,7 @@ import sqlite3
 import secrets
 import os
 from datetime import datetime, timezone, timedelta
-from fastapi import FastAPI, Request, HTTPException, Response
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
@@ -125,7 +125,7 @@ async def register(request: Request):
     return {"status": "ok"}
 
 @app.post("/api/login")
-async def login(request: Request, response: Response):
+async def login(request: Request):
     data = await request.json()
     username = data.get("username", "").strip()
     password = data.get("password", "").strip()
@@ -143,23 +143,29 @@ async def login(request: Request, response: Response):
 
     user = {"id": row[0], "username": row[1], "role": row[3]}
 
-    # Устанавливаем cookie с токеном
+    # Делаем JSONResponse и ставим cookie в нём
+    response = JSONResponse({"status": "ok", "user": user})
     response.set_cookie(
-    key="token",
-    value=token,
-    httponly=True,
-    max_age=3600,
-    path="/",
-    samesite="lax",   # вместо none
-    secure=False
+        key="token",
+        value=token,
+        httponly=True,
+        max_age=3600,
+        path="/",
+        samesite="lax",   # вместо none
+        secure=False
     )
-
-    return {"status": "ok", "user": user}
+    return response
 
 @app.post("/api/logout")
-async def logout(response: Response):
+async def logout(request: Request):
+    token = request.cookies.get("token")
+    if token:
+        cur.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        conn.commit()
+
+    response = JSONResponse({"status": "ok"})
     response.delete_cookie("token")
-    return {"status": "ok"}
+    return response
 
 @app.get("/api/users")
 async def get_users(request: Request):
