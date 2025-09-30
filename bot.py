@@ -8,16 +8,14 @@ from passlib.hash import bcrypt
 import uvicorn
 import logging
 
-# Логирование
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# CORS (разрешаем доступ с твоего IP)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://79.174.78.128"],  # твой фронтенд
+    allow_origins=["http://79.174.78.128"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,8 +64,6 @@ cur.execute("""CREATE TABLE IF NOT EXISTS users (
 )""")
 
 conn.commit()
-
-# ===================== AUTH =====================
 
 @app.post("/api/register")
 async def register(request: Request):
@@ -121,7 +117,6 @@ async def delete_user(user_id: int):
     conn.commit()
     return {"status": "ok"}
 
-# ===================== NEWS =====================
 
 @app.get("/api/news")
 def get_news():
@@ -151,8 +146,6 @@ async def create_news(request: Request):
     )
     conn.commit()
     return {"status": "ok", "id": news_id}
-
-# ===================== FORUM =====================
 
 @app.get("/api/forum/topics")
 def get_topics():
@@ -213,8 +206,6 @@ async def reply_topic(topic_id: str, request: Request):
     )
     conn.commit()
     return {"status": "ok", "id": msg_id}
-
-# ===================== START =====================
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

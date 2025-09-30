@@ -1,4 +1,3 @@
-// Глобальная замена текста кнопки 'Аккаунт' на имя пользователя
 function updateAccountMenuButton() {
   const navBtn = document.querySelector('.nav-link.account-link');
   if (!navBtn) return;
@@ -13,10 +12,8 @@ function updateAccountMenuButton() {
   }
 }
 
-// Вызываем при загрузке страницы
 document.addEventListener('DOMContentLoaded', updateAccountMenuButton);
 
-// Для динамического обновления (например, после входа/выхода)
 window.updateAccountMenuButton = updateAccountMenuButton;
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -27,7 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
     themeLink.href = "css/theme-" + theme + ".css";
     localStorage.setItem("theme", theme);
 
-    // Удаляем все классы тем с body
     document.body.classList.remove(
       "theme-dark",
       "theme-pink",
@@ -41,7 +37,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.classList.add("theme-" + theme);
   }
 
-  // кнопки переключения тем
   const btnDark = document.getElementById("theme-dark");
   const btnLight = document.getElementById("theme-light");
   const btnGray = document.getElementById("theme-gray");

@@ -1,7 +1,6 @@
 const API_URL = "http://localhost:8000";
 let currentTopic = null;
 
-// Загрузка тем форума
 async function loadTopics() {
   const section = document.getElementById("forum-topics");
   section.innerHTML = '<div class="about-text">Загрузка тем...</div>';
@@ -24,7 +23,6 @@ async function loadTopics() {
         </div>
       </article>
     `).join("");
-    // Навешиваем обработчики
     document.querySelectorAll('.forum-topic').forEach(card => {
       card.addEventListener('click', () => openTopic(card.dataset.id, card.dataset.title));
     });
@@ -34,7 +32,6 @@ async function loadTopics() {
   }
 }
 
-// Экранирование HTML для защиты от XSS
 function escapeHTML(str) {
   return str
     .replace(/&/g, "&amp;")
@@ -44,7 +41,6 @@ function escapeHTML(str) {
     .replace(/'/g, "&#39;");
 }
 
-// Открытие темы и загрузка сообщений
 async function openTopic(id, title) {
   currentTopic = id;
   document.getElementById("forum-topics").style.display = "none";
@@ -77,7 +73,6 @@ async function openTopic(id, title) {
   }
 }
 
-// Назад к списку тем
 function backToTopics() {
   document.getElementById("forum-messages").style.display = "none";
   document.getElementById("forum-topics").style.display = "flex";
@@ -85,7 +80,6 @@ function backToTopics() {
 
 document.getElementById("back-to-topics").addEventListener("click", backToTopics);
 
-// Отправка ответа
 async function sendReply() {
   const text = document.getElementById("reply-text").value.trim();
   if (!text) return;
@@ -107,5 +101,4 @@ async function sendReply() {
 
 document.getElementById("send-reply").addEventListener("click", sendReply);
 
-// Инициализация
 loadTopics();

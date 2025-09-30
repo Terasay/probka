@@ -1,14 +1,11 @@
 // js/account.js
-const API_URL = ""; // пусто => работаем через nginx (тот же домен)
+const API_URL = "";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Привязываем события после загрузки DOM
   document.getElementById("login-btn").addEventListener("click", login);
   document.getElementById("logout-btn").addEventListener("click", logout);
-  // регистру оставляем, но если хочешь — можно убрать/скрыть кнопку в HTML
   document.getElementById("register-btn").addEventListener("click", registerHandler);
 
-  // Автовход из localStorage
   const savedUser = localStorage.getItem("user");
   if (savedUser) {
     try {
@@ -19,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ===== Универсальный запрос к API (возвращает распарсенный объект) =====
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     credentials: "include",
@@ -27,7 +23,6 @@ async function apiFetch(path, options = {}) {
     ...options
   });
 
-  // Попытка распарсить JSON — если сервер возвращает статус ok, вернём объект
   let data = null;
   try {
     data = await res.json();
@@ -36,14 +31,12 @@ async function apiFetch(path, options = {}) {
   }
 
   if (!res.ok) {
-    // если пришёл объект с error/detail, показываем его
     throw new Error(data?.error || data?.detail || `Ошибка (${res.status})`);
   }
 
   return data;
 }
 
-// ===== Логин =====
 async function login() {
   const username = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value.trim();
@@ -58,7 +51,6 @@ async function login() {
       body: JSON.stringify({ username, password })
     });
 
-    // Ожидаем { status: "ok", user: { ... } }
     if (data && data.user) {
       localStorage.setItem("user", JSON.stringify(data.user));
       updateUI(data.user);
@@ -72,7 +64,6 @@ async function login() {
   }
 }
 
-// ===== Регистрация (простая) =====
 async function registerHandler() {
   const username = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value.trim();
@@ -87,10 +78,8 @@ async function registerHandler() {
       body: JSON.stringify({ username, password })
     });
 
-    // сервер возвращает {"status":"ok"} — делаем автологин после регистрации
     if (data && data.status === "ok") {
       alert("Регистрация успешна — теперь можно войти");
-      // не логиним автоматически, просто очистим поля
       document.getElementById("login-password").value = "";
     } else {
       throw new Error("Регистрация не удалась");
@@ -101,16 +90,12 @@ async function registerHandler() {
   }
 }
 
-// ===== Логаут =====
 async function logout() {
   try {
-    // Убираем локально
     localStorage.removeItem("user");
-    // Попробуем сообщить серверу (если у тебя там нет сессий — сервер просто ответит)
     try {
       await apiFetch("/api/logout", { method: "POST" });
     } catch (e) {
-      // игнорируем ошибки logout на сервере
       console.warn("[logout] server logout failed:", e.message);
     }
   } finally {
@@ -118,7 +103,6 @@ async function logout() {
   }
 }
 
-// ===== Загрузка списка пользователей (для админа) =====
 async function loadUsers() {
   const tableBody = document.querySelector("#users-table tbody");
   if (!tableBody) return;
@@ -126,10 +110,8 @@ async function loadUsers() {
   tableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
 
   try {
-    // Используем apiFetch, чтобы получить объект { status: "ok", users: [...] }
     const data = await apiFetch("/api/users", { method: "GET" });
 
-    // Учитываем формат ответа у тебя: { status: "ok", users: [...] }
     const users = Array.isArray(data.users) ? data.users : [];
 
     console.log("[loadUsers] got users:", users);
@@ -149,14 +131,12 @@ async function loadUsers() {
       </tr>
     `).join("");
 
-    // навесить обработчики кнопок удаления
     document.querySelectorAll('.delete-user-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         if (!confirm(`Удалить пользователя #${id}?`)) return;
         try {
           const resp = await apiFetch(`/api/users/${id}`, { method: "DELETE" });
-          // ожидание { status: "ok" }
           if (resp && resp.status === "ok") {
             await loadUsers();
           } else {
@@ -183,16 +163,13 @@ function updateUI(user) {
   const navBtn = document.querySelector(".nav-link.account-link");
 
   if (user) {
-    // Скрыть форму логина
     if (authForms) authForms.style.display = "none";
     if (accountInfo) accountInfo.style.display = "block";
-    // Заполнить данные
     const nameEl = document.getElementById("account-name");
     const roleEl = document.getElementById("account-role");
     if (nameEl) nameEl.innerText = user.username;
     if (roleEl) roleEl.innerText = user.role;
     if (navBtn) navBtn.innerText = user.username;
-    // Показываем админ-панель если роль == admin
     if (user.role === "admin") {
       if (adminPanel) {
         adminPanel.style.display = "block";
@@ -202,7 +179,6 @@ function updateUI(user) {
       if (adminPanel) adminPanel.style.display = "none";
     }
   } else {
-    // Выход — показываем форму логина
     if (authForms) authForms.style.display = "block";
     if (accountInfo) accountInfo.style.display = "none";
     if (adminPanel) adminPanel.style.display = "none";
@@ -210,7 +186,6 @@ function updateUI(user) {
   }
 }
 
-// ===== Вспомогалки =====
 function escapeHtml(str) {
   if (typeof str !== "string") return str;
   return str.replace(/[&<>"']/g, function (c) {

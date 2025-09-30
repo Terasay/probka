@@ -46,7 +46,6 @@ document.getElementById("convert").addEventListener("click", () => {
 const ctx = document.getElementById("priceChart").getContext("2d");
 let chart;
 
-// берём цвет из CSS переменной
 function getVar(name) {
   return getComputedStyle(document.documentElement)
     .getPropertyValue(name)
@@ -98,10 +97,8 @@ function drawChart(currencyId) {
   });
 }
 
-// слушаем смену валюты
 chartSel.addEventListener("change", () => drawChart(chartSel.value));
 
-// слушаем смену темы (чтобы цвет менялся сразу)
 const themeLink = document.getElementById("theme-link");
 if (themeLink) {
   const observer = new MutationObserver(() => {
@@ -110,11 +107,9 @@ if (themeLink) {
   observer.observe(themeLink, { attributes: true, attributeFilter: ['href'] });
 }
 
-// начальный рендер
 renderRates();
 populateSelects();
 
-// ждём пока тема загрузится, потом строим график с актуальным цветом
 window.addEventListener("load", () => {
   drawChart(chartSel.value);
 });
