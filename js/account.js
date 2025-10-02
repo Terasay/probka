@@ -52,7 +52,7 @@ async function login() {
     });
 
     if (data && data.user) {
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (window.setUserSession) window.setUserSession(data.user);
       updateUI(data.user);
       console.log("[login] ok user:", data.user);
     } else {
@@ -92,7 +92,7 @@ async function registerHandler() {
 
 async function logout() {
   try {
-    localStorage.removeItem("user");
+    if (window.setUserSession) window.setUserSession(null);
     try {
       await apiFetch("/api/logout", { method: "POST" });
     } catch (e) {
