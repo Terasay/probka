@@ -160,4 +160,49 @@ async function loadNews() {
   }
 }
 
+
+// Показывать форму публикации только для админа
+function showAdminPanelIfNeeded() {
+  const user = getCurrentUser();
+  const panel = document.getElementById('news-admin-panel');
+  if (user && user.role === 'admin') {
+    panel.style.display = '';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+// Обработка публикации новости
+function setupNewsCreateForm() {
+  const form = document.getElementById('news-create-form');
+  if (!form) return;
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const user = getCurrentUser();
+    if (!user || user.role !== 'admin') return;
+    const title = form.title.value.trim();
+    const content = form.content.value.trim();
+    if (!content) return;
+    // Формат: если есть заголовок, то ***Заголовок***\nТекст
+    let fullContent = content;
+    if (title) fullContent = `***${title}***\n${content}`;
+    await fetch(`${API_URL}/api/news/create`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        author: user.username,
+        author_id: user.id,
+        content: fullContent,
+        avatar: '',
+        attachments: ''
+      })
+    });
+    form.reset();
+    loadNews();
+  });
+}
+
+// Инициализация
+showAdminPanelIfNeeded();
+setupNewsCreateForm();
 loadNews();
