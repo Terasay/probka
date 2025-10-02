@@ -53,31 +53,6 @@
   </footer>
   </div>
 
-  <script>
-    async function loadNews() {
-      const feed = document.getElementById("news-feed");
-      try {
-        const res = await fetch("http://localhost:8000/api/news");
-        const data = await res.json();
-        if (!data.length) {
-          feed.innerHTML = "<p>Пока новостей нет.</p>";
-          return;
-        }
-
-        feed.innerHTML = data.map(n => `
-          <article class="news-card">
-            <div class="news-date">${new Date(n.date).toLocaleString()}</div>
-            <div class="news-content">${n.content.replace(/\n/g, "<br>")}</div>
-            <div class="news-author">— ${n.author}</div>
-          </article>
-        `).join("");
-      } catch (err) {
-        feed.innerHTML = "<p>Ошибка загрузки новостей :(</p>";
-        console.error(err);
-      }
-    }
-
-    loadNews();
-  </script>
+  <!-- Скрипт загрузки новостей теперь только в js/news.js -->
 </body>
 </html>

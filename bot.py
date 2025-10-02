@@ -55,12 +55,31 @@ cur.execute("""CREATE TABLE IF NOT EXISTS forum_messages (
     attachments TEXT
 )""")
 
+
 cur.execute("""CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password_hash TEXT,
     role TEXT DEFAULT 'user',
     created_at TEXT
+)""")
+
+# --- Новые таблицы для системы новостей ---
+cur.execute("""CREATE TABLE IF NOT EXISTS news_comments (
+    id TEXT PRIMARY KEY,
+    news_id TEXT,
+    author TEXT,
+    author_id TEXT,
+    avatar TEXT,
+    content TEXT,
+    date TEXT
+)""")
+
+cur.execute("""CREATE TABLE IF NOT EXISTS news_likes (
+    id TEXT PRIMARY KEY,
+    news_id TEXT,
+    user_id TEXT,
+    value INTEGER -- 1 = like, -1 = dislike
 )""")
 
 conn.commit()
@@ -128,6 +147,7 @@ def get_news():
         for r in rows
     ]
 
+
 @app.post("/api/news/create")
 async def create_news(request: Request):
     data = await request.json()
@@ -146,6 +166,61 @@ async def create_news(request: Request):
     )
     conn.commit()
     return {"status": "ok", "id": news_id}
+
+# --- API для комментариев к новостям ---
+@app.get("/api/news/{news_id}/comments")
+def get_news_comments(news_id: str):
+    cur.execute("SELECT * FROM news_comments WHERE news_id = ? ORDER BY date ASC", (news_id,))
+    rows = cur.fetchall()
+    return [
+        {"id": r[0], "news_id": r[1], "author": r[2], "author_id": r[3], "avatar": r[4], "content": r[5], "date": r[6]}
+        for r in rows
+    ]
+
+@app.post("/api/news/{news_id}/comments/add")
+async def add_news_comment(news_id: str, request: Request):
+    data = await request.json()
+    comment_id = os.urandom(8).hex()
+    if not data.get("content", "").strip():
+        return {"status": "error", "message": "Пустой комментарий"}
+    cur.execute(
+        "INSERT OR IGNORE INTO news_comments VALUES (?,?,?,?,?,?,?)",
+        (
+            comment_id,
+            news_id,
+            data.get("author", "anon"),
+            data.get("author_id", "0"),
+            data.get("avatar", ""),
+            data.get("content", ""),
+            data.get("date", datetime.now(timezone.utc).isoformat()),
+        ),
+    )
+    conn.commit()
+    return {"status": "ok", "id": comment_id}
+
+# --- API для лайков/дизлайков новостей ---
+@app.get("/api/news/{news_id}/likes")
+def get_news_likes(news_id: str):
+    cur.execute("SELECT value, COUNT(*) FROM news_likes WHERE news_id = ? GROUP BY value", (news_id,))
+    result = {"like": 0, "dislike": 0}
+    for value, count in cur.fetchall():
+        if value == 1:
+            result["like"] = count
+        elif value == -1:
+            result["dislike"] = count
+    return result
+
+@app.post("/api/news/{news_id}/like")
+async def like_news(news_id: str, request: Request):
+    data = await request.json()
+    user_id = data.get("user_id", "0")
+    value = data.get("value", 1)  # 1 = like, -1 = dislike
+    like_id = f"{news_id}_{user_id}"
+    # Обновить или вставить
+    cur.execute("REPLACE INTO news_likes (id, news_id, user_id, value) VALUES (?, ?, ?, ?)",
+                (like_id, news_id, user_id, value))
+    conn.commit()
+    return {"status": "ok"}
 
 @app.get("/api/forum/topics")
 def get_topics():
