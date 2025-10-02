@@ -1,13 +1,19 @@
 const API_URL = "http://79.174.78.128:8080";
 
+// Получить текущего пользователя (user должен быть определён глобально после логина)
+function getCurrentUser() {
+  if (window.user && window.user.username && window.user.id) {
+    return { username: window.user.username, id: window.user.id };
+  }
+  return null;
+}
+
 async function loadNews() {
   const feed = document.getElementById('news-feed');
   try {
     const res = await fetch(`${API_URL}/api/news`);
     const data = await res.json();
-
     feed.innerHTML = '';
-
 
     data.forEach(item => {
       const card = document.createElement('article');
@@ -32,35 +38,33 @@ async function loadNews() {
         content = content.replace(/\[Файл: .*?\]/g, '').trim();
       }
 
-      // Лайки/дизлайки
-      let likesHTML = `<div class="news-likes" id="likes-${item.id}">
-        <button class="like-btn" data-value="1" data-id="${item.id}">👍</button>
-        <span class="like-count" id="like-count-${item.id}">0</span>
-        <button class="dislike-btn" data-value="-1" data-id="${item.id}">👎</button>
-        <span class="dislike-count" id="dislike-count-${item.id}">0</span>
-      </div>`;
-
-      // Комментарии
-      let commentsHTML = `<div class="news-comments" id="comments-${item.id}"></div>
-        <form class="comment-form" data-id="${item.id}">
-          <input type="text" name="comment" placeholder="Ваш комментарий..." required maxlength="500">
-          <button type="submit">Отправить</button>
-        </form>`;
-
+      // --- Новый дизайн карточки ---
       card.innerHTML = `
-        ${title ? `<h2 class="news-title">${title}</h2>` : ''}
+        <div class="news-header-row">
+          <div class="news-title-block">
+            ${title ? `<h2 class="news-title">${title}</h2>` : ''}
+            <div class="news-meta">
+              <span class="news-author">${item.author}</span>
+              <span class="news-date">${new Date(item.date).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
         <div class="news-content">${content.replace(/\n/g, '<br>')}</div>
         ${attachmentHTML}
-        ${likesHTML}
-        ${commentsHTML}
-        <div class="news-footer">
-          <div class="footer-left">${new Date(item.date).toLocaleString()}</div>
-          <div class="footer-center">
-            ${item.avatar 
-              ? `<img class="author-avatar" src="${item.avatar}" alt="аватар">` 
-              : ''}
+        <div class="news-actions-row">
+          <div class="news-likes" id="likes-${item.id}">
+            <button class="like-btn" data-value="1" data-id="${item.id}">👍</button>
+            <span class="like-count" id="like-count-${item.id}">0</span>
+            <button class="dislike-btn" data-value="-1" data-id="${item.id}">👎</button>
+            <span class="dislike-count" id="dislike-count-${item.id}">0</span>
           </div>
-          <div class="footer-right">${item.author}</div>
+        </div>
+        <div class="news-comments-block">
+          <div class="news-comments" id="comments-${item.id}"></div>
+          <form class="comment-form" data-id="${item.id}">
+            <input type="text" name="comment" placeholder="Оставьте комментарий..." required maxlength="500">
+            <button type="submit">Отправить</button>
+          </form>
         </div>
       `;
 
@@ -79,27 +83,36 @@ async function loadNews() {
           commentsDiv.innerHTML = '<div class="no-comments">Комментариев нет</div>';
         } else {
           commentsDiv.innerHTML = comments.map(c =>
-            `<div class="comment">
-              <span class="comment-author">${c.author}</span>:
-              <span class="comment-content">${c.content.replace(/\n/g, '<br>')}</span>
+            `<div class="comment-row">
+              <span class="comment-author">${c.author}</span>
               <span class="comment-date">${new Date(c.date).toLocaleString()}</span>
+              <div class="comment-content">${c.content.replace(/\n/g, '<br>')}</div>
             </div>`
           ).join('');
         }
       });
+
+      // Отключить форму комментария если не залогинен
+      const user = getCurrentUser();
+      if (!user) {
+        const form = card.querySelector('.comment-form');
+        form.querySelector('input[name="comment"]').disabled = true;
+        form.querySelector('button[type="submit"]').disabled = true;
+        form.querySelector('input[name="comment"]').placeholder = 'Войдите, чтобы комментировать';
+      }
     });
 
     // Обработка лайков/дизлайков
     feed.addEventListener('click', async e => {
       if (e.target.classList.contains('like-btn') || e.target.classList.contains('dislike-btn')) {
+        const user = getCurrentUser();
+        if (!user) return alert('Войдите, чтобы голосовать');
         const newsId = e.target.getAttribute('data-id');
         const value = parseInt(e.target.getAttribute('data-value'));
-        // user_id можно получить из localStorage или куки, здесь для примера "1"
-        const user_id = localStorage.getItem('user_id') || '1';
         await fetch(`${API_URL}/api/news/${newsId}/like`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({user_id, value})
+          body: JSON.stringify({user_id: user.id, value})
         });
         // обновить счетчики
         const likes = await fetch(`${API_URL}/api/news/${newsId}/likes`).then(r=>r.json());
@@ -112,17 +125,16 @@ async function loadNews() {
     feed.addEventListener('submit', async e => {
       if (e.target.classList.contains('comment-form')) {
         e.preventDefault();
+        const user = getCurrentUser();
+        if (!user) return;
         const newsId = e.target.getAttribute('data-id');
         const input = e.target.querySelector('input[name="comment"]');
         const content = input.value.trim();
         if (!content) return;
-        // author и author_id можно получить из localStorage или куки, здесь для примера "anon" и "1"
-        const author = localStorage.getItem('username') || 'anon';
-        const author_id = localStorage.getItem('user_id') || '1';
         await fetch(`${API_URL}/api/news/${newsId}/comments/add`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({author, author_id, content})
+          body: JSON.stringify({author: user.username, author_id: user.id, content})
         });
         input.value = '';
         // обновить комментарии
@@ -132,10 +144,10 @@ async function loadNews() {
           commentsDiv.innerHTML = '<div class="no-comments">Комментариев нет</div>';
         } else {
           commentsDiv.innerHTML = comments.map(c =>
-            `<div class="comment">
-              <span class="comment-author">${c.author}</span>:
-              <span class="comment-content">${c.content.replace(/\n/g, '<br>')}</span>
+            `<div class="comment-row">
+              <span class="comment-author">${c.author}</span>
               <span class="comment-date">${new Date(c.date).toLocaleString()}</span>
+              <div class="comment-content">${c.content.replace(/\n/g, '<br>')}</div>
             </div>`
           ).join('');
         }
