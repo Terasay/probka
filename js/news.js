@@ -1,7 +1,7 @@
 async function loadNews() {
   const feed = document.getElementById('news-feed');
   try {
-    const res = await fetch('http://localhost:8000/api/news');
+    const res = await fetch('http://localhost:8080/api/news');
     const data = await res.json();
 
     feed.innerHTML = '';
