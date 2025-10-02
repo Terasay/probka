@@ -1,7 +1,9 @@
+const API_URL = "http://79.174.78.128:8080";
+
 async function loadNews() {
   const feed = document.getElementById('news-feed');
   try {
-    const res = await fetch('http://localhost:8080/api/news');
+    const res = await fetch(`${API_URL}/api/news`);
     const data = await res.json();
 
     feed.innerHTML = '';
@@ -65,13 +67,13 @@ async function loadNews() {
       feed.appendChild(card);
 
       // Загрузить лайки
-      fetch(`http://localhost:8000/api/news/${item.id}/likes`).then(r=>r.json()).then(likes => {
+      fetch(`${API_URL}/api/news/${item.id}/likes`).then(r=>r.json()).then(likes => {
         document.getElementById(`like-count-${item.id}`).textContent = likes.like || 0;
         document.getElementById(`dislike-count-${item.id}`).textContent = likes.dislike || 0;
       });
 
       // Загрузить комментарии
-      fetch(`http://localhost:8000/api/news/${item.id}/comments`).then(r=>r.json()).then(comments => {
+      fetch(`${API_URL}/api/news/${item.id}/comments`).then(r=>r.json()).then(comments => {
         const commentsDiv = document.getElementById(`comments-${item.id}`);
         if (comments.length === 0) {
           commentsDiv.innerHTML = '<div class="no-comments">Комментариев нет</div>';
@@ -94,13 +96,13 @@ async function loadNews() {
         const value = parseInt(e.target.getAttribute('data-value'));
         // user_id можно получить из localStorage или куки, здесь для примера "1"
         const user_id = localStorage.getItem('user_id') || '1';
-        await fetch(`http://localhost:8000/api/news/${newsId}/like`, {
+        await fetch(`${API_URL}/api/news/${newsId}/like`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({user_id, value})
         });
         // обновить счетчики
-        const likes = await fetch(`http://localhost:8000/api/news/${newsId}/likes`).then(r=>r.json());
+        const likes = await fetch(`${API_URL}/api/news/${newsId}/likes`).then(r=>r.json());
         document.getElementById(`like-count-${newsId}`).textContent = likes.like || 0;
         document.getElementById(`dislike-count-${newsId}`).textContent = likes.dislike || 0;
       }
@@ -117,14 +119,14 @@ async function loadNews() {
         // author и author_id можно получить из localStorage или куки, здесь для примера "anon" и "1"
         const author = localStorage.getItem('username') || 'anon';
         const author_id = localStorage.getItem('user_id') || '1';
-        await fetch(`http://localhost:8000/api/news/${newsId}/comments/add`, {
+        await fetch(`${API_URL}/api/news/${newsId}/comments/add`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({author, author_id, content})
         });
         input.value = '';
         // обновить комментарии
-        const comments = await fetch(`http://localhost:8000/api/news/${newsId}/comments`).then(r=>r.json());
+        const comments = await fetch(`${API_URL}/api/news/${newsId}/comments`).then(r=>r.json());
         const commentsDiv = document.getElementById(`comments-${newsId}`);
         if (comments.length === 0) {
           commentsDiv.innerHTML = '<div class="no-comments">Комментариев нет</div>';
