@@ -46,9 +46,10 @@
         <a href="index.html" class="back-btn">← На главную</a>
       </header>
 
-      <!-- Форма публикации новости (только для админа) -->
+      <!-- Кнопка и форма публикации новости (только для админа) -->
       <section id="news-admin-panel" style="display:none; margin-bottom:32px;">
-        <form id="news-create-form" class="card" style="max-width:600px;margin:0 auto 24px;">
+        <button id="show-news-create-btn" style="margin-bottom:16px;display:block;">Создать новость</button>
+        <form id="news-create-form" class="card" style="max-width:600px;margin:0 auto 24px;display:none;">
           <h2 style="margin-bottom:12px;">Опубликовать новость</h2>
           <input type="text" name="title" placeholder="Заголовок (опционально)" style="width:100%;margin-bottom:10px;padding:10px 14px;border-radius:8px;" maxlength="100">
           <textarea name="content" placeholder="Текст новости..." required style="width:100%;min-height:80px;margin-bottom:10px;padding:10px 14px;border-radius:8px;"></textarea>
@@ -67,6 +68,24 @@
     // После логина на сайте window.user должен быть установлен глобально.
     // Для теста можно раскомментировать строку ниже:
     // window.user = {id: 1, username: 'Admin', role: 'admin'};
+
+    // Логика показа/скрытия формы создания новости
+    document.addEventListener('DOMContentLoaded', function() {
+      const panel = document.getElementById('news-admin-panel');
+      const btn = document.getElementById('show-news-create-btn');
+      const form = document.getElementById('news-create-form');
+      if (btn && form) {
+        btn.addEventListener('click', function() {
+          if (form.style.display === 'none' || !form.style.display) {
+            form.style.display = 'block';
+            btn.textContent = 'Скрыть редактор';
+          } else {
+            form.style.display = 'none';
+            btn.textContent = 'Создать новость';
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
