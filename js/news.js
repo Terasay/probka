@@ -3,7 +3,8 @@ const API_URL = "http://79.174.78.128:8080";
 // Получить текущего пользователя (user должен быть определён глобально после логина)
 function getCurrentUser() {
   if (window.user && window.user.username && window.user.id) {
-    return { username: window.user.username, id: window.user.id };
+    // Вернуть всю структуру user, чтобы был доступ к role
+    return window.user;
   }
   return null;
 }
@@ -165,10 +166,21 @@ async function loadNews() {
 function showAdminPanelIfNeeded() {
   const user = getCurrentUser();
   const panel = document.getElementById('news-admin-panel');
+  const btn = document.getElementById('show-news-create-btn');
+  const form = document.getElementById('news-create-form');
   if (user && user.role === 'admin') {
     panel.style.display = '';
+    if (btn && form) {
+      // Сбросить состояние: форма скрыта, кнопка "Создать новость"
+      form.style.display = 'none';
+      btn.textContent = 'Создать новость';
+    }
   } else {
     panel.style.display = 'none';
+    if (btn && form) {
+      form.style.display = 'none';
+      btn.textContent = 'Создать новость';
+    }
   }
 }
 
@@ -203,6 +215,11 @@ function setupNewsCreateForm() {
 }
 
 // Инициализация
-showAdminPanelIfNeeded();
-setupNewsCreateForm();
-loadNews();
+document.addEventListener('DOMContentLoaded', () => {
+  showAdminPanelIfNeeded();
+  setupNewsCreateForm();
+  loadNews();
+
+  // Поддержка динамического показа панели для админа после логина без перезагрузки
+  window.addEventListener('user-session-changed', showAdminPanelIfNeeded);
+});
