@@ -52,7 +52,12 @@ async function login() {
     });
 
     if (data && data.user) {
-      if (window.setUserSession) window.setUserSession(data.user);
+      if (window.setUserSession) {
+        window.setUserSession(data.user);
+      } else {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.user = data.user;
+      }
       updateUI(data.user);
       console.log("[login] ok user:", data.user);
     } else {
@@ -92,7 +97,12 @@ async function registerHandler() {
 
 async function logout() {
   try {
-    if (window.setUserSession) window.setUserSession(null);
+    if (window.setUserSession) {
+      window.setUserSession(null);
+    } else {
+      localStorage.removeItem("user");
+      window.user = null;
+    }
     try {
       await apiFetch("/api/logout", { method: "POST" });
     } catch (e) {

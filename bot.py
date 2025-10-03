@@ -1,3 +1,9 @@
+
+# --- API logout (заглушка) ---
+@app.post("/api/logout")
+async def logout():
+    # Заглушка: просто возвращаем OK, т.к. сессий на сервере нет
+    return {"status": "ok"}
 import sqlite3
 import os
 from datetime import datetime, timezone
