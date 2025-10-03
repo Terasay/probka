@@ -1,9 +1,3 @@
-
-# --- API logout (заглушка) ---
-@app.post("/api/logout")
-async def logout():
-    # Заглушка: просто возвращаем OK, т.к. сессий на сервере нет
-    return {"status": "ok"}
 import sqlite3
 import os
 from datetime import datetime, timezone
@@ -18,6 +12,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# --- API logout (заглушка) ---
+@app.post("/api/logout")
+async def logout():
+    # Заглушка: просто возвращаем OK, т.к. сессий на сервере нет
+    return {"status": "ok"}
 
 app.add_middleware(
     CORSMiddleware,
