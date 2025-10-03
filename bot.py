@@ -159,9 +159,17 @@ def get_news():
 @app.post("/api/news/create")
 async def create_news(request: Request):
     data = await request.json()
-    news_id = data.get("id", os.urandom(8).hex())
+    # Проверка: только админ может публиковать новости
+    author_id = data.get("author_id")
+    if not author_id:
+        return JSONResponse({"error": "Нет ID пользователя"}, status_code=403)
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE id = ?", (author_id,))
+        row = cur.fetchone()
+        if not row or row[0] != "admin":
+            return JSONResponse({"error": "Только админ может публиковать новости"}, status_code=403)
+        news_id = data.get("id", os.urandom(8).hex())
         cur.execute(
             "INSERT OR IGNORE INTO news VALUES (?,?,?,?,?,?,?)",
             (
