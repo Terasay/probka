@@ -58,13 +58,20 @@ def init_db():
             date TEXT,
             attachments TEXT
         )""")
+        # Добавляем avatar в users, если его нет
         cur.execute("""CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
             password_hash TEXT,
             role TEXT DEFAULT 'user',
-            created_at TEXT
+            created_at TEXT,
+            avatar TEXT DEFAULT ''
         )""")
+        # Миграция: если столбца avatar нет, добавить
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
+        except Exception:
+            pass
         cur.execute("""CREATE TABLE IF NOT EXISTS news_comments (
             id TEXT PRIMARY KEY,
             news_id TEXT,
@@ -87,6 +94,52 @@ def init_db():
             value INTEGER -- 1 = like, -1 = dislike
         )""")
         conn.commit()
+from fastapi import UploadFile, File, Form
+import shutil
+import os
+@app.post("/api/account/change_password")
+async def change_password(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    old_password = data.get("old_password", "").strip()
+    new_password = data.get("new_password", "").strip()
+    if not user_id or not old_password or not new_password:
+        return JSONResponse({"error": "Не все поля заполнены"}, status_code=400)
+    if len(new_password) < 4:
+        return JSONResponse({"error": "Пароль слишком короткий"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        if not row or not bcrypt.verify(old_password, row[0]):
+            return JSONResponse({"error": "Старый пароль неверен"}, status_code=403)
+        new_hash = bcrypt.hash(new_password)
+        cur.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+        conn.commit()
+    return {"status": "ok"}
+
+# API для загрузки аватарки
+@app.post("/api/account/upload_avatar")
+async def upload_avatar(user_id: int = Form(...), file: UploadFile = File(...)):
+    # Проверка типа файла
+    if not file.content_type.startswith("image/"):
+        return JSONResponse({"error": "Можно загружать только изображения"}, status_code=400)
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
+        return JSONResponse({"error": "Разрешены только jpg, png, webp"}, status_code=400)
+    # Папка для аватарок
+    upload_dir = os.path.join("uploads", str(user_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    avatar_path = os.path.join(upload_dir, "avatar" + ext)
+    with open(avatar_path, "wb") as out_file:
+        shutil.copyfileobj(file.file, out_file)
+    # Сохраняем путь в БД (относительно корня)
+    avatar_url = f"/{avatar_path.replace('\\', '/')}"
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET avatar = ? WHERE id = ?", (avatar_url, user_id))
+        conn.commit()
+    return {"status": "ok", "avatar": avatar_url}
 
 init_db()
 

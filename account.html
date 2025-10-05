@@ -46,9 +46,30 @@
         <button id="register-btn">Регистрация</button>
       </div>
       <div id="account-info" style="display:none;">
-        <p>Вы вошли как: <span id="account-name"></span></p>
-        <p>Ваша роль: <span id="account-role"></span></p>
+        <div style="display:flex;align-items:center;gap:18px;justify-content:center;margin-bottom:10px;">
+          <img id="account-avatar-img" src="assets/img/kakoedelo.jpeg" alt="avatar" class="author-avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:none;box-shadow:0 2px 8px #0002;">
+          <div style="text-align:left;">
+            <p style="margin:0;">Вы вошли как: <span id="account-name"></span></p>
+            <p style="margin:0;">Ваша роль: <span id="account-role"></span></p>
+          </div>
+        </div>
         <button id="logout-btn">Выйти</button>
+      </div>
+
+      <div id="account-settings" class="card" style="display:none;max-width:420px;margin:32px auto 0 auto;">
+        <h2 style="margin-top:0;">Настройки профиля</h2>
+        <div style="margin-bottom:18px;">
+          <label style="font-weight:500;">Аватарка:</label><br>
+          <input type="file" id="avatar-upload-input" accept="image/png,image/jpeg,image/webp" style="margin-top:8px;">
+          <div style="font-size:13px;color:var(--muted);margin-top:4px;">jpg/png/webp, до 2 МБ</div>
+        </div>
+        <form id="change-pass-form" autocomplete="off" style="margin-bottom:0;">
+          <label for="old-password" style="font-weight:500;">Старый пароль:</label>
+          <input type="password" id="old-password" class="auth-input" placeholder="Старый пароль" autocomplete="current-password">
+          <label for="new-password" style="font-weight:500;">Новый пароль:</label>
+          <input type="password" id="new-password" class="auth-input" placeholder="Новый пароль" autocomplete="new-password">
+          <button type="submit" style="margin-top:10px;width:100%;">Сменить пароль</button>
+        </form>
       </div>
       <div id="admin-panel" style="display:none; margin-top:32px;">
         <h2>Пользователи</h2>

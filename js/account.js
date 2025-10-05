@@ -14,7 +14,78 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.removeItem("user");
     }
   }
+
+  // Настройки профиля: смена пароля
+  const changePassForm = document.getElementById("change-pass-form");
+  if (changePassForm) {
+    changePassForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await changePassword();
+    });
+  }
+  // Настройки профиля: загрузка аватарки
+  const avatarInput = document.getElementById("avatar-upload-input");
+  if (avatarInput) {
+    avatarInput.addEventListener("change", handleAvatarUpload);
+  }
 });
+async function changePassword() {
+  const oldPass = document.getElementById("old-password").value.trim();
+  const newPass = document.getElementById("new-password").value.trim();
+  if (!oldPass || !newPass) {
+    alert("Введите старый и новый пароль");
+    return;
+  }
+  if (!window.user || !window.user.id) {
+    alert("Неизвестный пользователь");
+    return;
+  }
+  try {
+    const resp = await apiFetch("/api/account/change_password", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: window.user.id,
+        old_password: oldPass,
+        new_password: newPass
+      })
+    });
+    alert("Пароль успешно изменён");
+    document.getElementById("old-password").value = "";
+    document.getElementById("new-password").value = "";
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function handleAvatarUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!window.user || !window.user.id) {
+    alert("Неизвестный пользователь");
+    return;
+  }
+  const formData = new FormData();
+  formData.append("user_id", window.user.id);
+  formData.append("file", file);
+  try {
+    const res = await fetch("/api/account/upload_avatar", {
+      method: "POST",
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Ошибка загрузки");
+    // Обновить аватарку в UI и в user
+    if (window.user) {
+      window.user.avatar = data.avatar;
+      localStorage.setItem("user", JSON.stringify(window.user));
+      updateUI(window.user);
+    }
+    document.getElementById("avatar-upload-input").value = "";
+    alert("Аватарка обновлена!");
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -171,15 +242,27 @@ function updateUI(user) {
   const accountInfo = document.getElementById("account-info");
   const adminPanel = document.getElementById("admin-panel");
   const navBtn = document.querySelector(".nav-link.account-link");
+  const avatarImg = document.getElementById("account-avatar-img");
+  const settingsBlock = document.getElementById("account-settings");
 
   if (user) {
     if (authForms) authForms.style.display = "none";
     if (accountInfo) accountInfo.style.display = "block";
+    if (settingsBlock) settingsBlock.style.display = "block";
     const nameEl = document.getElementById("account-name");
     const roleEl = document.getElementById("account-role");
     if (nameEl) nameEl.innerText = user.username;
     if (roleEl) roleEl.innerText = user.role;
     if (navBtn) navBtn.innerText = user.username;
+    if (avatarImg) {
+      if (user.avatar) {
+        avatarImg.src = user.avatar;
+        avatarImg.style.display = "inline-block";
+      } else {
+        avatarImg.src = "assets/img/kakoedelo.jpeg";
+        avatarImg.style.display = "inline-block";
+      }
+    }
     if (user.role === "admin") {
       if (adminPanel) {
         adminPanel.style.display = "block";
@@ -191,8 +274,10 @@ function updateUI(user) {
   } else {
     if (authForms) authForms.style.display = "block";
     if (accountInfo) accountInfo.style.display = "none";
+    if (settingsBlock) settingsBlock.style.display = "none";
     if (adminPanel) adminPanel.style.display = "none";
     if (navBtn) navBtn.innerText = "Аккаунт";
+    if (avatarImg) avatarImg.style.display = "none";
   }
 }
 
