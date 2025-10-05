@@ -2,18 +2,20 @@
 const API_URL = "";
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("login-btn").addEventListener("click", login);
-  document.getElementById("logout-btn").addEventListener("click", logout);
-  document.getElementById("register-btn").addEventListener("click", registerHandler);
-
-  const savedUser = localStorage.getItem("user");
-  if (savedUser) {
-    try {
-      updateUI(JSON.parse(savedUser));
-    } catch (e) {
-      localStorage.removeItem("user");
+  // Инициализация window.user из localStorage
+  let savedUser = null;
+  try {
+    savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      window.user = JSON.parse(savedUser);
+    } else {
+      window.user = null;
     }
+  } catch (e) {
+    window.user = null;
+    localStorage.removeItem("user");
   }
+  updateUI(window.user);
 
   // Настройки профиля: смена пароля
   const changePassForm = document.getElementById("change-pass-form");
@@ -129,8 +131,8 @@ async function login() {
         localStorage.setItem("user", JSON.stringify(data.user));
         window.user = data.user;
       }
-      updateUI(data.user);
-      console.log("[login] ok user:", data.user);
+      updateUI(window.user);
+      console.log("[login] ok user:", window.user);
     } else {
       throw new Error("Неправильный ответ сервера при логине");
     }
@@ -228,6 +230,40 @@ async function loadUsers() {
           console.error("[deleteUser]", err);
         }
       });
+  async function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    // Всегда пробуем актуализировать window.user из localStorage
+    try {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) window.user = JSON.parse(savedUser);
+    } catch {}
+    if (!window.user || !window.user.id) {
+      alert("Неизвестный пользователь");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("user_id", window.user.id);
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/account/upload_avatar", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Ошибка загрузки");
+      // Обновить аватарку в UI и в user
+      if (window.user) {
+        window.user.avatar = data.avatar;
+        localStorage.setItem("user", JSON.stringify(window.user));
+        updateUI(window.user);
+      }
+      document.getElementById("avatar-upload-input").value = "";
+      alert("Аватарка обновлена!");
+    } catch (err) {
+      alert(err.message);
+    }
+  }
     });
 
   } catch (err) {
