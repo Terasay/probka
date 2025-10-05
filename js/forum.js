@@ -1,17 +1,63 @@
-const API_URL = "http://localhost:8000";
+const API_URL = "http://79.174.78.128:8080";
+// Получить текущего пользователя (user должен быть определён глобально после логина)
+function getCurrentUser() {
+  if (window.user && window.user.username && window.user.id) {
+    return window.user;
+  }
+  return null;
+}
+// Обработка создания новой темы
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('forum-create-form');
+  if (form) {
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const user = getCurrentUser();
+      if (!user) return;
+      const title = form.title.value.trim();
+      if (!title) return;
+      form.querySelector('button[type="submit"]').disabled = true;
+      try {
+        await fetch(`${API_URL}/api/forum/topics/create`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            title,
+            author: user.username,
+            author_id: user.id,
+            avatar: '',
+            date: new Date().toISOString()
+          })
+        });
+        form.reset();
+        await loadTopics();
+      } catch (err) {
+        alert('Ошибка создания темы');
+        console.error(err);
+      }
+      form.querySelector('button[type="submit"]').disabled = false;
+    });
+  }
+});
 let currentTopic = null;
 
 async function loadTopics() {
   const section = document.getElementById("forum-topics");
-  section.innerHTML = '<div class="about-text">Загрузка тем...</div>';
+  // Не трогать форму создания темы
+  const form = document.getElementById('forum-create-form');
+  let html = '';
+  if (form) html += form.outerHTML;
+  html += '<div class="about-text">Загрузка тем...</div>';
+  section.innerHTML = html;
   try {
     const res = await fetch(`${API_URL}/api/forum/topics`);
-    const topics = await res.json();
+    const data = await res.json();
+    const topics = Array.isArray(data) ? data : (data.topics || data);
     if (!topics.length) {
-      section.innerHTML = '<div class="about-text">Нет тем на форуме.</div>';
+      section.innerHTML = (form ? form.outerHTML : '') + '<div class="about-text">Нет тем на форуме.</div>';
       return;
     }
-    section.innerHTML = topics.map(t => `
+    section.innerHTML = (form ? form.outerHTML : '') + topics.map(t => `
       <article class="news-card forum-topic" data-id="${t.id}" data-title="${t.title}">
         <div class="news-date">${new Date(t.date).toLocaleString()}</div>
         <div class="news-title">${t.title}</div>
@@ -27,7 +73,7 @@ async function loadTopics() {
       card.addEventListener('click', () => openTopic(card.dataset.id, card.dataset.title));
     });
   } catch(err) {
-    section.innerHTML = '<div class="about-text">Ошибка загрузки тем :(</div>';
+    section.innerHTML = (form ? form.outerHTML : '') + '<div class="about-text">Ошибка загрузки тем :(</div>';
     console.error(err);
   }
 }
@@ -81,14 +127,21 @@ function backToTopics() {
 document.getElementById("back-to-topics").addEventListener("click", backToTopics);
 
 async function sendReply() {
+  const user = getCurrentUser();
+  if (!user) return;
   const text = document.getElementById("reply-text").value.trim();
   if (!text) return;
   document.getElementById("send-reply").disabled = true;
   try {
-    await fetch(`${API_URL}/api/forum/reply/${currentTopic}`, {
+    await fetch(`${API_URL}/api/forum/topic/${currentTopic}/reply`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({content:text})
+      body: JSON.stringify({
+        content: text,
+        author: user.username,
+        author_id: user.id,
+        avatar: ''
+      })
     });
     document.getElementById("reply-text").value = "";
     await openTopic(currentTopic, document.getElementById("topic-title").innerText);
@@ -99,6 +152,26 @@ async function sendReply() {
   document.getElementById("send-reply").disabled = false;
 }
 
+
+// Блокировать форму ответа для гостей
+function updateReplyFormState() {
+  const user = getCurrentUser();
+  const textarea = document.getElementById("reply-text");
+  const btn = document.getElementById("send-reply");
+  if (!textarea || !btn) return;
+  if (user) {
+    textarea.disabled = false;
+    btn.disabled = false;
+    textarea.placeholder = "Ваш ответ...";
+  } else {
+    textarea.disabled = true;
+    btn.disabled = true;
+    textarea.placeholder = "Войдите, чтобы отвечать";
+  }
+}
+
 document.getElementById("send-reply").addEventListener("click", sendReply);
+document.addEventListener('DOMContentLoaded', updateReplyFormState);
+window.addEventListener('user-session-changed', updateReplyFormState);
 
 loadTopics();

@@ -43,6 +43,12 @@
         <a href="index.html" class="back-btn">← На главную</a>
       </header>
       <section id="forum-topics" class="news-feed">
+        <!-- Форма создания новой темы (только для залогиненных) -->
+        <form id="forum-create-form" class="card" style="max-width:600px;margin:0 auto 24px 0;display:none;">
+          <h2 style="margin-bottom:12px;">Создать новую тему</h2>
+          <input type="text" name="title" placeholder="Заголовок темы" required maxlength="100" style="width:100%;margin-bottom:10px;padding:10px 14px;border-radius:8px;">
+          <button type="submit">Создать тему</button>
+        </form>
         <!-- Темы форума будут загружены сюда -->
       </section>
       <section id="forum-messages" class="news-feed" style="display:none;">
@@ -61,6 +67,23 @@
       Terasay Corporation © 2025
     </footer>
   </div>
+  <script src="js/user-session.js"></script>
   <script src="js/forum.js"></script>
+  <script>
+    // Показывать форму создания темы только для залогиненных
+    document.addEventListener('DOMContentLoaded', function() {
+      function showForumCreateForm() {
+        const form = document.getElementById('forum-create-form');
+        if (!form) return;
+        if (window.user && window.user.username) {
+          form.style.display = 'block';
+        } else {
+          form.style.display = 'none';
+        }
+      }
+      showForumCreateForm();
+      window.addEventListener('user-session-changed', showForumCreateForm);
+    });
+  </script>
 </body>
 </html>
