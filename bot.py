@@ -355,19 +355,20 @@ async def create_topic(request: Request):
         return JSONResponse({"error": "Нет ID пользователя"}, status_code=403)
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        cur.execute("SELECT username FROM users WHERE id = ?", (author_id,))
+        cur.execute("SELECT username, avatar FROM users WHERE id = ?", (author_id,))
         row = cur.fetchone()
         if not row:
             return JSONResponse({"error": "Пользователь не найден"}, status_code=403)
+        username, avatar = row
         topic_id = data.get("id", os.urandom(8).hex())
         cur.execute(
             "INSERT OR IGNORE INTO forum_topics VALUES (?,?,?,?,?,?)",
             (
                 topic_id,
                 data.get("title", "Без названия"),
-                data.get("author", row[0]),
-                data.get("author_id", author_id),
-                data.get("avatar", ""),
+                username,
+                author_id,
+                avatar or "",
                 data.get("date", datetime.now(timezone.utc).isoformat()),
             ),
         )
@@ -397,19 +398,20 @@ async def reply_topic(topic_id: str, request: Request):
         return {"status": "error", "message": "Пустое сообщение"}
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        cur.execute("SELECT username FROM users WHERE id = ?", (author_id,))
+        cur.execute("SELECT username, avatar FROM users WHERE id = ?", (author_id,))
         row = cur.fetchone()
         if not row:
             return JSONResponse({"error": "Пользователь не найден"}, status_code=403)
-        msg_id = os.urandom(8).hex()
+        username, avatar = row
+        msg_id = data.get("id", os.urandom(8).hex())
         cur.execute(
             "INSERT OR IGNORE INTO forum_messages VALUES (?,?,?,?,?,?,?,?)",
             (
                 msg_id,
                 topic_id,
-                row[0],
+                username,
                 author_id,
-                data.get("avatar", ""),
+                avatar or "",
                 data.get("content", ""),
                 data.get("date", datetime.now(timezone.utc).isoformat()),
                 data.get("attachments", ""),
