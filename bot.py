@@ -1,30 +1,3 @@
-
-# --- API для лайков/дизлайков сообщений форума ---
-@app.get("/api/forum/message/{message_id}/likes")
-def get_forum_message_likes(message_id: str):
-    with sqlite3.connect("site.db") as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT value, COUNT(*) FROM forum_likes WHERE message_id = ? GROUP BY value", (message_id,))
-        result = {"like": 0, "dislike": 0}
-        for value, count in cur.fetchall():
-            if value == 1:
-                result["like"] = count
-            elif value == -1:
-                result["dislike"] = count
-        return result
-
-@app.post("/api/forum/message/{message_id}/like")
-async def like_forum_message(message_id: str, request: Request):
-    data = await request.json()
-    user_id = data.get("user_id", "0")
-    value = data.get("value", 1)  # 1 = like, -1 = dislike
-    like_id = f"{message_id}_{user_id}"
-    with sqlite3.connect("site.db") as conn:
-        cur = conn.cursor()
-        cur.execute("REPLACE INTO forum_likes (id, message_id, user_id, value) VALUES (?, ?, ?, ?)",
-                    (like_id, message_id, user_id, value))
-        conn.commit()
-    return {"status": "ok"}
 import sqlite3
 import os
 from datetime import datetime, timezone
@@ -116,6 +89,33 @@ def init_db():
         conn.commit()
 
 init_db()
+
+# --- API для лайков/дизлайков сообщений форума ---
+@app.get("/api/forum/message/{message_id}/likes")
+def get_forum_message_likes(message_id: str):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT value, COUNT(*) FROM forum_likes WHERE message_id = ? GROUP BY value", (message_id,))
+        result = {"like": 0, "dislike": 0}
+        for value, count in cur.fetchall():
+            if value == 1:
+                result["like"] = count
+            elif value == -1:
+                result["dislike"] = count
+        return result
+
+@app.post("/api/forum/message/{message_id}/like")
+async def like_forum_message(message_id: str, request: Request):
+    data = await request.json()
+    user_id = data.get("user_id", "0")
+    value = data.get("value", 1)  # 1 = like, -1 = dislike
+    like_id = f"{message_id}_{user_id}"
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("REPLACE INTO forum_likes (id, message_id, user_id, value) VALUES (?, ?, ?, ?)",
+                    (like_id, message_id, user_id, value))
+        conn.commit()
+    return {"status": "ok"}
 
 @app.post("/api/register")
 async def register(request: Request):
