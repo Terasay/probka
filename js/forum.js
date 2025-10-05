@@ -101,10 +101,17 @@ async function openTopic(id, title) {
       list.innerHTML = '<div class="about-text">Нет сообщений.</div>';
       return;
     }
+    // Для каждого сообщения — контейнер для лайков
     list.innerHTML = msgs.map(m => `
-      <article class="news-card forum-message">
+      <article class="news-card forum-message" data-id="${m.id}">
         <div class="news-date">${new Date(m.date).toLocaleString()}</div>
         <div class="news-content">${escapeHTML(m.content).replace(/\n/g, '<br>')}</div>
+        <div class="forum-likes" id="forum-likes-${m.id}">
+          <button class="forum-like-btn" data-value="1" data-id="${m.id}" title="Лайк">👍</button>
+          <span class="forum-like-count" id="forum-like-count-${m.id}">0</span>
+          <button class="forum-dislike-btn" data-value="-1" data-id="${m.id}" title="Дизлайк">👎</button>
+          <span class="forum-dislike-count" id="forum-dislike-count-${m.id}">0</span>
+        </div>
         <div class="news-footer">
           <div class="footer-center">
             ${m.avatar ? `<img class="author-avatar" src="${m.avatar}" alt="аватар">` : ''}
@@ -113,10 +120,35 @@ async function openTopic(id, title) {
         </div>
       </article>
     `).join("");
+    // Загрузить лайки для каждого сообщения
+    for (const m of msgs) {
+      fetch(`${API_URL}/api/forum/message/${m.id}/likes`).then(r=>r.json()).then(likes => {
+        document.getElementById(`forum-like-count-${m.id}`).textContent = likes.like || 0;
+        document.getElementById(`forum-dislike-count-${m.id}`).textContent = likes.dislike || 0;
+      });
+    }
   } catch(err) {
     list.innerHTML = '<div class="about-text">Ошибка загрузки сообщений :(</div>';
     console.error(err);
   }
+// Обработка кликов по лайкам/дизлайкам сообщений форума
+document.addEventListener('click', async e => {
+  if (e.target.classList.contains('forum-like-btn') || e.target.classList.contains('forum-dislike-btn')) {
+    const user = getCurrentUser();
+    if (!user) return alert('Войдите, чтобы голосовать');
+    const msgId = e.target.getAttribute('data-id');
+    const value = parseInt(e.target.getAttribute('data-value'));
+    await fetch(`${API_URL}/api/forum/message/${msgId}/like`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: user.id, value})
+    });
+    // обновить счетчики
+    const likes = await fetch(`${API_URL}/api/forum/message/${msgId}/likes`).then(r=>r.json());
+    document.getElementById(`forum-like-count-${msgId}`).textContent = likes.like || 0;
+    document.getElementById(`forum-dislike-count-${msgId}`).textContent = likes.dislike || 0;
+  }
+});
 }
 
 function backToTopics() {
