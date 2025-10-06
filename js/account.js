@@ -175,6 +175,8 @@ async function logout() {
     } else {
       localStorage.removeItem("user");
       window.user = null;
+      // Диспатчить событие для синхронизации между вкладками
+      window.dispatchEvent(new Event('user-session-changed'));
     }
     try {
       await apiFetch("/api/logout", { method: "POST" });

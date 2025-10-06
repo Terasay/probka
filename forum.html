@@ -122,6 +122,12 @@
     }
     document.addEventListener('DOMContentLoaded', syncUserAndNavAndForm);
     window.addEventListener('user-session-changed', syncUserAndNavAndForm);
+    // Слушать изменения localStorage для синхронизации между вкладками
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'user') {
+        window.dispatchEvent(new Event('user-session-changed'));
+      }
+    });
   </script>
   <script src="js/user-session.js"></script>
   <script src="js/forum.js"></script>
