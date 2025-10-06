@@ -67,6 +67,7 @@ async function loadTopics() {
     const topics = Array.isArray(data) ? data : (data.topics || data);
     if (!topics.length) {
       section.innerHTML = (form ? form.outerHTML : '') + '<div class="about-text">Нет тем на форуме.</div>';
+      if (typeof window.syncUserAndNavAndForm === 'function') window.syncUserAndNavAndForm();
       return;
     }
     section.innerHTML = (form ? form.outerHTML : '') + topics.map(t => `
@@ -88,8 +89,10 @@ async function loadTopics() {
     document.querySelectorAll('.forum-topic').forEach(card => {
       card.addEventListener('click', () => openTopic(card.dataset.id, card.dataset.title));
     });
+    if (typeof window.syncUserAndNavAndForm === 'function') window.syncUserAndNavAndForm();
   } catch(err) {
     section.innerHTML = (form ? form.outerHTML : '') + '<div class="about-text">Ошибка загрузки тем :(</div>';
+    if (typeof window.syncUserAndNavAndForm === 'function') window.syncUserAndNavAndForm();
     console.error(err);
   }
 }
