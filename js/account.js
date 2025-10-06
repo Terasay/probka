@@ -30,6 +30,15 @@ document.addEventListener("DOMContentLoaded", () => {
   if (avatarInput) {
     avatarInput.addEventListener("change", handleAvatarUpload);
   }
+
+  // Кнопка выхода
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await logout();
+    });
+  }
 });
 async function changePassword() {
   const oldPass = document.getElementById("old-password").value.trim();
