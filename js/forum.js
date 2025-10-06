@@ -58,15 +58,15 @@ async function loadTopics() {
       return;
     }
     section.innerHTML = (form ? form.outerHTML : '') + topics.map(t => `
-      <article class="news-card forum-topic" data-id="${t.id}" data-title="${t.title}">
+      <article class="news-card forum-topic" data-id="${escapeHTML(t.id)}" data-title="${escapeHTML(t.title)}">
         <div class="forum-topic-header">
           <div class="forum-topic-avatar">
-            ${t.avatar ? `<img class="author-avatar" src="${t.avatar}" alt="аватар">` : '<div class="author-avatar avatar-placeholder"></div>'}
+            ${t.avatar ? `<img class="author-avatar" src="${escapeHTML(t.avatar)}" alt="аватар">` : '<div class="author-avatar avatar-placeholder"></div>'}
           </div>
           <div class="forum-topic-meta">
-            <div class="forum-topic-title">${t.title}</div>
+            <div class="forum-topic-title">${escapeHTML(t.title)}</div>
             <div class="forum-topic-info">
-              <span class="forum-topic-author">${t.author}</span>
+              <span class="forum-topic-author">${escapeHTML(t.author)}</span>
               <span class="forum-topic-date">${new Date(t.date).toLocaleString()}</span>
             </div>
           </div>
@@ -107,22 +107,22 @@ async function openTopic(id, title) {
     }
     // Для каждого сообщения — контейнер для лайков
     list.innerHTML = msgs.map(m => `
-      <article class="news-card forum-message" data-id="${m.id}">
+      <article class="news-card forum-message" data-id="${escapeHTML(m.id)}">
         <div class="forum-message-header">
           <div class="forum-message-avatar">
-            ${m.avatar ? `<img class="author-avatar" src="${m.avatar}" alt="аватар">` : '<div class="author-avatar avatar-placeholder"></div>'}
+            ${m.avatar ? `<img class="author-avatar" src="${escapeHTML(m.avatar)}" alt="аватар">` : '<div class="author-avatar avatar-placeholder"></div>'}
           </div>
           <div class="forum-message-meta">
-            <span class="forum-message-author">${m.author}</span>
+            <span class="forum-message-author">${escapeHTML(m.author)}</span>
             <span class="forum-message-date">${new Date(m.date).toLocaleString()}</span>
           </div>
         </div>
         <div class="forum-message-content">${escapeHTML(m.content).replace(/\n/g, '<br>')}</div>
-        <div class="forum-likes" id="forum-likes-${m.id}">
-          <button class="forum-like-btn" data-value="1" data-id="${m.id}" title="Лайк">👍</button>
-          <span class="forum-like-count" id="forum-like-count-${m.id}">0</span>
-          <button class="forum-dislike-btn" data-value="-1" data-id="${m.id}" title="Дизлайк">👎</button>
-          <span class="forum-dislike-count" id="forum-dislike-count-${m.id}">0</span>
+        <div class="forum-likes" id="forum-likes-${escapeHTML(m.id)}">
+          <button class="forum-like-btn" data-value="1" data-id="${escapeHTML(m.id)}" title="Лайк">👍</button>
+          <span class="forum-like-count" id="forum-like-count-${escapeHTML(m.id)}">0</span>
+          <button class="forum-dislike-btn" data-value="-1" data-id="${escapeHTML(m.id)}" title="Дизлайк">👎</button>
+          <span class="forum-dislike-count" id="forum-dislike-count-${escapeHTML(m.id)}">0</span>
         </div>
       </article>
     `).join("");

@@ -91,23 +91,44 @@
       Terasay Corporation © 2025
     </footer>
   </div>
+  <script>
+    // Инициализация window.user из localStorage и обновление ника в шапке
+    function syncUserAndNav() {
+      let savedUser = null;
+      try {
+        savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          window.user = JSON.parse(savedUser);
+        } else {
+          window.user = null;
+        }
+      } catch (e) {
+        window.user = null;
+      }
+      // Обновить ник в шапке
+      const navBtn = document.querySelector('.nav-link.account-link');
+      if (navBtn) {
+        navBtn.innerText = (window.user && window.user.username) ? window.user.username : 'Аккаунт';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', syncUserAndNav);
+    window.addEventListener('user-session-changed', syncUserAndNav);
+  </script>
   <script src="js/user-session.js"></script>
   <script src="js/forum.js"></script>
   <script>
     // Показывать форму создания темы только для залогиненных
-    document.addEventListener('DOMContentLoaded', function() {
-      function showForumCreateForm() {
-        const form = document.getElementById('forum-create-form');
-        if (!form) return;
-        if (window.user && window.user.username) {
-          form.style.display = 'block';
-        } else {
-          form.style.display = 'none';
-        }
+    function showForumCreateForm() {
+      const form = document.getElementById('forum-create-form');
+      if (!form) return;
+      if (window.user && window.user.username) {
+        form.style.display = 'block';
+      } else {
+        form.style.display = 'none';
       }
-      showForumCreateForm();
-      window.addEventListener('user-session-changed', showForumCreateForm);
-    });
+    }
+    document.addEventListener('DOMContentLoaded', showForumCreateForm);
+    window.addEventListener('user-session-changed', showForumCreateForm);
   </script>
 </body>
 </html>

@@ -18,6 +18,22 @@
       document.head.appendChild(l);
       document.body.classList.remove('theme-dark', 'theme-pink', 'theme-light', 'theme-gray', 'theme-red');
       document.body.classList.add('theme-' + t);
+      // --- Синхронизация ника в шапке ---
+      let savedUser = null;
+      try {
+        savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          window.user = JSON.parse(savedUser);
+        } else {
+          window.user = null;
+        }
+      } catch (e) {
+        window.user = null;
+      }
+      const navBtn = document.querySelector('.nav-link.account-link');
+      if (navBtn) {
+        navBtn.innerText = (window.user && window.user.username) ? window.user.username : 'Аккаунт';
+      }
     });
   </script>
 </head>
