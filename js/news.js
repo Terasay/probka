@@ -9,6 +9,17 @@ function getCurrentUser() {
   return null;
 }
 
+
+// Функция для экранирования HTML
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function loadNews() {
   const feed = document.getElementById('news-feed');
   try {
@@ -33,7 +44,7 @@ async function loadNews() {
         fileMatches.forEach(f => {
           const filename = f.match(/\[Файл: (.*?)\]/)[1];
           attachmentHTML += `<div class="news-attachment">
-                               <img src="uploads/${item.id}/${filename}" class="news-image">
+                               <img src="uploads/${item.id}/${escapeHTML(filename)}" class="news-image">
                              </div>`;
         });
         content = content.replace(/\[Файл: .*?\]/g, '').trim();
@@ -43,14 +54,14 @@ async function loadNews() {
       card.innerHTML = `
         <div class="news-header-row">
           <div class="news-title-block">
-            ${title ? `<h2 class="news-title">${title}</h2>` : ''}
+            ${title ? `<h2 class="news-title">${escapeHTML(title)}</h2>` : ''}
             <div class="news-meta">
-              <span class="news-author">${item.author}</span>
+              <span class="news-author">${escapeHTML(item.author)}</span>
               <span class="news-date">${new Date(item.date).toLocaleString()}</span>
             </div>
           </div>
         </div>
-        <div class="news-content">${content.replace(/\n/g, '<br>')}</div>
+        <div class="news-content">${escapeHTML(content).replace(/\n/g, '<br>')}</div>
         ${attachmentHTML}
         <div class="news-actions-row">
           <div class="news-likes" id="likes-${item.id}">
@@ -85,9 +96,9 @@ async function loadNews() {
         } else {
           commentsDiv.innerHTML = comments.map(c =>
             `<div class="comment-row">
-              <span class="comment-author">${c.author}</span>
+              <span class="comment-author">${escapeHTML(c.author)}</span>
               <span class="comment-date">${new Date(c.date).toLocaleString()}</span>
-              <div class="comment-content">${c.content.replace(/\n/g, '<br>')}</div>
+              <div class="comment-content">${escapeHTML(c.content).replace(/\n/g, '<br>')}</div>
             </div>`
           ).join('');
         }
@@ -146,9 +157,9 @@ async function loadNews() {
         } else {
           commentsDiv.innerHTML = comments.map(c =>
             `<div class="comment-row">
-              <span class="comment-author">${c.author}</span>
+              <span class="comment-author">${escapeHTML(c.author)}</span>
               <span class="comment-date">${new Date(c.date).toLocaleString()}</span>
-              <div class="comment-content">${c.content.replace(/\n/g, '<br>')}</div>
+              <div class="comment-content">${escapeHTML(c.content).replace(/\n/g, '<br>')}</div>
             </div>`
           ).join('');
         }
