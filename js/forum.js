@@ -1,4 +1,16 @@
 const API_URL = "http://79.174.78.128:8080";
+
+// Синхронизация window.user из localStorage (гарантированно до любого использования)
+try {
+  const savedUser = localStorage.getItem('user');
+  if (savedUser) {
+    window.user = JSON.parse(savedUser);
+  } else {
+    window.user = null;
+  }
+} catch (e) {
+  window.user = null;
+}
 // Получить текущего пользователя (user должен быть определён глобально после логина)
 function getCurrentUser() {
   if (window.user && window.user.username && window.user.id) {
