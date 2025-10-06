@@ -93,6 +93,46 @@
   </div>
   <script>
     // Синхронизация window.user, ника в шапке и видимости формы создания темы
+    function attachForumCreateHandler() {
+      const form = document.getElementById('forum-create-form');
+      if (form && !form._handlerAttached) {
+        form.addEventListener('submit', async e => {
+          e.preventDefault();
+          if (!window.user || !window.user.username) {
+            alert('Войдите, чтобы создавать темы');
+            return;
+          }
+          const title = form.title.value.trim();
+          if (!title) {
+            alert('Введите заголовок темы');
+            return;
+          }
+          form.querySelector('button[type="submit"]').disabled = true;
+          try {
+            const API_URL = window.API_URL || 'http://79.174.78.128:8080';
+            const resp = await fetch(`${API_URL}/api/forum/topics/create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title,
+                author: window.user.username,
+                author_id: window.user.id,
+                avatar: window.user.avatar || ''
+              })
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data?.error || 'Ошибка создания темы');
+            form.title.value = '';
+            if (window.loadTopics) window.loadTopics();
+            else location.reload();
+          } catch (err) {
+            alert(err.message);
+          }
+          form.querySelector('button[type="submit"]').disabled = false;
+        });
+        form._handlerAttached = true;
+      }
+    }
     function syncUserAndNavAndForm() {
       let savedUser = null;
       try {
@@ -115,6 +155,7 @@
       if (form) {
         if (window.user && window.user.username) {
           form.style.display = 'block';
+          attachForumCreateHandler();
         } else {
           form.style.display = 'none';
         }
