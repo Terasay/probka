@@ -92,8 +92,8 @@
     </footer>
   </div>
   <script>
-    // Инициализация window.user из localStorage и обновление ника в шапке
-    function syncUserAndNav() {
+    // Синхронизация window.user, ника в шапке и видимости формы создания темы
+    function syncUserAndNavAndForm() {
       let savedUser = null;
       try {
         savedUser = localStorage.getItem('user');
@@ -110,25 +110,21 @@
       if (navBtn) {
         navBtn.innerText = (window.user && window.user.username) ? window.user.username : 'Аккаунт';
       }
+      // Показать/скрыть форму создания темы
+      const form = document.getElementById('forum-create-form');
+      if (form) {
+        if (window.user && window.user.username) {
+          form.style.display = 'block';
+        } else {
+          form.style.display = 'none';
+        }
+      }
     }
-    document.addEventListener('DOMContentLoaded', syncUserAndNav);
-    window.addEventListener('user-session-changed', syncUserAndNav);
+    document.addEventListener('DOMContentLoaded', syncUserAndNavAndForm);
+    window.addEventListener('user-session-changed', syncUserAndNavAndForm);
   </script>
   <script src="js/user-session.js"></script>
   <script src="js/forum.js"></script>
-  <script>
-    // Показывать форму создания темы только для залогиненных
-    function showForumCreateForm() {
-      const form = document.getElementById('forum-create-form');
-      if (!form) return;
-      if (window.user && window.user.username) {
-        form.style.display = 'block';
-      } else {
-        form.style.display = 'none';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', showForumCreateForm);
-    window.addEventListener('user-session-changed', showForumCreateForm);
-  </script>
+  <!-- showForumCreateForm больше не нужен, всё делается в syncUserAndNavAndForm -->
 </body>
 </html>
