@@ -176,9 +176,9 @@ body {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  height: 100vh;
-  width: 100vw;
-  overflow-x: hidden;
+  height: auto;
+  /* width: 100vw; */
+  /* overflow-x: hidden; */
 }
 
 body.theme-pink {
@@ -199,7 +199,7 @@ body.theme-pink {
   padding-bottom: 40px;
   box-sizing: border-box;
   min-height: 100vh;
-  overflow-y: auto;
+  /* overflow-y: auto; */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -498,8 +498,8 @@ select::-ms-expand {
   flex-direction: column;
   box-sizing: border-box;
   flex: 1 1 auto;
-  width: 100vw;
-  overflow-x: hidden;
+  /* width: 100vw; */
+  /* overflow-x: hidden; */
 }
 @media (max-width:900px) {
   .columns {
@@ -509,7 +509,7 @@ select::-ms-expand {
     grid-template-columns: 1fr;
   }
   .container {
-    max-width: 98vw;
+    max-width: 100vw;
     padding-left: 6px;
     padding-right: 6px;
   }
@@ -528,7 +528,7 @@ select::-ms-expand {
     font-size: 15px;
   }
   .profile-settings-block, .card {
-    max-width: 98vw;
+    max-width: 100vw;
     padding: 12px 6px 10px 6px;
   }
   .news-card {
