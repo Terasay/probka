@@ -106,39 +106,39 @@ document.addEventListener("DOMContentLoaded", () => {
     // Кнопка выхода
     const logoutBtn = document.getElementById("logout-btn");
     if (logoutBtn) {
-      logoutBtn.onclick = async (e) => {
+      logoutBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         await logout();
-      };
+      });
     }
     // Кнопка входа
     const loginBtn = document.getElementById("login-btn");
     if (loginBtn) {
-      loginBtn.onclick = async (e) => {
+      loginBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         await login();
-      };
+      });
     }
     // Кнопка регистрации
     const registerBtn = document.getElementById("register-btn");
     if (registerBtn) {
-      registerBtn.onclick = async (e) => {
+      registerBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         await registerHandler();
-      };
+      });
     }
     // Форма смены пароля
     const changePassForm = document.getElementById("change-pass-form");
     if (changePassForm) {
-      changePassForm.onsubmit = async (e) => {
+      changePassForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         await changePassword();
-      };
+      });
     }
     // Загрузка аватарки
     const avatarInput = document.getElementById("avatar-upload-input");
     if (avatarInput) {
-      avatarInput.onchange = handleAvatarUpload;
+      avatarInput.addEventListener("change", handleAvatarUpload);
     }
   }
   window.attachButtonHandlers = attachButtonHandlers;
