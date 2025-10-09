@@ -413,6 +413,10 @@ function updateUI(user) {
     if (registerCountryBtn) registerCountryBtn.style.display = "none";
     if (countryInfoEl) countryInfoEl.style.display = "none";
   }
+  // Всегда навешивать обработчики после обновления DOM
+  if (typeof attachButtonHandlers === "function") {
+    attachButtonHandlers();
+  }
 }
 
 function escapeHtml(str) {
