@@ -1,6 +1,14 @@
 // js/account.js
 const API_URL = "";
 
+const COUNTRIES = [
+  { id: "hom", name: "Хомасия" },
+  { id: "bgg", name: "Бурград" },
+  { id: "myr", name: "Миртания" },
+  { id: "tdv", name: "Трудовия" },
+  { id: "ktv", name: "Крастовия" }
+];
+
 document.addEventListener("DOMContentLoaded", () => {
   // --- Админ: заявки на регистрацию страны ---
   const countryRequestsList = document.getElementById("country-requests-list");
@@ -51,13 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- Механика стран ---
 // Список стран (можно вынести на сервер)
-const COUNTRIES = [
-  { id: "hom", name: "Хомасия" },
-  { id: "bgg", name: "Бурград" },
-  { id: "myr", name: "Миртания" },
-  { id: "tdv", name: "Трудовия" },
-  { id: "ktv", name: "Крастовия" }
-];
 
   // Список занятых стран (запрашивается с сервера)
   let takenCountries = [];
