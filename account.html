@@ -59,34 +59,34 @@
       </div>
 
       <!-- Модальное окно регистрации страны -->
-      <div id="country-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;">
-        <div style="background:var(--card);padding:32px 24px;border-radius:18px;max-width:400px;width:90vw;margin:auto;box-shadow:0 8px 32px #0006;position:relative;">
-          <button id="close-country-modal" style="position:absolute;top:12px;right:12px;font-size:22px;background:none;border:none;color:var(--muted);cursor:pointer;">×</button>
-          <h2 style="margin-top:0;margin-bottom:18px;">Регистрация страны</h2>
+      <div id="country-modal" class="country-modal">
+        <div class="country-modal-content">
+          <button id="close-country-modal" class="country-modal-close">×</button>
+          <h2 class="country-modal-title">Регистрация страны</h2>
           <form id="country-form">
-            <label for="country-player-name" style="font-weight:500;">Ваше имя:</label>
+            <label for="country-player-name" class="country-modal-label">Ваше имя:</label>
             <input type="text" id="country-player-name" class="auth-input" placeholder="Имя игрока" required maxlength="32">
-            <label for="country-select" style="font-weight:500;margin-top:12px;">Выберите страну:</label>
-            <select id="country-select" required style="width:100%;margin-bottom:18px;"></select>
-            <button type="submit" style="width:100%;margin-top:10px;">Отправить заявку</button>
+            <label for="country-select" class="country-modal-label country-modal-label-select">Выберите страну:</label>
+            <select id="country-select" required class="country-modal-select"></select>
+            <button type="submit" class="country-modal-submit">Отправить заявку</button>
           </form>
-          <div id="country-form-status" style="margin-top:12px;font-size:15px;color:var(--accent);"></div>
+          <div id="country-form-status" class="country-modal-status"></div>
         </div>
       </div>
 
       <div id="account-settings" class="card" style="display:none;max-width:420px;margin:32px auto 0 auto;">
-        <h2 style="margin-top:0;">Настройки профиля</h2>
-        <div style="margin-bottom:18px;">
-          <label style="font-weight:500;">Аватарка:</label><br>
-          <input type="file" id="avatar-upload-input" accept="image/png,image/jpeg,image/webp" style="margin-top:8px;">
-          <div style="font-size:13px;color:var(--muted);margin-top:4px;">jpg/png/webp, до 2 МБ</div>
+        <h2 class="profile-settings-title">Настройки профиля</h2>
+        <div class="profile-avatar-block">
+          <label class="profile-avatar-label">Аватарка:</label><br>
+          <input type="file" id="avatar-upload-input" accept="image/png,image/jpeg,image/webp" class="profile-avatar-input">
+          <div class="profile-avatar-hint">jpg/png/webp, до 2 МБ</div>
         </div>
-        <form id="change-pass-form" autocomplete="off" style="margin-bottom:0;">
-          <label for="old-password" style="font-weight:500;">Старый пароль:</label>
+        <form id="change-pass-form" autocomplete="off" class="profile-change-pass-form">
+          <label for="old-password" class="profile-pass-label">Старый пароль:</label>
           <input type="password" id="old-password" class="auth-input" placeholder="Старый пароль" autocomplete="current-password">
-          <label for="new-password" style="font-weight:500;">Новый пароль:</label>
+          <label for="new-password" class="profile-pass-label">Новый пароль:</label>
           <input type="password" id="new-password" class="auth-input" placeholder="Новый пароль" autocomplete="new-password">
-          <button type="submit" style="margin-top:10px;width:100%;">Сменить пароль</button>
+          <button type="submit" class="profile-pass-submit">Сменить пароль</button>
         </form>
       </div>
       <div id="admin-panel" style="display:none; margin-top:32px;">

@@ -1,3 +1,95 @@
+/* --- Модальное окно регистрации страны --- */
+.country-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.45);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+.country-modal[style*="display: block"], .country-modal.active {
+  display: flex;
+}
+.country-modal-content {
+  background: var(--card);
+  padding: 32px 24px;
+  border-radius: 18px;
+  max-width: 400px;
+  width: 90vw;
+  margin: auto;
+  box-shadow: 0 8px 32px #0006;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.country-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 22px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.country-modal-title {
+  margin-top: 0;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.country-modal-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: block;
+}
+.country-modal-label-select {
+  margin-top: 12px;
+}
+.country-modal-select {
+  width: 100%;
+  margin-bottom: 18px;
+}
+.country-modal-submit {
+  width: 100%;
+  margin-top: 10px;
+}
+.country-modal-status {
+  margin-top: 12px;
+  font-size: 15px;
+  color: var(--accent);
+  text-align: center;
+}
+
+/* --- Блок настроек профиля --- */
+.profile-settings-title {
+  margin-top: 0;
+}
+.profile-avatar-block {
+  margin-bottom: 18px;
+}
+.profile-avatar-label {
+  font-weight: 500;
+}
+.profile-avatar-input {
+  margin-top: 8px;
+}
+.profile-avatar-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.profile-change-pass-form {
+  margin-bottom: 0;
+}
+.profile-pass-label {
+  font-weight: 500;
+}
+.profile-pass-submit {
+  margin-top: 10px;
+  width: 100%;
+}
 .profile-settings-block {
   background: var(--card);
   border-radius: 16px;
