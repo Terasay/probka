@@ -49,10 +49,26 @@ document.addEventListener("DOMContentLoaded", () => {
     return c ? c.name : id;
   }
 
+  function populateCountrySelect() {
+    const select = document.getElementById("country-select");
+    if (!select) return;
+    select.innerHTML = "";
+    COUNTRIES.forEach(c => {
+      if (!takenCountries[c.id]) {
+        const option = document.createElement("option");
+        option.value = c.id;
+        option.textContent = c.name;
+        select.appendChild(option);
+      }
+    });
+  }
+
   // Получить заявки и отрендерить при загрузке и при изменении пользователя
   async function updateCountryRequests() {
     await fetchCountryRequests();
+    await fetchTakenCountries();
     renderCountryRequests();
+    populateCountrySelect();
   }
   updateCountryRequests();
   window.addEventListener('user-session-changed', updateCountryRequests);
@@ -61,22 +77,23 @@ document.addEventListener("DOMContentLoaded", () => {
 // Список стран (можно вынести на сервер)
 
   // Список занятых стран (запрашивается с сервера)
-  let takenCountries = [];
+  let takenCountries = {}; // id: taken_by
 
   async function fetchTakenCountries() {
     try {
       const res = await fetch("/api/countries/taken");
       if (res.ok) {
-        takenCountries = await res.json();
+        const data = await res.json();
+        takenCountries = Object.fromEntries(data);
       }
-    } catch (e) { takenCountries = []; }
+    } catch (e) { takenCountries = {}; }
   }
 
   // Показывать кнопку регистрации страны только если пользователь залогинен и не имеет страны
   function updateCountryButtonState() {
     const registerCountryBtn = document.getElementById("register-country-btn");
     if (!registerCountryBtn) return;
-    if (!window.user || window.user.country) {
+    if (!window.user || (window.user.country && takenCountries[window.user.country] == window.user.id)) {
       registerCountryBtn.style.display = "none";
     } else {
       registerCountryBtn.style.display = "block";
@@ -139,6 +156,52 @@ document.addEventListener("DOMContentLoaded", () => {
     const avatarInput = document.getElementById("avatar-upload-input");
     if (avatarInput) {
       avatarInput.addEventListener("change", handleAvatarUpload);
+    }
+    // Регистрация страны
+    const registerCountryBtn = document.getElementById("register-country-btn");
+    if (registerCountryBtn) {
+      registerCountryBtn.addEventListener("click", () => {
+        const modal = document.getElementById("country-modal");
+        if (modal) modal.style.display = "block";
+      });
+    }
+    // Закрытие модального окна
+    const closeModalBtn = document.getElementById("close-country-modal");
+    if (closeModalBtn) {
+      closeModalBtn.addEventListener("click", () => {
+        const modal = document.getElementById("country-modal");
+        if (modal) modal.style.display = "none";
+      });
+    }
+    // Форма регистрации страны
+    const countryForm = document.getElementById("country-form");
+    if (countryForm) {
+      countryForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const playerName = document.getElementById("country-player-name").value.trim();
+        const countryId = document.getElementById("country-select").value;
+        if (!playerName || !countryId) {
+          document.getElementById("country-form-status").textContent = "Заполните все поля";
+          return;
+        }
+        try {
+          const res = await fetch("/api/countries/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ playerName, countryId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            document.getElementById("country-form-status").textContent = "Заявка отправлена!";
+            document.getElementById("country-modal").style.display = "none";
+            await updateCountryRequests(); // обновить список
+          } else {
+            document.getElementById("country-form-status").textContent = data.error;
+          }
+        } catch (err) {
+          document.getElementById("country-form-status").textContent = "Ошибка: " + err.message;
+        }
+      });
     }
   }
   window.attachButtonHandlers = attachButtonHandlers;
@@ -386,7 +449,7 @@ function updateUI(user) {
     }
     // Отображение страны
     if (countryInfoEl) {
-      if (user.country) {
+      if (user.country && takenCountries[user.country] == user.id) {
         const countryObj = COUNTRIES.find(c => c.id === user.country);
         countryInfoEl.textContent = countryObj ? countryObj.name : user.country;
         countryInfoEl.style.display = "inline";
