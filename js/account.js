@@ -456,6 +456,7 @@ function updateUI(user) {
   const navBtn = document.querySelector(".nav-link.account-link");
   const avatarImg = document.getElementById("account-avatar-img");
   const settingsBlock = document.getElementById("account-settings");
+  const registerCountryBtn = document.getElementById("register-country-btn");
 
   if (user) {
     if (authForms) authForms.style.display = "none";
