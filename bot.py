@@ -79,8 +79,16 @@ async def approve_country(request: Request):
         cur.execute("SELECT id FROM users WHERE username = ?", (player_name,))
         user_row = cur.fetchone()
         user_id = user_row[0] if user_row else None
+        # Если страна уже занята, отказать
+        cur.execute("SELECT taken_by FROM countries WHERE id = ?", (country_id,))
+        taken_row = cur.fetchone()
+        if taken_row and taken_row[0]:
+            return JSONResponse({"error": "Страна уже занята"}, status_code=400)
         # Пометить страну как занятую
         cur.execute("UPDATE countries SET taken_by = ? WHERE id = ?", (user_id, country_id))
+        # Записать страну в профиль пользователя
+        if user_id:
+            cur.execute("UPDATE users SET country = ? WHERE id = ?", (country_id, user_id))
         # Обновить заявку
         cur.execute("UPDATE country_requests SET status = 'approved' WHERE id = ?", (req_id,))
         conn.commit()
@@ -153,10 +161,16 @@ def init_db():
             role TEXT DEFAULT 'user',
             created_at TEXT,
             avatar TEXT DEFAULT ''
+            , country TEXT DEFAULT NULL
         )""")
         # Миграция: если столбца avatar нет, добавить
         try:
             cur.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
+        except Exception:
+            pass
+        # Миграция: если столбца country нет, добавить
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN country TEXT DEFAULT NULL")
         except Exception:
             pass
         cur.execute("""CREATE TABLE IF NOT EXISTS news_comments (
@@ -304,20 +318,20 @@ async def login(request: Request):
 
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        cur.execute("SELECT id, username, password_hash, role FROM users WHERE username = ?", (username,))
+        cur.execute("SELECT id, username, password_hash, role, country FROM users WHERE username = ?", (username,))
         row = cur.fetchone()
         if not row or not bcrypt.verify(password, row[2]):
             return JSONResponse({"error": "Неверный логин или пароль"}, status_code=401)
-        user = {"id": row[0], "username": row[1], "role": row[3]}
+        user = {"id": row[0], "username": row[1], "role": row[3], "country": row[4]}
     return {"status": "ok", "user": user}
 
 @app.get("/api/users")
 async def get_users():
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        cur.execute("SELECT id, username, role, created_at FROM users ORDER BY id")
+        cur.execute("SELECT id, username, role, created_at, country FROM users ORDER BY id")
         users = [
-            {"id": r[0], "username": r[1], "role": r[2], "created_at": r[3]}
+            {"id": r[0], "username": r[1], "role": r[2], "created_at": r[3], "country": r[4]}
             for r in cur.fetchall()
         ]
     return {"status": "ok", "users": users}
