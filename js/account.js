@@ -157,52 +157,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (avatarInput) {
       avatarInput.addEventListener("change", handleAvatarUpload);
     }
-    // Регистрация страны
-    const registerCountryBtn = document.getElementById("register-country-btn");
-    if (registerCountryBtn) {
-      registerCountryBtn.addEventListener("click", () => {
-        const modal = document.getElementById("country-modal");
-        if (modal) modal.style.display = "block";
-      });
-    }
-    // Закрытие модального окна
-    const closeModalBtn = document.getElementById("close-country-modal");
-    if (closeModalBtn) {
-      closeModalBtn.addEventListener("click", () => {
-        const modal = document.getElementById("country-modal");
-        if (modal) modal.style.display = "none";
-      });
-    }
-    // Форма регистрации страны
-    const countryForm = document.getElementById("country-form");
-    if (countryForm) {
-      countryForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const playerName = document.getElementById("country-player-name").value.trim();
-        const countryId = document.getElementById("country-select").value;
-        if (!playerName || !countryId) {
-          document.getElementById("country-form-status").textContent = "Заполните все поля";
-          return;
-        }
-        try {
-          const res = await fetch("/api/countries/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ playerName, countryId })
-          });
-          const data = await res.json();
-          if (data.success) {
-            document.getElementById("country-form-status").textContent = "Заявка отправлена!";
-            document.getElementById("country-modal").style.display = "none";
-            await updateCountryRequests(); // обновить список
-          } else {
-            document.getElementById("country-form-status").textContent = data.error;
-          }
-        } catch (err) {
-          document.getElementById("country-form-status").textContent = "Ошибка: " + err.message;
-        }
-      });
-    }
   }
   window.attachButtonHandlers = attachButtonHandlers;
   // Гарантированно навешиваем обработчики при загрузке страницы
