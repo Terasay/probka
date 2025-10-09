@@ -49,15 +49,15 @@ document.addEventListener("DOMContentLoaded", () => {
   updateCountryRequests();
   window.addEventListener('user-session-changed', updateCountryRequests);
 
-  // --- Механика стран ---
-  // Список стран (можно вынести на сервер)
-  const COUNTRIES = [
-    { id: "hom", name: "Хомасия" },
-    { id: "bgg", name: "Бурград" },
-    { id: "myr", name: "Миртания" },
-    { id: "tdv", name: "Трудовия" },
-    { id: "ktv", name: "Крастовия" }
-  ];
+// --- Механика стран ---
+// Список стран (можно вынести на сервер)
+const COUNTRIES = [
+  { id: "hom", name: "Хомасия" },
+  { id: "bgg", name: "Бурград" },
+  { id: "myr", name: "Миртания" },
+  { id: "tdv", name: "Трудовия" },
+  { id: "ktv", name: "Крастовия" }
+];
 
   // Список занятых стран (запрашивается с сервера)
   let takenCountries = [];
