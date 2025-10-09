@@ -140,8 +140,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (avatarInput) {
       avatarInput.onchange = handleAvatarUpload;
     }
-}
-// --- конец функции attachButtonHandlers ---
+  }
+  window.attachButtonHandlers = attachButtonHandlers;
+  // Гарантированно навешиваем обработчики при загрузке страницы
+  attachButtonHandlers();
 }); // <-- закрываем document.addEventListener
 
 async function changePassword() {
@@ -421,8 +423,8 @@ function updateUI(user) {
     if (countryInfoEl) countryInfoEl.style.display = "none";
   }
   // Всегда навешивать обработчики после обновления DOM
-  if (typeof attachButtonHandlers === "function") {
-    attachButtonHandlers();
+  if (typeof window.attachButtonHandlers === "function") {
+    window.attachButtonHandlers();
   }
 }
 
