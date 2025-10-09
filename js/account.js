@@ -5,11 +5,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Админ: заявки на регистрацию страны ---
   const countryRequestsList = document.getElementById("country-requests-list");
 
-  // Заглушка: заявки на регистрацию страны (в реальности — с сервера)
-  let countryRequests = [
-    { id: 1, player: "Игрок1", country: "rus", status: "pending" },
-    { id: 2, player: "Игрок2", country: "deu", status: "pending" }
-  ];
+  // Заявки на регистрацию страны (запрашиваются с сервера)
+  let countryRequests = [];
+
+  async function fetchCountryRequests() {
+    try {
+      const res = await fetch("/api/countries/requests");
+      if (res.ok) {
+        countryRequests = await res.json();
+      }
+    } catch (e) { countryRequests = []; }
+  }
 
   function renderCountryRequests() {
     if (!countryRequestsList) return;
@@ -23,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     countryRequestsList.innerHTML = countryRequests.map(req =>
       `<div class="country-request" style="border:1px solid #ccc; margin:8px 0; padding:8px; border-radius:6px;">
-        <b>${req.player}</b> хочет зарегистрировать страну <b>${getCountryName(req.country)}</b>
+        <b>${escapeHtml(req.player)}</b> хочет зарегистрировать страну <b>${getCountryName(req.country)}</b>
         <button data-action="approve" data-id="${req.id}">Одобрить</button>
         <button data-action="reject" data-id="${req.id}">Отклонить</button>
       </div>`
@@ -37,32 +43,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Обработка кнопок одобрить/отклонить
   if (countryRequestsList) {
-    countryRequestsList.addEventListener("click", (e) => {
+    countryRequestsList.addEventListener("click", async (e) => {
       const btn = e.target.closest("button[data-action]");
       if (!btn) return;
       const id = parseInt(btn.dataset.id);
       const req = countryRequests.find(r => r.id === id);
       if (!req) return;
       if (btn.dataset.action === "approve") {
-        req.status = "approved";
-        // TODO: отправить на сервер, присвоить страну игроку
-        alert(`Заявка одобрена: ${req.player} теперь ${getCountryName(req.country)}`);
-        // Удалить заявку из списка
-        countryRequests = countryRequests.filter(r => r.id !== id);
-        renderCountryRequests();
+        // Одобрить заявку через API
+        const res = await fetch(`/api/countries/approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          alert(`Заявка одобрена: ${req.player} теперь ${getCountryName(req.country)}`);
+          await updateCountryRequests();
+        } else {
+          alert("Ошибка одобрения заявки");
+        }
       } else if (btn.dataset.action === "reject") {
-        req.status = "rejected";
-        // TODO: отправить на сервер, уведомить игрока
-        alert(`Заявка отклонена: ${req.player}`);
-        countryRequests = countryRequests.filter(r => r.id !== id);
-        renderCountryRequests();
+        // Отклонить заявку через API
+        const res = await fetch(`/api/countries/reject`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          alert(`Заявка отклонена: ${req.player}`);
+          await updateCountryRequests();
+        } else {
+          alert("Ошибка отклонения заявки");
+        }
       }
     });
   }
 
-  // Рендерить заявки при загрузке и при изменении пользователя
-  renderCountryRequests();
-  window.addEventListener('user-session-changed', renderCountryRequests);
+  // Получить заявки и отрендерить при загрузке и при изменении пользователя
+  async function updateCountryRequests() {
+    await fetchCountryRequests();
+    renderCountryRequests();
+  }
+  updateCountryRequests();
+  window.addEventListener('user-session-changed', updateCountryRequests);
   // --- Механика стран ---
   const registerCountryBtn = document.getElementById("register-country-btn");
   const countryModal = document.getElementById("country-modal");
@@ -80,8 +103,17 @@ document.addEventListener("DOMContentLoaded", () => {
     { id: "deu", name: "Германия" }
   ];
 
-  // Заглушка: список занятых стран (в реальности — с сервера)
+  // Список занятых стран (запрашивается с сервера)
   let takenCountries = [];
+
+  async function fetchTakenCountries() {
+    try {
+      const res = await fetch("/api/countries/taken");
+      if (res.ok) {
+        takenCountries = await res.json();
+      }
+    } catch (e) { takenCountries = []; }
+  }
 
   // Показывать кнопку регистрации страны только если пользователь залогинен и не имеет страны
   function updateCountryButtonState() {
@@ -97,10 +129,11 @@ document.addEventListener("DOMContentLoaded", () => {
     registerCountryBtn.addEventListener("click", () => {
       countryModal.style.display = "flex";
       countryFormStatus.textContent = "";
-      // Заполнить список стран
-      countrySelect.innerHTML = COUNTRIES.map(c =>
-        `<option value="${c.id}" ${takenCountries.includes(c.id) ? "disabled" : ""}>${c.name}${takenCountries.includes(c.id) ? " (занято)" : ""}</option>`
-      ).join("");
+      fetchTakenCountries().then(() => {
+        countrySelect.innerHTML = COUNTRIES.map(c =>
+          `<option value="${c.id}" ${takenCountries.includes(c.id) ? "disabled" : ""}>${c.name}${takenCountries.includes(c.id) ? " (занято)" : ""}</option>`
+        ).join("");
+      });
     });
   }
 
@@ -122,11 +155,23 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       countryFormStatus.textContent = "Отправка заявки...";
-      // TODO: заменить на реальный API
-      setTimeout(() => {
-        countryFormStatus.textContent = "Заявка отправлена! Ожидайте одобрения администратора.";
-        countryModal.style.display = "none";
-      }, 1200);
+      fetch("/api/countries/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerName, countryId })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            countryFormStatus.textContent = "Заявка отправлена! Ожидайте одобрения администратора.";
+            setTimeout(() => { countryModal.style.display = "none"; }, 1000);
+          } else {
+            countryFormStatus.textContent = data.error || "Ошибка отправки заявки";
+          }
+        })
+        .catch(() => {
+          countryFormStatus.textContent = "Ошибка соединения с сервером";
+        });
     });
   }
 
