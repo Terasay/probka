@@ -54,6 +54,23 @@
           </div>
         </div>
         <button id="logout-btn">Выйти</button>
+        <button id="register-country-btn" style="margin-top:18px;display:none;">Регистрация страны</button>
+      </div>
+
+      <!-- Модальное окно регистрации страны -->
+      <div id="country-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:var(--card);padding:32px 24px;border-radius:18px;max-width:400px;width:90vw;margin:auto;box-shadow:0 8px 32px #0006;position:relative;">
+          <button id="close-country-modal" style="position:absolute;top:12px;right:12px;font-size:22px;background:none;border:none;color:var(--muted);cursor:pointer;">×</button>
+          <h2 style="margin-top:0;margin-bottom:18px;">Регистрация страны</h2>
+          <form id="country-form">
+            <label for="country-player-name" style="font-weight:500;">Ваше имя:</label>
+            <input type="text" id="country-player-name" class="auth-input" placeholder="Имя игрока" required maxlength="32">
+            <label for="country-select" style="font-weight:500;margin-top:12px;">Выберите страну:</label>
+            <select id="country-select" required style="width:100%;margin-bottom:18px;"></select>
+            <button type="submit" style="width:100%;margin-top:10px;">Отправить заявку</button>
+          </form>
+          <div id="country-form-status" style="margin-top:12px;font-size:15px;color:var(--accent);"></div>
+        </div>
       </div>
 
       <div id="account-settings" class="card" style="display:none;max-width:420px;margin:32px auto 0 auto;">
@@ -85,6 +102,9 @@
           </thead>
           <tbody></tbody>
         </table>
+          <hr>
+          <h4>Заявки на регистрацию страны</h4>
+          <div id="country-requests-list"></div>
       </div>
 
       <h2>Темы</h2>

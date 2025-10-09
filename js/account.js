@@ -2,6 +2,138 @@
 const API_URL = "";
 
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Админ: заявки на регистрацию страны ---
+  const countryRequestsList = document.getElementById("country-requests-list");
+
+  // Заглушка: заявки на регистрацию страны (в реальности — с сервера)
+  let countryRequests = [
+    { id: 1, player: "Игрок1", country: "rus", status: "pending" },
+    { id: 2, player: "Игрок2", country: "deu", status: "pending" }
+  ];
+
+  function renderCountryRequests() {
+    if (!countryRequestsList) return;
+    if (!window.user || window.user.role !== "admin") {
+      countryRequestsList.innerHTML = "";
+      return;
+    }
+    if (!countryRequests.length) {
+      countryRequestsList.innerHTML = "Нет заявок.";
+      return;
+    }
+    countryRequestsList.innerHTML = countryRequests.map(req =>
+      `<div class="country-request" style="border:1px solid #ccc; margin:8px 0; padding:8px; border-radius:6px;">
+        <b>${req.player}</b> хочет зарегистрировать страну <b>${getCountryName(req.country)}</b>
+        <button data-action="approve" data-id="${req.id}">Одобрить</button>
+        <button data-action="reject" data-id="${req.id}">Отклонить</button>
+      </div>`
+    ).join("");
+  }
+
+  function getCountryName(id) {
+    const c = COUNTRIES.find(c => c.id === id);
+    return c ? c.name : id;
+  }
+
+  // Обработка кнопок одобрить/отклонить
+  if (countryRequestsList) {
+    countryRequestsList.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+      const id = parseInt(btn.dataset.id);
+      const req = countryRequests.find(r => r.id === id);
+      if (!req) return;
+      if (btn.dataset.action === "approve") {
+        req.status = "approved";
+        // TODO: отправить на сервер, присвоить страну игроку
+        alert(`Заявка одобрена: ${req.player} теперь ${getCountryName(req.country)}`);
+        // Удалить заявку из списка
+        countryRequests = countryRequests.filter(r => r.id !== id);
+        renderCountryRequests();
+      } else if (btn.dataset.action === "reject") {
+        req.status = "rejected";
+        // TODO: отправить на сервер, уведомить игрока
+        alert(`Заявка отклонена: ${req.player}`);
+        countryRequests = countryRequests.filter(r => r.id !== id);
+        renderCountryRequests();
+      }
+    });
+  }
+
+  // Рендерить заявки при загрузке и при изменении пользователя
+  renderCountryRequests();
+  window.addEventListener('user-session-changed', renderCountryRequests);
+  // --- Механика стран ---
+  const registerCountryBtn = document.getElementById("register-country-btn");
+  const countryModal = document.getElementById("country-modal");
+  const closeCountryModalBtn = document.getElementById("close-country-modal");
+  const countryForm = document.getElementById("country-form");
+  const countrySelect = document.getElementById("country-select");
+  const countryFormStatus = document.getElementById("country-form-status");
+
+  // Список стран (можно вынести на сервер)
+  const COUNTRIES = [
+    { id: "rus", name: "Россия" },
+    { id: "usa", name: "США" },
+    { id: "chn", name: "Китай" },
+    { id: "jpn", name: "Япония" },
+    { id: "deu", name: "Германия" }
+  ];
+
+  // Заглушка: список занятых стран (в реальности — с сервера)
+  let takenCountries = [];
+
+  // Показывать кнопку регистрации страны только если пользователь залогинен и не имеет страны
+  function updateCountryButtonState() {
+    if (!window.user || window.user.country) {
+      registerCountryBtn.style.display = "none";
+    } else {
+      registerCountryBtn.style.display = "block";
+    }
+  }
+
+  // Открыть модальное окно
+  if (registerCountryBtn) {
+    registerCountryBtn.addEventListener("click", () => {
+      countryModal.style.display = "flex";
+      countryFormStatus.textContent = "";
+      // Заполнить список стран
+      countrySelect.innerHTML = COUNTRIES.map(c =>
+        `<option value="${c.id}" ${takenCountries.includes(c.id) ? "disabled" : ""}>${c.name}${takenCountries.includes(c.id) ? " (занято)" : ""}</option>`
+      ).join("");
+    });
+  }
+
+  // Закрыть модальное окно
+  if (closeCountryModalBtn) {
+    closeCountryModalBtn.addEventListener("click", () => {
+      countryModal.style.display = "none";
+    });
+  }
+
+  // Отправка заявки на регистрацию страны
+  if (countryForm) {
+    countryForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const playerName = document.getElementById("country-player-name").value.trim();
+      const countryId = countrySelect.value;
+      if (!playerName || !countryId) {
+        countryFormStatus.textContent = "Заполните все поля";
+        return;
+      }
+      countryFormStatus.textContent = "Отправка заявки...";
+      // TODO: заменить на реальный API
+      setTimeout(() => {
+        countryFormStatus.textContent = "Заявка отправлена! Ожидайте одобрения администратора.";
+        countryModal.style.display = "none";
+      }, 1200);
+    });
+  }
+
+  updateCountryButtonState();
+
+  // При изменении пользователя обновлять кнопку
+  window.addEventListener('user-session-changed', updateCountryButtonState);
   // Инициализация window.user из localStorage
   let savedUser = null;
   try {
@@ -302,6 +434,14 @@ function updateUI(user) {
     } else {
       if (adminPanel) adminPanel.style.display = "none";
     }
+    // Показывать кнопку регистрации страны только если нет страны
+    if (registerCountryBtn) {
+      if (!user.country) {
+        registerCountryBtn.style.display = "block";
+      } else {
+        registerCountryBtn.style.display = "none";
+      }
+    }
   } else {
     if (authForms) authForms.style.display = "block";
     if (accountInfo) accountInfo.style.display = "none";
@@ -309,6 +449,7 @@ function updateUI(user) {
     if (adminPanel) adminPanel.style.display = "none";
     if (navBtn) navBtn.innerText = "Аккаунт";
     if (avatarImg) avatarImg.style.display = "none";
+    if (registerCountryBtn) registerCountryBtn.style.display = "none";
   }
 }
 
