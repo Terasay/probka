@@ -1,3 +1,4 @@
+
 import sqlite3
 import os
 from datetime import datetime, timezone
@@ -18,6 +19,82 @@ app = FastAPI()
 async def logout():
     # Заглушка: просто возвращаем OK, т.к. сессий на сервере нет
     return {"status": "ok"}
+
+@app.post("/api/countries/approve")
+async def approve_country_request(request: Request):
+    data = await request.json()
+    req_id = data.get("id")
+    if not req_id:
+        return JSONResponse({"error": "Нет id заявки"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Получить заявку
+        cur.execute("SELECT country_id, player_id FROM country_requests WHERE id = ? AND status = 'pending'", (req_id,))
+        row = cur.fetchone()
+        if not row:
+            return JSONResponse({"error": "Заявка не найдена"}, status_code=404)
+        country_id, player_id = row
+        # Пометить страну как занятую
+        cur.execute("UPDATE countries SET taken_by = ? WHERE id = ?", (player_id, country_id))
+        # Обновить статус заявки
+        cur.execute("UPDATE country_requests SET status = 'approved' WHERE id = ?", (req_id,))
+        conn.commit()
+    return {"success": True}
+
+@app.post("/api/countries/reject")
+async def reject_country_request(request: Request):
+    data = await request.json()
+    req_id = data.get("id")
+    if not req_id:
+        return JSONResponse({"error": "Нет id заявки"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("UPDATE country_requests SET status = 'rejected' WHERE id = ?", (req_id,))
+        conn.commit()
+    return {"success": True}
+@app.get("/api/countries/taken")
+async def get_taken_countries():
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM countries WHERE taken_by IS NOT NULL")
+        rows = cur.fetchall()
+        taken = [r[0] for r in rows]
+    return taken
+@app.get("/api/countries/requests")
+async def get_country_requests():
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, player_id, player_name, country_id, status, created_at FROM country_requests WHERE status = 'pending' ORDER BY created_at ASC")
+        rows = cur.fetchall()
+        result = [
+            {"id": r[0], "player_id": r[1], "player": r[2], "country": r[3], "status": r[4], "created_at": r[5]}
+            for r in rows
+        ]
+    return result
+@app.post("/api/countries/register")
+async def register_country(request: Request):
+    data = await request.json()
+    player_name = data.get("playerName", "").strip()
+    country_id = data.get("countryId", "").strip()
+    player_id = data.get("playerId")
+    if not player_name or not country_id:
+        return JSONResponse({"error": "Заполните все поля"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Проверить, не занята ли страна
+        cur.execute("SELECT taken_by FROM countries WHERE id = ?", (country_id,))
+        row = cur.fetchone()
+        if row and row[0]:
+            return JSONResponse({"error": "Страна уже занята"}, status_code=400)
+        # Проверить, нет ли уже заявки от этого игрока на эту страну
+        cur.execute("SELECT id FROM country_requests WHERE player_name = ? AND country_id = ? AND status = 'pending'", (player_name, country_id))
+        if cur.fetchone():
+            return JSONResponse({"error": "У вас уже есть заявка на эту страну"}, status_code=400)
+        # Добавить заявку
+        cur.execute("INSERT INTO country_requests (player_id, player_name, country_id, status, created_at) VALUES (?, ?, ?, 'pending', ?)",
+                    (player_id, player_name, country_id, datetime.now(timezone.utc).isoformat()))
+        conn.commit()
+    return {"success": True}
 
 app.add_middleware(
     CORSMiddleware,
@@ -94,6 +171,21 @@ def init_db():
             value INTEGER -- 1 = like, -1 = dislike
         )""")
         conn.commit()
+        # --- Таблица стран ---
+        cur.execute("""CREATE TABLE IF NOT EXISTS countries (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            taken_by INTEGER DEFAULT NULL -- user_id
+        )""")
+        # --- Таблица заявок на регистрацию страны ---
+        cur.execute("""CREATE TABLE IF NOT EXISTS country_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id INTEGER,
+            player_name TEXT,
+            country_id TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT
+        )""")
 from fastapi import UploadFile, File, Form
 import shutil
 import os
@@ -419,6 +511,3 @@ async def reply_topic(topic_id: str, request: Request):
         )
         conn.commit()
     return {"status": "ok", "id": msg_id}
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
