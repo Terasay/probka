@@ -127,11 +127,18 @@ document.addEventListener("DOMContentLoaded", () => {
         await registerHandler();
       };
     }
+    // Форма смены пароля
+    const changePassForm = document.getElementById("change-pass-form");
     if (changePassForm) {
       changePassForm.onsubmit = async (e) => {
         e.preventDefault();
         await changePassword();
       };
+    }
+    // Загрузка аватарки
+    const avatarInput = document.getElementById("avatar-upload-input");
+    if (avatarInput) {
+      avatarInput.onchange = handleAvatarUpload;
     }
 }
 // --- конец функции attachButtonHandlers ---
