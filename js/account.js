@@ -457,6 +457,7 @@ function updateUI(user) {
   const avatarImg = document.getElementById("account-avatar-img");
   const settingsBlock = document.getElementById("account-settings");
   const registerCountryBtn = document.getElementById("register-country-btn");
+  const countryInfoEl = document.getElementById("account-country-info");
 
   if (user) {
     if (authForms) authForms.style.display = "none";
@@ -474,6 +475,17 @@ function updateUI(user) {
       } else {
         avatarImg.src = "assets/img/kakoedelo.jpeg";
         avatarImg.style.display = "inline-block";
+      }
+    }
+    // Отображение страны
+    if (countryInfoEl) {
+      if (user.country) {
+        const countryObj = COUNTRIES.find(c => c.id === user.country);
+        countryInfoEl.textContent = countryObj ? countryObj.name : user.country;
+        countryInfoEl.style.display = "inline";
+      } else {
+        countryInfoEl.textContent = "-";
+        countryInfoEl.style.display = "inline";
       }
     }
     if (user.role === "admin") {
@@ -500,6 +512,7 @@ function updateUI(user) {
     if (navBtn) navBtn.innerText = "Аккаунт";
     if (avatarImg) avatarImg.style.display = "none";
     if (registerCountryBtn) registerCountryBtn.style.display = "none";
+    if (countryInfoEl) countryInfoEl.style.display = "none";
   }
 }
 
