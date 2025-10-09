@@ -1,3 +1,19 @@
+@app.post("/api/users/{user_id}/reset_country")
+async def reset_user_country(user_id: int):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Получить текущую страну пользователя
+        cur.execute("SELECT country FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        if not row or not row[0]:
+            return {"status": "ok"}  # Уже сброшено
+        country_id = row[0]
+        # Сбросить страну у пользователя
+        cur.execute("UPDATE users SET country = NULL WHERE id = ?", (user_id,))
+        # Освободить страну в таблице стран
+        cur.execute("UPDATE countries SET taken_by = NULL WHERE id = ? AND taken_by = ?", (country_id, user_id))
+        conn.commit()
+    return {"status": "ok"}
 from fastapi import Depends
 import sqlite3
 import os

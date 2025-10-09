@@ -346,7 +346,10 @@ async function loadUsers() {
         <td>${escapeHtml(u.username)}</td>
         <td>${escapeHtml(u.role)}</td>
         <td>${u.created_at ? escapeHtml(new Date(u.created_at).toLocaleString()) : ''}</td>
-        <td>${u.role !== 'admin' ? `<button class="delete-user-btn" data-id="${u.id}">Удалить</button>` : ''}</td>
+        <td>
+          ${u.role !== 'admin' ? `<button class="delete-user-btn" data-id="${u.id}">Удалить</button>` : ''}
+          ${u.role !== 'admin' && u.country ? `<button class="reset-country-btn" data-id="${u.id}">Сбросить страну</button>` : ''}
+        </td>
       </tr>
     `).join("");
 
@@ -364,6 +367,24 @@ async function loadUsers() {
         } catch (err) {
           alert(err.message);
           console.error("[deleteUser]", err);
+        }
+      });
+    });
+
+    document.querySelectorAll('.reset-country-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!confirm(`Сбросить страну у пользователя #${id}?`)) return;
+        try {
+          const resp = await apiFetch(`/api/users/${id}/reset_country`, { method: "POST" });
+          if (resp && resp.status === "ok") {
+            await loadUsers();
+          } else {
+            throw new Error("Не удалось сбросить страну");
+          }
+        } catch (err) {
+          alert(err.message);
+          console.error("[resetCountry]", err);
         }
       });
     });
