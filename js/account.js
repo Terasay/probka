@@ -126,134 +126,16 @@ document.addEventListener("DOMContentLoaded", () => {
         await registerHandler();
       };
     }
-    // Смена пароля
-    const changePassForm = document.getElementById("change-pass-form");
     if (changePassForm) {
       changePassForm.onsubmit = async (e) => {
         e.preventDefault();
         await changePassword();
       };
     }
-    // Загрузка аватарки
-    const avatarInput = document.getElementById("avatar-upload-input");
-    if (avatarInput) {
-      avatarInput.onchange = handleAvatarUpload;
-    }
-    // Кнопка регистрации страны
-    const registerCountryBtn = document.getElementById("register-country-btn");
-    const countryModal = document.getElementById("country-modal");
-    const countryFormStatus = document.getElementById("country-form-status");
-    const countrySelect = document.getElementById("country-select");
-    if (registerCountryBtn && countryModal && countryFormStatus && countrySelect) {
-      registerCountryBtn.onclick = () => {
-        countryModal.style.display = "flex";
-        countryFormStatus.textContent = "";
-        fetchTakenCountries().then(() => {
-          countrySelect.innerHTML = COUNTRIES.map(c =>
-            `<option value="${c.id}" ${takenCountries.includes(c.id) ? "disabled" : ""}>${c.name}${takenCountries.includes(c.id) ? " (занято)" : ""}</option>`
-          ).join("");
-        });
-      };
-    }
-    // Кнопка закрытия модального окна
-    const closeCountryModalBtn = document.getElementById("close-country-modal");
-    if (closeCountryModalBtn && countryModal) {
-      closeCountryModalBtn.onclick = () => {
-        countryModal.style.display = "none";
-      };
-    }
-    // Форма заявки на страну
-    const countryForm = document.getElementById("country-form");
-    if (countryForm && countryFormStatus && countrySelect && countryModal) {
-      countryForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const playerName = document.getElementById("country-player-name").value.trim();
-        const countryId = countrySelect.value;
-        if (!playerName || !countryId) {
-          countryFormStatus.textContent = "Заполните все поля";
-          return;
-        }
-        countryFormStatus.textContent = "Отправка заявки...";
-        fetch("/api/countries/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ playerName, countryId })
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              countryFormStatus.textContent = "Заявка отправлена! Ожидайте одобрения администратора.";
-              setTimeout(() => { countryModal.style.display = "none"; }, 1000);
-            } else {
-              countryFormStatus.textContent = data.error || "Ошибка отправки заявки";
-            }
-          })
-          .catch(() => {
-            countryFormStatus.textContent = "Ошибка соединения с сервером";
-          });
-      };
-    }
-    // Обработка кнопок одобрить/отклонить заявки на страну (делегирование)
-    if (countryRequestsList) {
-      countryRequestsList.onclick = async (e) => {
-        const btn = e.target.closest("button[data-action]");
-        if (!btn) return;
-        const id = parseInt(btn.dataset.id);
-        const req = countryRequests.find(r => r.id === id);
-        if (!req) return;
-        if (btn.dataset.action === "approve") {
-          const res = await fetch(`/api/countries/approve`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id })
-          });
-          if (res.ok) {
-            alert(`Заявка одобрена: ${req.player} теперь ${getCountryName(req.country)}`);
-            await updateCountryRequests();
-            // Если текущий пользователь — тот, кому одобрили страну, обновить его данные
-            if (window.user && window.user.username === req.player) {
-              try {
-                const data = await apiFetch("/api/users", { method: "GET" });
-                const users = Array.isArray(data.users) ? data.users : [];
-                const updatedUser = users.find(u => u.username === window.user.username);
-                if (updatedUser) {
-                  window.user.country = updatedUser.country;
-                  localStorage.setItem("user", JSON.stringify(window.user));
-                  updateUI(window.user);
-                }
-              } catch (err) {
-                console.warn("Не удалось обновить страну пользователя после одобрения заявки", err);
-              }
-            }
-          } else {
-            alert("Ошибка одобрения заявки");
-          }
-        } else if (btn.dataset.action === "reject") {
-          const res = await fetch(`/api/countries/reject`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id })
-          });
-          if (res.ok) {
-            alert(`Заявка отклонена: ${req.player}`);
-            await updateCountryRequests();
-          } else {
-            alert("Ошибка отклонения заявки");
-          }
-        }
-      };
-    }
-  }
+}
+// --- конец функции attachButtonHandlers ---
+}); // <-- закрываем document.addEventListener
 
-  // Переопределяем updateUI, чтобы навешивать обработчики после каждого обновления UI
-  const origUpdateUI = window.updateUI || updateUI;
-  window.updateUI = function(user) {
-    origUpdateUI(user);
-    attachButtonHandlers();
-  };
-  // Первый раз навесить обработчики
-  attachButtonHandlers();
-});
 async function changePassword() {
   const oldPass = document.getElementById("old-password").value.trim();
   const newPass = document.getElementById("new-password").value.trim();
@@ -503,6 +385,7 @@ function updateUI(user) {
         countryInfoEl.style.display = "inline";
       }
     }
+    // Панель админа показывать всегда для admin
     if (user.role === "admin") {
       if (adminPanel) {
         adminPanel.style.display = "block";
@@ -511,9 +394,9 @@ function updateUI(user) {
     } else {
       if (adminPanel) adminPanel.style.display = "none";
     }
-    // Показывать кнопку регистрации страны только если нет страны
+    // Кнопку регистрации страны показывать только если нет страны и не admin
     if (registerCountryBtn) {
-      if (!user.country) {
+      if (!user.country && user.role !== "admin") {
         registerCountryBtn.style.display = "block";
       } else {
         registerCountryBtn.style.display = "none";
