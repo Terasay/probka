@@ -1,6 +1,9 @@
 // js/account.js
 const API_URL = "";
 
+// Список занятых стран (глобально)
+let takenCountries = {}; // id: taken_by
+
 const COUNTRIES = [
   { id: "hom", name: "Хомасия" },
   { id: "bgg", name: "Бурград" },
@@ -13,8 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Админ: заявки на регистрацию страны ---
   const countryRequestsList = document.getElementById("country-requests-list");
 
-  // Список занятых стран (запрашивается с сервера)
-  let takenCountries = {}; // id: taken_by
+  // ...existing code...
 
   // Заявки на регистрацию страны (запрашиваются с сервера)
   let countryRequests = [];
