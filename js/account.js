@@ -210,6 +210,21 @@ document.addEventListener("DOMContentLoaded", () => {
           if (res.ok) {
             alert(`Заявка одобрена: ${req.player} теперь ${getCountryName(req.country)}`);
             await updateCountryRequests();
+            // Если текущий пользователь — тот, кому одобрили страну, обновить его данные
+            if (window.user && window.user.username === req.player) {
+              try {
+                const data = await apiFetch("/api/users", { method: "GET" });
+                const users = Array.isArray(data.users) ? data.users : [];
+                const updatedUser = users.find(u => u.username === window.user.username);
+                if (updatedUser) {
+                  window.user.country = updatedUser.country;
+                  localStorage.setItem("user", JSON.stringify(window.user));
+                  updateUI(window.user);
+                }
+              } catch (err) {
+                console.warn("Не удалось обновить страну пользователя после одобрения заявки", err);
+              }
+            }
           } else {
             alert("Ошибка одобрения заявки");
           }
