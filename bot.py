@@ -84,6 +84,8 @@ async def approve_country(request: Request):
         taken_row = cur.fetchone()
         if taken_row and taken_row[0]:
             return JSONResponse({"error": "Страна уже занята"}, status_code=400)
+        # Перед выдачей страны новому пользователю, сбросить её у всех других пользователей
+        cur.execute("UPDATE users SET country = NULL WHERE country = ? AND id != ?", (country_id, user_id))
         # Пометить страну как занятую
         cur.execute("UPDATE countries SET taken_by = ? WHERE id = ?", (user_id, country_id))
         # Записать страну в профиль пользователя
