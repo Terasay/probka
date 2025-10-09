@@ -1,3 +1,4 @@
+from fastapi import Depends
 import sqlite3
 import os
 from datetime import datetime, timezone
@@ -11,7 +12,93 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 app = FastAPI()
+
+# --- API: получить список занятых стран ---
+@app.get("/api/countries/taken")
+async def get_taken_countries():
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM countries WHERE taken_by IS NOT NULL")
+        taken = [row[0] for row in cur.fetchall()]
+    return taken
+
+# --- API: подать заявку на регистрацию страны ---
+@app.post("/api/countries/register")
+async def register_country(request: Request):
+    data = await request.json()
+    player_name = data.get("playerName", "").strip()
+    country_id = data.get("countryId", "").strip()
+    if not player_name or not country_id:
+        return {"success": False, "error": "Заполните все поля"}
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Проверить, занята ли страна
+        cur.execute("SELECT taken_by FROM countries WHERE id = ?", (country_id,))
+        row = cur.fetchone()
+        if row and row[0]:
+            return {"success": False, "error": "Страна уже занята"}
+        # Проверить, есть ли уже заявка от этого игрока на эту страну в статусе pending
+        cur.execute("SELECT id FROM country_requests WHERE player_name = ? AND country_id = ? AND status = 'pending'", (player_name, country_id))
+        if cur.fetchone():
+            return {"success": False, "error": "У вас уже есть заявка на эту страну"}
+        # Добавить заявку
+        cur.execute("INSERT INTO country_requests (player_name, country_id, created_at) VALUES (?, ?, ?)", (player_name, country_id, datetime.now(timezone.utc).isoformat()))
+        conn.commit()
+    return {"success": True}
+
+# --- API: получить список заявок на регистрацию страны (только для админа) ---
+@app.get("/api/countries/requests")
+async def get_country_requests():
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, player_name, country_id, status FROM country_requests WHERE status = 'pending' ORDER BY created_at ASC")
+        requests = [
+            {"id": r[0], "player": r[1], "country": r[2], "status": r[3]}
+            for r in cur.fetchall()
+        ]
+    return requests
+
+# --- API: одобрить заявку (только для админа) ---
+@app.post("/api/countries/approve")
+async def approve_country(request: Request):
+    data = await request.json()
+    req_id = data.get("id")
+    if not req_id:
+        return JSONResponse({"error": "Нет id заявки"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Получить заявку
+        cur.execute("SELECT player_name, country_id FROM country_requests WHERE id = ? AND status = 'pending'", (req_id,))
+        row = cur.fetchone()
+        if not row:
+            return JSONResponse({"error": "Заявка не найдена"}, status_code=404)
+        player_name, country_id = row
+        # Найти пользователя по имени
+        cur.execute("SELECT id FROM users WHERE username = ?", (player_name,))
+        user_row = cur.fetchone()
+        user_id = user_row[0] if user_row else None
+        # Пометить страну как занятую
+        cur.execute("UPDATE countries SET taken_by = ? WHERE id = ?", (user_id, country_id))
+        # Обновить заявку
+        cur.execute("UPDATE country_requests SET status = 'approved' WHERE id = ?", (req_id,))
+        conn.commit()
+    return {"success": True}
+
+# --- API: отклонить заявку (только для админа) ---
+@app.post("/api/countries/reject")
+async def reject_country(request: Request):
+    data = await request.json()
+    req_id = data.get("id")
+    if not req_id:
+        return JSONResponse({"error": "Нет id заявки"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Обновить заявку
+        cur.execute("UPDATE country_requests SET status = 'rejected' WHERE id = ?", (req_id,))
+        conn.commit()
+    return {"success": True}
 
 # --- API logout (заглушка) ---
 @app.post("/api/logout")

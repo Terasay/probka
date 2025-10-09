@@ -52,11 +52,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Механика стран ---
   // Список стран (можно вынести на сервер)
   const COUNTRIES = [
-    { id: "rus", name: "Россия" },
-    { id: "usa", name: "США" },
-    { id: "chn", name: "Китай" },
-    { id: "jpn", name: "Япония" },
-    { id: "deu", name: "Германия" }
+    { id: "hom", name: "Хомасия" },
+    { id: "bgg", name: "Бурград" },
+    { id: "myr", name: "Миртания" },
+    { id: "tdv", name: "Трудовия" },
+    { id: "ktv", name: "Крастовия" }
   ];
 
   // Список занятых стран (запрашивается с сервера)
