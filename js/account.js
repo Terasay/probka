@@ -41,44 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return c ? c.name : id;
   }
 
-  // Обработка кнопок одобрить/отклонить
-  if (countryRequestsList) {
-    countryRequestsList.addEventListener("click", async (e) => {
-      const btn = e.target.closest("button[data-action]");
-      if (!btn) return;
-      const id = parseInt(btn.dataset.id);
-      const req = countryRequests.find(r => r.id === id);
-      if (!req) return;
-      if (btn.dataset.action === "approve") {
-        // Одобрить заявку через API
-        const res = await fetch(`/api/countries/approve`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id })
-        });
-        if (res.ok) {
-          alert(`Заявка одобрена: ${req.player} теперь ${getCountryName(req.country)}`);
-          await updateCountryRequests();
-        } else {
-          alert("Ошибка одобрения заявки");
-        }
-      } else if (btn.dataset.action === "reject") {
-        // Отклонить заявку через API
-        const res = await fetch(`/api/countries/reject`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id })
-        });
-        if (res.ok) {
-          alert(`Заявка отклонена: ${req.player}`);
-          await updateCountryRequests();
-        } else {
-          alert("Ошибка отклонения заявки");
-        }
-      }
-    });
-  }
-
   // Получить заявки и отрендерить при загрузке и при изменении пользователя
   async function updateCountryRequests() {
     await fetchCountryRequests();
@@ -86,14 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateCountryRequests();
   window.addEventListener('user-session-changed', updateCountryRequests);
-  // --- Механика стран ---
-  const registerCountryBtn = document.getElementById("register-country-btn");
-  const countryModal = document.getElementById("country-modal");
-  const closeCountryModalBtn = document.getElementById("close-country-modal");
-  const countryForm = document.getElementById("country-form");
-  const countrySelect = document.getElementById("country-select");
-  const countryFormStatus = document.getElementById("country-form-status");
 
+  // --- Механика стран ---
   // Список стран (можно вынести на сервер)
   const COUNTRIES = [
     { id: "rus", name: "Россия" },
@@ -117,6 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Показывать кнопку регистрации страны только если пользователь залогинен и не имеет страны
   function updateCountryButtonState() {
+    const registerCountryBtn = document.getElementById("register-country-btn");
+    if (!registerCountryBtn) return;
     if (!window.user || window.user.country) {
       registerCountryBtn.style.display = "none";
     } else {
@@ -124,61 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Открыть модальное окно
-  if (registerCountryBtn) {
-    registerCountryBtn.addEventListener("click", () => {
-      countryModal.style.display = "flex";
-      countryFormStatus.textContent = "";
-      fetchTakenCountries().then(() => {
-        countrySelect.innerHTML = COUNTRIES.map(c =>
-          `<option value="${c.id}" ${takenCountries.includes(c.id) ? "disabled" : ""}>${c.name}${takenCountries.includes(c.id) ? " (занято)" : ""}</option>`
-        ).join("");
-      });
-    });
-  }
-
-  // Закрыть модальное окно
-  if (closeCountryModalBtn) {
-    closeCountryModalBtn.addEventListener("click", () => {
-      countryModal.style.display = "none";
-    });
-  }
-
-  // Отправка заявки на регистрацию страны
-  if (countryForm) {
-    countryForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const playerName = document.getElementById("country-player-name").value.trim();
-      const countryId = countrySelect.value;
-      if (!playerName || !countryId) {
-        countryFormStatus.textContent = "Заполните все поля";
-        return;
-      }
-      countryFormStatus.textContent = "Отправка заявки...";
-      fetch("/api/countries/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerName, countryId })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            countryFormStatus.textContent = "Заявка отправлена! Ожидайте одобрения администратора.";
-            setTimeout(() => { countryModal.style.display = "none"; }, 1000);
-          } else {
-            countryFormStatus.textContent = data.error || "Ошибка отправки заявки";
-          }
-        })
-        .catch(() => {
-          countryFormStatus.textContent = "Ошибка соединения с сервером";
-        });
-    });
-  }
-
-  updateCountryButtonState();
-
-  // При изменении пользователя обновлять кнопку
-  window.addEventListener('user-session-changed', updateCountryButtonState);
   // Инициализация window.user из localStorage
   let savedUser = null;
   try {
@@ -194,46 +97,147 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateUI(window.user);
 
-  // Настройки профиля: смена пароля
-  const changePassForm = document.getElementById("change-pass-form");
-  if (changePassForm) {
-    changePassForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await changePassword();
-    });
-  }
-  // Настройки профиля: загрузка аватарки
-  const avatarInput = document.getElementById("avatar-upload-input");
-  if (avatarInput) {
-    avatarInput.addEventListener("change", handleAvatarUpload);
+  // При изменении пользователя обновлять кнопку
+  window.addEventListener('user-session-changed', updateCountryButtonState);
+
+  // Навешивание обработчиков событий на кнопки (после каждого updateUI)
+  function attachButtonHandlers() {
+    // Кнопка выхода
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+      logoutBtn.onclick = async (e) => {
+        e.preventDefault();
+        await logout();
+      };
+    }
+    // Кнопка входа
+    const loginBtn = document.getElementById("login-btn");
+    if (loginBtn) {
+      loginBtn.onclick = async (e) => {
+        e.preventDefault();
+        await login();
+      };
+    }
+    // Кнопка регистрации
+    const registerBtn = document.getElementById("register-btn");
+    if (registerBtn) {
+      registerBtn.onclick = async (e) => {
+        e.preventDefault();
+        await registerHandler();
+      };
+    }
+    // Смена пароля
+    const changePassForm = document.getElementById("change-pass-form");
+    if (changePassForm) {
+      changePassForm.onsubmit = async (e) => {
+        e.preventDefault();
+        await changePassword();
+      };
+    }
+    // Загрузка аватарки
+    const avatarInput = document.getElementById("avatar-upload-input");
+    if (avatarInput) {
+      avatarInput.onchange = handleAvatarUpload;
+    }
+    // Кнопка регистрации страны
+    const registerCountryBtn = document.getElementById("register-country-btn");
+    const countryModal = document.getElementById("country-modal");
+    const countryFormStatus = document.getElementById("country-form-status");
+    const countrySelect = document.getElementById("country-select");
+    if (registerCountryBtn && countryModal && countryFormStatus && countrySelect) {
+      registerCountryBtn.onclick = () => {
+        countryModal.style.display = "flex";
+        countryFormStatus.textContent = "";
+        fetchTakenCountries().then(() => {
+          countrySelect.innerHTML = COUNTRIES.map(c =>
+            `<option value="${c.id}" ${takenCountries.includes(c.id) ? "disabled" : ""}>${c.name}${takenCountries.includes(c.id) ? " (занято)" : ""}</option>`
+          ).join("");
+        });
+      };
+    }
+    // Кнопка закрытия модального окна
+    const closeCountryModalBtn = document.getElementById("close-country-modal");
+    if (closeCountryModalBtn && countryModal) {
+      closeCountryModalBtn.onclick = () => {
+        countryModal.style.display = "none";
+      };
+    }
+    // Форма заявки на страну
+    const countryForm = document.getElementById("country-form");
+    if (countryForm && countryFormStatus && countrySelect && countryModal) {
+      countryForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const playerName = document.getElementById("country-player-name").value.trim();
+        const countryId = countrySelect.value;
+        if (!playerName || !countryId) {
+          countryFormStatus.textContent = "Заполните все поля";
+          return;
+        }
+        countryFormStatus.textContent = "Отправка заявки...";
+        fetch("/api/countries/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ playerName, countryId })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              countryFormStatus.textContent = "Заявка отправлена! Ожидайте одобрения администратора.";
+              setTimeout(() => { countryModal.style.display = "none"; }, 1000);
+            } else {
+              countryFormStatus.textContent = data.error || "Ошибка отправки заявки";
+            }
+          })
+          .catch(() => {
+            countryFormStatus.textContent = "Ошибка соединения с сервером";
+          });
+      };
+    }
+    // Обработка кнопок одобрить/отклонить заявки на страну (делегирование)
+    if (countryRequestsList) {
+      countryRequestsList.onclick = async (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+        const id = parseInt(btn.dataset.id);
+        const req = countryRequests.find(r => r.id === id);
+        if (!req) return;
+        if (btn.dataset.action === "approve") {
+          const res = await fetch(`/api/countries/approve`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+          });
+          if (res.ok) {
+            alert(`Заявка одобрена: ${req.player} теперь ${getCountryName(req.country)}`);
+            await updateCountryRequests();
+          } else {
+            alert("Ошибка одобрения заявки");
+          }
+        } else if (btn.dataset.action === "reject") {
+          const res = await fetch(`/api/countries/reject`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+          });
+          if (res.ok) {
+            alert(`Заявка отклонена: ${req.player}`);
+            await updateCountryRequests();
+          } else {
+            alert("Ошибка отклонения заявки");
+          }
+        }
+      };
+    }
   }
 
-  // Кнопка выхода
-  const logoutBtn = document.getElementById("logout-btn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await logout();
-    });
-  }
-
-  // Кнопка входа
-  const loginBtn = document.getElementById("login-btn");
-  if (loginBtn) {
-    loginBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await login();
-    });
-  }
-
-  // Кнопка регистрации
-  const registerBtn = document.getElementById("register-btn");
-  if (registerBtn) {
-    registerBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await registerHandler();
-    });
-  }
+  // Переопределяем updateUI, чтобы навешивать обработчики после каждого обновления UI
+  const origUpdateUI = window.updateUI || updateUI;
+  window.updateUI = function(user) {
+    origUpdateUI(user);
+    attachButtonHandlers();
+  };
+  // Первый раз навесить обработчики
+  attachButtonHandlers();
 });
 async function changePassword() {
   const oldPass = document.getElementById("old-password").value.trim();
