@@ -13,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Админ: заявки на регистрацию страны ---
   const countryRequestsList = document.getElementById("country-requests-list");
 
+  // Список занятых стран (запрашивается с сервера)
+  let takenCountries = {}; // id: taken_by
+
   // Заявки на регистрацию страны (запрашиваются с сервера)
   let countryRequests = [];
 
@@ -75,9 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- Механика стран ---
 // Список стран (можно вынести на сервер)
-
-  // Список занятых стран (запрашивается с сервера)
-  let takenCountries = {}; // id: taken_by
 
   async function fetchTakenCountries() {
     try {
