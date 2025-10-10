@@ -336,11 +336,17 @@ async def login(request: Request):
 
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        cur.execute("SELECT id, username, password_hash, role, country FROM users WHERE username = ?", (username,))
+        cur.execute("SELECT id, username, password_hash, role, country, avatar FROM users WHERE username = ?", (username,))
         row = cur.fetchone()
         if not row or not bcrypt.verify(password, row[2]):
             return JSONResponse({"error": "Неверный логин или пароль"}, status_code=401)
-        user = {"id": row[0], "username": row[1], "role": row[3], "country": row[4]}
+        user = {
+            "id": row[0],
+            "username": row[1],
+            "role": row[3],
+            "country": row[4],
+            "avatar": row[5] or ""
+        }
     return {"status": "ok", "user": user}
 
 @app.get("/api/users")
