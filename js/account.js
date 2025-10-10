@@ -157,6 +157,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+    // Кнопка закрытия модального окна страны
+    const closeCountryModalBtn = document.getElementById("close-country-modal");
+    if (closeCountryModalBtn) {
+      closeCountryModalBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const modal = document.getElementById("country-modal");
+        if (modal) {
+          modal.style.display = "none";
+        }
+      });
+    }
     // Форма смены пароля
     const changePassForm = document.getElementById("change-pass-form");
     if (changePassForm) {
