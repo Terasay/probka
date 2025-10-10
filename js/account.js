@@ -146,6 +146,17 @@ document.addEventListener("DOMContentLoaded", () => {
         await registerHandler();
       });
     }
+    // Кнопка регистрации страны
+    const registerCountryBtn = document.getElementById("register-country-btn");
+    if (registerCountryBtn) {
+      registerCountryBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const modal = document.getElementById("register-country-modal");
+        if (modal) {
+          modal.style.display = "block";
+        }
+      });
+    }
     // Форма смены пароля
     const changePassForm = document.getElementById("change-pass-form");
     if (changePassForm) {
