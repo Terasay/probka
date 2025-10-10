@@ -47,6 +47,57 @@ document.addEventListener("DOMContentLoaded", () => {
         <button data-action="reject" data-id="${req.id}">Отклонить</button>
       </div>`
     ).join("");
+    attachCountryRequestHandlers();
+  }
+
+  // Навешивание обработчиков на кнопки заявок
+  function attachCountryRequestHandlers() {
+    document.querySelectorAll('[data-action="approve"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/countries/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const data = await res.json();
+          if (data.success) {
+            await updateCountryRequests();
+          } else {
+            alert(data.error || 'Ошибка одобрения');
+          }
+        } catch (err) {
+          alert(err.message || 'Ошибка');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+    document.querySelectorAll('[data-action="reject"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/countries/reject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const data = await res.json();
+          if (data.success) {
+            await updateCountryRequests();
+          } else {
+            alert(data.error || 'Ошибка отклонения');
+          }
+        } catch (err) {
+          alert(err.message || 'Ошибка');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
   }
 
   function getCountryName(id) {
