@@ -185,6 +185,47 @@ document.addEventListener("DOMContentLoaded", () => {
   window.attachButtonHandlers = attachButtonHandlers;
   // Гарантированно навешиваем обработчики при загрузке страницы
   attachButtonHandlers();
+
+    // --- Обработчик формы регистрации страны ---
+    const countryForm = document.getElementById("country-form");
+    if (countryForm) {
+      countryForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const playerNameInput = document.getElementById("country-player-name");
+        const countrySelect = document.getElementById("country-select");
+        const statusDiv = document.getElementById("country-form-status");
+        if (!playerNameInput || !countrySelect) return;
+        const playerName = playerNameInput.value.trim();
+        const countryId = countrySelect.value;
+        if (!playerName || !countryId) {
+          statusDiv.textContent = "Заполните все поля";
+          statusDiv.style.color = "red";
+          return;
+        }
+        try {
+          const res = await fetch("/api/countries/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ playerName, countryId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            statusDiv.textContent = "Заявка отправлена!";
+            statusDiv.style.color = "green";
+            playerNameInput.value = "";
+            countrySelect.value = "";
+            // Обновить заявки и список стран
+            await updateCountryRequests();
+          } else {
+            statusDiv.textContent = data.error || "Ошибка отправки заявки";
+            statusDiv.style.color = "red";
+          }
+        } catch (err) {
+          statusDiv.textContent = err.message || "Ошибка отправки";
+          statusDiv.style.color = "red";
+        }
+      });
+    }
 }); // <-- закрываем document.addEventListener
 
 async function changePassword() {
