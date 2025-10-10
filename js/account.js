@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (registerCountryBtn) {
       registerCountryBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        const modal = document.getElementById("register-country-modal");
+        const modal = document.getElementById("country-modal");
         if (modal) {
           modal.style.display = "block";
         }
