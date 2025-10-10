@@ -540,7 +540,7 @@ function updateUI(user) {
     }
     // Отображение страны
     if (countryInfoEl) {
-      if (user.country && takenCountries[user.country] == user.id) {
+      if (user.country) {
         const countryObj = COUNTRIES.find(c => c.id === user.country);
         countryInfoEl.textContent = countryObj ? countryObj.name : user.country;
         countryInfoEl.style.display = "inline";
