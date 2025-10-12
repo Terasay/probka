@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const modal = document.getElementById("country-modal");
         if (modal) {
-          modal.style.display = "block";
+          modal.classList.add("active");
         }
       });
     }
@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const modal = document.getElementById("country-modal");
         if (modal) {
-          modal.style.display = "none";
+          modal.classList.remove("active");
         }
       });
     }
