@@ -9,9 +9,11 @@
   height: 100vh;
   background: rgba(20, 24, 40, 0.75); /* более плотный фон, универсальный для всех тем */
   z-index: 9999;
-  display: flex;
   align-items: center;
   justify-content: center;
+}
+.country-modal[style*="display: block"], .country-modal.active {
+  display: flex;
 }
 .country-modal[style*="display: block"], .country-modal.active {
   display: flex;
