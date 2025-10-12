@@ -109,8 +109,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const select = document.getElementById("country-select");
     if (!select) return;
     select.innerHTML = "";
+    // Получаем список стран, на которые нет владельца и нет активных заявок
+    // countryRequests - заявки, takenCountries - занятые
+    const requestedCountries = (window.countryRequests || []).map(r => r.country);
     COUNTRIES.forEach(c => {
-      if (!takenCountries[c.id]) {
+      if (!takenCountries[c.id] && !requestedCountries.includes(c.id)) {
         const option = document.createElement("option");
         option.value = c.id;
         option.textContent = c.name;

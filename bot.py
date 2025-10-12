@@ -41,6 +41,7 @@ async def reset_user_country(user_id: int):
         conn.commit()
     return {"status": "ok"}
 # --- API: подать заявку на регистрацию страны ---
+
 @app.post("/api/countries/register")
 async def register_country(request: Request):
     data = await request.json()
@@ -55,7 +56,11 @@ async def register_country(request: Request):
         row = cur.fetchone()
         if row and row[0]:
             return {"success": False, "error": "Страна уже занята"}
-        # Проверить, есть ли уже заявка от этого игрока на эту страну в статусе pending
+        # Проверить, есть ли уже активная заявка от этого игрока на любую страну
+        cur.execute("SELECT id FROM country_requests WHERE player_name = ? AND status = 'pending'", (player_name,))
+        if cur.fetchone():
+            return {"success": False, "error": "У вас уже есть активная заявка на страну. Дождитесь решения или отмените её."}
+        # Проверить, есть ли уже заявка от этого игрока на эту страну в статусе pending (дублирующая проверка, можно убрать)
         cur.execute("SELECT id FROM country_requests WHERE player_name = ? AND country_id = ? AND status = 'pending'", (player_name, country_id))
         if cur.fetchone():
             return {"success": False, "error": "У вас уже есть заявка на эту страну"}
