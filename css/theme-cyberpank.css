@@ -13,8 +13,13 @@ body.theme-cyberpank .auth-input:focus {
   color: #13ded8;
 }
 body.theme-cyberpank .country-modal {
-  background: rgba(19, 222, 216, 0.18);
-  /* Можно сделать чуть плотнее, например 0.35, если нужно меньше прозрачности */
+  background: rgba(19, 222, 216, 0.18); /* затемнение фона, можно чуть темнее */
+}
+body.theme-cyberpank .country-modal-content {
+  background: #181828;
+  /* или background: var(--card); если var(--card) плотный, но лучше явно задать */
+  box-shadow: 0 8px 32px #13ded8;
+  color: #ff00ff;
 }
 :root {
   --bg-top: #0a0a0f;

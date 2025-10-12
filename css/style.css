@@ -20,7 +20,7 @@
   border-radius: 18px;
   max-width: 400px;
   width: 90vw;
-  margin: auto;
+  margin: 0;
   box-shadow: 0 8px 32px #0006;
   position: relative;
   display: flex;
