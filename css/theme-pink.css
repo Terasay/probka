@@ -1,3 +1,8 @@
+body.theme-pink .country-modal-content {
+  background: #f8ddec;
+  color: #b64a85;
+  box-shadow: 0 8px 32px #f78ac822;
+}
 body.theme-pink .auth-input {
   background: #f8ddec;
   color: #b64a85;

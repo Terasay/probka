@@ -1,3 +1,8 @@
+body.theme-deep-dark .country-modal-content {
+  background: #111111;
+  color: #e5e5e5;
+  box-shadow: 0 8px 32px #3b82f633;
+}
 body.theme-deep-dark .auth-input {
   background: #111111;
   color: #e5e5e5;
