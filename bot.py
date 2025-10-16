@@ -1,19 +1,29 @@
-from fastapi import Depends
-import sqlite3
 import os
+import sqlite3
+import shutil
+import logging
 from datetime import datetime, timezone
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
 import uvicorn
-import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 app = FastAPI()
+
+# --- API: получить список всех стран и их статусов ---
+@app.get("/api/countries/list")
+async def get_countries_list():
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, name, taken_by FROM countries")
+        countries = [
+            {"id": r[0], "name": r[1], "taken_by": r[2]} for r in cur.fetchall()
+        ]
+    return countries
 
 # --- API: получить список занятых стран ---
 @app.get("/api/countries/taken")
