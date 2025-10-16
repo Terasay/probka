@@ -22,8 +22,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/countries/requests");
       if (res.ok) {
         countryRequests = await res.json();
+        window.countryRequests = countryRequests;
+      } else {
+        countryRequests = [];
+        window.countryRequests = [];
       }
-    } catch (e) { countryRequests = []; }
+    } catch (e) {
+      countryRequests = [];
+      window.countryRequests = [];
+    }
   }
 
   function renderCountryRequests() {
