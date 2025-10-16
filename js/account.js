@@ -13,12 +13,8 @@ const COUNTRIES = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-  // --- Админ: заявки на регистрацию страны ---
   const countryRequestsList = document.getElementById("country-requests-list");
 
-  // ...existing code...
-
-  // Заявки на регистрацию страны (запрашиваются с сервера)
   let countryRequests = [];
 
   async function fetchCountryRequests() {
@@ -50,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
     attachCountryRequestHandlers();
   }
 
-  // Навешивание обработчиков на кнопки заявок
   function attachCountryRequestHandlers() {
     document.querySelectorAll('[data-action="approve"]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -109,15 +104,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const select = document.getElementById("country-select");
     if (!select) return;
     select.innerHTML = "";
-    // Получаем список стран, на которые нет владельца и нет активных заявок
-    // countryRequests - заявки, takenCountries - занятые
     const requestedCountries = (window.countryRequests || []).map(r => r.country);
-    COUNTRIES.forEach(c => {
-      // Страна НЕ отображается, если она занята (есть taken_by)
+    const countriesList = window.countriesList || COUNTRIES;
+    countriesList.forEach(c => {
       if (takenCountries && takenCountries[c.id]) return;
-      // Страна НЕ отображается, если на неё уже есть активная заявка
       if (requestedCountries.includes(c.id)) return;
-      // Если страна свободна и нет заявки, добавляем в список
       const option = document.createElement("option");
       option.value = c.id;
       option.textContent = c.name;
@@ -125,38 +116,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Получить заявки и отрендерить при загрузке и при изменении пользователя
+  async function fetchCountriesList() {
+    try {
+      const res = await fetch("/api/countries/list");
+      if (res.ok) {
+        const data = await res.json();
+        // data: [{id, name, taken_by}]
+        window.countriesList = Array.isArray(data) ? data.map(c => ({ id: c.id, name: c.name })) : COUNTRIES;
+      } else {
+        window.countriesList = COUNTRIES;
+      }
+    } catch (e) {
+      window.countriesList = COUNTRIES;
+    }
+  }
+
   async function updateCountryRequests() {
     await fetchCountryRequests();
+    await fetchCountriesList();
     await fetchTakenCountries();
     renderCountryRequests();
     populateCountrySelect();
   }
   updateCountryRequests();
   window.addEventListener('user-session-changed', updateCountryRequests);
-
-// --- Механика стран ---
-// Список стран (можно вынести на сервер)
-
-  async function fetchTakenCountries() {
-    try {
-      const res = await fetch("/api/countries/taken");
-      if (res.ok) {
-        const data = await res.json();
-        // data — массив пар [id, taken_by], например: [["tdv", 4321], ["hom", 1234]]
-        takenCountries = {};
-        if (Array.isArray(data)) {
-          data.forEach(([id, taken_by]) => {
-            if (id && taken_by) takenCountries[id] = taken_by;
-          });
-        }
-        // Для отладки:
-        // console.log("takenCountries:", takenCountries);
-      }
-    } catch (e) { takenCountries = {}; }
-  }
-
-  // Показывать кнопку регистрации страны только если пользователь залогинен и не имеет страны
   function updateCountryButtonState() {
     const registerCountryBtn = document.getElementById("register-country-btn");
     if (!registerCountryBtn) return;
@@ -167,7 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Инициализация window.user из localStorage
   let savedUser = null;
   try {
     savedUser = localStorage.getItem("user");
@@ -182,12 +164,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateUI(window.user);
 
-  // При изменении пользователя обновлять кнопку
   window.addEventListener('user-session-changed', updateCountryButtonState);
 
-  // Навешивание обработчиков событий на кнопки (после каждого updateUI)
   function attachButtonHandlers() {
-    // Кнопка выхода
     const logoutBtn = document.getElementById("logout-btn");
     if (logoutBtn) {
       logoutBtn.addEventListener("click", async (e) => {
@@ -195,7 +174,6 @@ document.addEventListener("DOMContentLoaded", () => {
         await logout();
       });
     }
-    // Кнопка входа
     const loginBtn = document.getElementById("login-btn");
     if (loginBtn) {
       loginBtn.addEventListener("click", async (e) => {
@@ -203,7 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
         await login();
       });
     }
-    // Кнопка регистрации
     const registerBtn = document.getElementById("register-btn");
     if (registerBtn) {
       registerBtn.addEventListener("click", async (e) => {
@@ -211,7 +188,6 @@ document.addEventListener("DOMContentLoaded", () => {
         await registerHandler();
       });
     }
-    // Кнопка регистрации страны
     const registerCountryBtn = document.getElementById("register-country-btn");
     if (registerCountryBtn) {
       registerCountryBtn.addEventListener("click", (e) => {
@@ -222,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
-    // Кнопка закрытия модального окна страны
     const closeCountryModalBtn = document.getElementById("close-country-modal");
     if (closeCountryModalBtn) {
       closeCountryModalBtn.addEventListener("click", (e) => {
@@ -233,7 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
-    // Форма смены пароля
     const changePassForm = document.getElementById("change-pass-form");
     if (changePassForm) {
       changePassForm.addEventListener("submit", async (e) => {
@@ -241,17 +215,14 @@ document.addEventListener("DOMContentLoaded", () => {
         await changePassword();
       });
     }
-    // Загрузка аватарки
     const avatarInput = document.getElementById("avatar-upload-input");
     if (avatarInput) {
       avatarInput.addEventListener("change", handleAvatarUpload);
     }
   }
   window.attachButtonHandlers = attachButtonHandlers;
-  // Гарантированно навешиваем обработчики при загрузке страницы
   attachButtonHandlers();
 
-    // --- Обработчик формы регистрации страны ---
     const countryForm = document.getElementById("country-form");
     if (countryForm) {
       countryForm.addEventListener("submit", async (e) => {
@@ -291,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
-}); // <-- закрываем document.addEventListener
+});
 
 async function changePassword() {
   const oldPass = document.getElementById("old-password").value.trim();
