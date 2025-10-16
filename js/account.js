@@ -1,7 +1,5 @@
-// js/account.js
 const API_URL = "";
 
-// Список занятых стран (глобально)
 let takenCountries = {}; // id: taken_by
 
 const COUNTRIES = [
@@ -13,7 +11,135 @@ const COUNTRIES = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Получить список занятых стран и обновить takenCountries
+  // --- Панель своей заявки на страну ---
+  async function fetchMyCountryRequest() {
+    if (!window.user) return null;
+    const userId = window.user.id;
+    try {
+      const res = await fetch(`/api/countries/my_request?user_id=${userId}`);
+      const data = await res.json();
+      return data.request || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function renderMyCountryRequestPanel(req) {
+    const panel = document.getElementById("my-country-request-panel");
+    const content = document.getElementById("my-country-request-content");
+    if (!panel || !content) return;
+    if (!window.user || window.user.role === "admin") {
+      panel.style.display = "none";
+      return;
+    }
+    if (!req) {
+      panel.style.display = "none";
+      content.innerHTML = "";
+      return;
+    }
+    panel.style.display = "block";
+    let countryName = getCountryName(req.country_id);
+    let created = req.created_at ? new Date(req.created_at).toLocaleString() : "";
+    content.innerHTML = `
+      <div style="margin-bottom:8px;">Страна: <b>${escapeHtml(countryName)}</b></div>
+      <div style="margin-bottom:8px;">Статус: <b>${escapeHtml(req.status)}</b></div>
+      <div style="margin-bottom:8px;">Создана: <b>${escapeHtml(created)}</b></div>
+      ${req.status === 'pending' ? `
+        <div style="margin-bottom:8px;">
+          <label>Изменить страну: </label>
+          <select id="edit-country-select"></select>
+          <button id="edit-country-btn">Изменить</button>
+        </div>
+        <button id="delete-country-request-btn" style="color:#b00;">Удалить заявку</button>
+      ` : ''}
+    `;
+    if (req.status === 'pending') {
+      // Заполнить select странами
+      const select = document.getElementById("edit-country-select");
+      if (select) {
+        const countriesList = window.countriesList || COUNTRIES;
+        select.innerHTML = "";
+        countriesList.forEach(c => {
+          // Страны, которые не заняты и не имеют других pending заявок
+          if (c.taken_by !== null && c.taken_by !== undefined && c.taken_by !== '' && c.taken_by !== 0) return;
+          // Исключить текущую страну заявки
+          if (String(c.id) === String(req.country_id)) return;
+          // Исключить страны с другими активными заявками
+          const hasActiveRequest = (window.countryRequests || []).some(r => String(r.country) === String(c.id));
+          if (hasActiveRequest) return;
+          const option = document.createElement("option");
+          option.value = c.id;
+          option.textContent = c.name;
+          select.appendChild(option);
+        });
+      }
+      // Кнопка изменить
+      const editBtn = document.getElementById("edit-country-btn");
+      if (editBtn && select) {
+        editBtn.onclick = async () => {
+          const newCountryId = select.value;
+          if (!newCountryId) return alert("Выберите страну");
+          editBtn.disabled = true;
+          try {
+            const res = await fetch("/api/countries/edit_request", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: req.id, country_id: newCountryId, user_id: window.user.id })
+            });
+            const data = await res.json();
+            if (data.success) {
+              alert("Заявка обновлена");
+              await updateMyCountryRequestPanel();
+              await updateCountryRequests();
+            } else {
+              alert(data.error || "Ошибка обновления");
+            }
+          } catch (e) {
+            alert(e.message || "Ошибка");
+          } finally {
+            editBtn.disabled = false;
+          }
+        };
+      }
+      // Кнопка удалить
+      const delBtn = document.getElementById("delete-country-request-btn");
+      if (delBtn) {
+        delBtn.onclick = async () => {
+          if (!confirm("Удалить заявку?")) return;
+          delBtn.disabled = true;
+          try {
+            const res = await fetch("/api/countries/delete_request", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: req.id, user_id: window.user.id })
+            });
+            const data = await res.json();
+            if (data.success) {
+              alert("Заявка удалена");
+              await updateMyCountryRequestPanel();
+              await updateCountryRequests();
+            } else {
+              alert(data.error || "Ошибка удаления");
+            }
+          } catch (e) {
+            alert(e.message || "Ошибка");
+          } finally {
+            delBtn.disabled = false;
+          }
+        };
+      }
+    }
+  }
+
+  async function updateMyCountryRequestPanel() {
+    const req = await fetchMyCountryRequest();
+    renderMyCountryRequestPanel(req);
+  }
+
+  window.addEventListener('user-session-changed', updateMyCountryRequestPanel);
+  window.addEventListener('country-requests-updated', updateMyCountryRequestPanel);
+  // После логина/регистрации/отправки заявки обновлять панель
+  setTimeout(updateMyCountryRequestPanel, 500);
   async function fetchTakenCountries() {
     try {
       const res = await fetch("/api/countries/taken");
@@ -166,12 +292,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function updateCountryRequests() {
-  await fetchCountryRequests();
-  await fetchCountriesList();
-  await fetchTakenCountries();
-  renderCountryRequests();
-  await fetchTakenCountries();
-  populateCountrySelect();
+    await fetchCountryRequests();
+    await fetchCountriesList();
+    await fetchTakenCountries();
+    renderCountryRequests();
+    await fetchTakenCountries();
+    populateCountrySelect();
+    window.dispatchEvent(new Event('country-requests-updated'));
   }
   updateCountryRequests();
   window.addEventListener('user-session-changed', updateCountryRequests);
@@ -197,6 +324,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.user = null;
     localStorage.removeItem("user");
   }
+
+      const myCountryPanel = document.getElementById("my-country-request-panel");
   updateUI(window.user);
 
   window.addEventListener('user-session-changed', updateCountryButtonState);
@@ -221,6 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
       registerBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         await registerHandler();
+        if (myCountryPanel) myCountryPanel.style.display = "";
       });
     }
     const registerCountryBtn = document.getElementById("register-country-btn");
@@ -230,6 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const modal = document.getElementById("country-modal");
         if (modal) {
           modal.classList.add("active");
+        if (myCountryPanel) myCountryPanel.style.display = "none";
         }
       });
     }
@@ -344,7 +475,6 @@ async function handleAvatarUpload(e) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || "Ошибка загрузки");
-    // Обновить аватарку в UI и в user
     if (window.user) {
       window.user.avatar = data.avatar;
       localStorage.setItem("user", JSON.stringify(window.user));
@@ -443,7 +573,6 @@ async function logout() {
     } else {
       localStorage.removeItem("user");
       window.user = null;
-      // Диспатчить событие для синхронизации между вкладками
       window.dispatchEvent(new Event('user-session-changed'));
     }
     try {
@@ -537,7 +666,6 @@ async function loadUsers() {
   }
 }
 
-// ===== UI обновление =====
 function updateUI(user) {
   const authForms = document.getElementById("auth-forms");
   const accountInfo = document.getElementById("account-info");
@@ -566,7 +694,6 @@ function updateUI(user) {
         avatarImg.style.display = "inline-block";
       }
     }
-    // Отображение страны
     if (countryInfoEl) {
       if (user.country) {
         const countryObj = COUNTRIES.find(c => c.id === user.country);
@@ -577,7 +704,6 @@ function updateUI(user) {
         countryInfoEl.style.display = "inline";
       }
     }
-    // Панель админа показывать всегда для admin
     if (user.role === "admin") {
       if (adminPanel) {
         adminPanel.style.display = "block";
@@ -586,7 +712,6 @@ function updateUI(user) {
     } else {
       if (adminPanel) adminPanel.style.display = "none";
     }
-    // Кнопку регистрации страны показывать только если нет страны и не admin
     if (registerCountryBtn) {
       if (!user.country && user.role !== "admin") {
         registerCountryBtn.style.display = "block";
@@ -604,7 +729,6 @@ function updateUI(user) {
     if (registerCountryBtn) registerCountryBtn.style.display = "none";
     if (countryInfoEl) countryInfoEl.style.display = "none";
   }
-  // Всегда навешивать обработчики после обновления DOM
   if (typeof window.attachButtonHandlers === "function") {
     window.attachButtonHandlers();
   }

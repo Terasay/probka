@@ -91,7 +91,6 @@ async def get_country_requests():
         ]
     return requests
 
-# --- API: одобрить заявку (только для админа) ---
 @app.post("/api/countries/approve")
 async def approve_country(request: Request):
     data = await request.json()
@@ -115,19 +114,15 @@ async def approve_country(request: Request):
         taken_row = cur.fetchone()
         if taken_row and taken_row[0]:
             return JSONResponse({"error": "Страна уже занята"}, status_code=400)
-        # Перед выдачей страны новому пользователю, сбросить её у всех других пользователей
         cur.execute("UPDATE users SET country = NULL WHERE country = ? AND id != ?", (country_id, user_id))
         # Пометить страну как занятую
         cur.execute("UPDATE countries SET taken_by = ? WHERE id = ?", (user_id, country_id))
-        # Записать страну в профиль пользователя
         if user_id:
             cur.execute("UPDATE users SET country = ? WHERE id = ?", (country_id, user_id))
-        # Обновить заявку
         cur.execute("UPDATE country_requests SET status = 'approved' WHERE id = ?", (req_id,))
         conn.commit()
     return {"success": True}
 
-# --- API: отклонить заявку (только для админа) ---
 @app.post("/api/countries/reject")
 async def reject_country(request: Request):
     data = await request.json()
@@ -138,6 +133,87 @@ async def reject_country(request: Request):
         cur = conn.cursor()
         # Обновить заявку
         cur.execute("UPDATE country_requests SET status = 'rejected' WHERE id = ?", (req_id,))
+        conn.commit()
+    return {"success": True}
+
+@app.get("/api/countries/my_request")
+async def get_my_country_request(user_id: int = None, username: str = None):
+    if not user_id and not username:
+        return JSONResponse({"error": "user_id или username обязателен"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        if user_id:
+            cur.execute("SELECT player_name FROM users WHERE id = ?", (user_id,))
+            row = cur.fetchone()
+            if not row:
+                return {"request": None}
+            player_name = row[0]
+        else:
+            player_name = username
+        cur.execute("SELECT id, country_id, status, created_at FROM country_requests WHERE player_name = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1", (player_name,))
+        req = cur.fetchone()
+        if not req:
+            return {"request": None}
+        return {"request": {"id": req[0], "country_id": req[1], "status": req[2], "created_at": req[3]}}
+
+@app.post("/api/countries/edit_request")
+async def edit_country_request(request: Request):
+    data = await request.json()
+    req_id = data.get("id")
+    new_country_id = data.get("country_id")
+    user_id = data.get("user_id")
+    if not req_id or not new_country_id or not user_id:
+        return JSONResponse({"error": "id, country_id, user_id обязательны"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT player_name, status FROM country_requests WHERE id = ?", (req_id,))
+        row = cur.fetchone()
+        if not row:
+            return JSONResponse({"error": "Заявка не найдена"}, status_code=404)
+        player_name, status = row
+        if status != 'pending':
+            return JSONResponse({"error": "Заявка уже рассмотрена"}, status_code=400)
+        cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        user_row = cur.fetchone()
+        if not user_row or user_row[0] != player_name:
+            return JSONResponse({"error": "Нет доступа"}, status_code=403)
+        cur.execute("SELECT taken_by FROM countries WHERE id = ?", (new_country_id,))
+        c_row = cur.fetchone()
+        if c_row and c_row[0]:
+            return JSONResponse({"error": "Страна уже занята"}, status_code=400)
+        cur.execute("SELECT id FROM country_requests WHERE country_id = ? AND status = 'pending' AND id != ?", (new_country_id, req_id))
+        if cur.fetchone():
+            return JSONResponse({"error": "На эту страну уже есть заявка"}, status_code=400)
+        # Обновить страну в заявке
+        cur.execute("UPDATE country_requests SET country_id = ? WHERE id = ?", (new_country_id, req_id))
+        conn.commit()
+    return {"success": True}
+
+# --- API: удалить свою заявку (только если pending) ---
+@app.post("/api/countries/delete_request")
+async def delete_country_request(request: Request):
+    data = await request.json()
+    req_id = data.get("id")
+    user_id = data.get("user_id")
+    if not req_id or not user_id:
+        return JSONResponse({"error": "id, user_id обязательны"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Получить заявку и проверить владельца
+        cur.execute("SELECT player_name, status FROM country_requests WHERE id = ?", (req_id,))
+        row = cur.fetchone()
+        if not row:
+            return JSONResponse({"error": "Заявка не найдена"}, status_code=404)
+        player_name, status = row
+        if status != 'pending':
+            return JSONResponse({"error": "Заявка уже рассмотрена"}, status_code=400)
+        # Проверить, что пользователь владелец заявки
+        cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        user_row = cur.fetchone()
+        if not user_row or user_row[0] != player_name:
+            return JSONResponse({"error": "Нет доступа"}, status_code=403)
+        # Удалить заявку
+        cur.execute("DELETE FROM country_requests WHERE id = ?", (req_id,))
         conn.commit()
     return {"success": True}
 
