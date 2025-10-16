@@ -24,11 +24,14 @@ document.addEventListener("DOMContentLoaded", () => {
         data.forEach(([id, taken_by]) => {
           if (taken_by) takenCountries[id] = taken_by;
         });
+        console.log("[takenCountries]", takenCountries);
       } else {
         takenCountries = {};
+        console.log("[takenCountries] пусто");
       }
     } catch (e) {
       takenCountries = {};
+      console.log("[takenCountries] ошибка", e);
     }
   }
   const countryRequestsList = document.getElementById("country-requests-list");
