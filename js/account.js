@@ -143,7 +143,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/countries/taken");
       if (res.ok) {
         const data = await res.json();
-        takenCountries = Object.fromEntries(data);
+        // data — массив пар [id, taken_by], например: [["tdv", 4321], ["hom", 1234]]
+        takenCountries = {};
+        if (Array.isArray(data)) {
+          data.forEach(([id, taken_by]) => {
+            if (id && taken_by) takenCountries[id] = taken_by;
+          });
+        }
+        // Для отладки:
+        // console.log("takenCountries:", takenCountries);
       }
     } catch (e) { takenCountries = {}; }
   }
