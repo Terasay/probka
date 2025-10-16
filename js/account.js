@@ -13,6 +13,24 @@ const COUNTRIES = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Получить список занятых стран и обновить takenCountries
+  async function fetchTakenCountries() {
+    try {
+      const res = await fetch("/api/countries/taken");
+      if (res.ok) {
+        const data = await res.json();
+        // data: [[id, taken_by], ...]
+        takenCountries = {};
+        data.forEach(([id, taken_by]) => {
+          if (taken_by) takenCountries[id] = taken_by;
+        });
+      } else {
+        takenCountries = {};
+      }
+    } catch (e) {
+      takenCountries = {};
+    }
+  }
   const countryRequestsList = document.getElementById("country-requests-list");
 
   let countryRequests = [];
@@ -139,11 +157,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function updateCountryRequests() {
-    await fetchCountryRequests();
-    await fetchCountriesList();
-    await fetchTakenCountries();
-    renderCountryRequests();
-    populateCountrySelect();
+  await fetchCountryRequests();
+  await fetchCountriesList();
+  await fetchTakenCountries();
+  renderCountryRequests();
+  await fetchTakenCountries();
+  populateCountrySelect();
   }
   updateCountryRequests();
   window.addEventListener('user-session-changed', updateCountryRequests);
