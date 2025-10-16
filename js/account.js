@@ -113,12 +113,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // countryRequests - заявки, takenCountries - занятые
     const requestedCountries = (window.countryRequests || []).map(r => r.country);
     COUNTRIES.forEach(c => {
-      if (!takenCountries[c.id] && !requestedCountries.includes(c.id)) {
-        const option = document.createElement("option");
-        option.value = c.id;
-        option.textContent = c.name;
-        select.appendChild(option);
-      }
+      // Страна НЕ отображается, если она занята (есть taken_by)
+      if (takenCountries && takenCountries[c.id]) return;
+      // Страна НЕ отображается, если на неё уже есть активная заявка
+      if (requestedCountries.includes(c.id)) return;
+      // Если страна свободна и нет заявки, добавляем в список
+      const option = document.createElement("option");
+      option.value = c.id;
+      option.textContent = c.name;
+      select.appendChild(option);
     });
   }
 
