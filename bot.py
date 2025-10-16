@@ -149,6 +149,7 @@ app.add_middleware(
 def init_db():
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
+        # ...создание таблиц...
         cur.execute("""CREATE TABLE IF NOT EXISTS news (
             id TEXT PRIMARY KEY,
             author TEXT,
@@ -176,22 +177,19 @@ def init_db():
             date TEXT,
             attachments TEXT
         )""")
-        # Добавляем avatar в users, если его нет
         cur.execute("""CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
             password_hash TEXT,
             role TEXT DEFAULT 'user',
             created_at TEXT,
-            avatar TEXT DEFAULT ''
-            , country TEXT DEFAULT NULL
+            avatar TEXT DEFAULT '',
+            country TEXT DEFAULT NULL
         )""")
-        # Миграция: если столбца avatar нет, добавить
         try:
             cur.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
         except Exception:
             pass
-        # Миграция: если столбца country нет, добавить
         try:
             cur.execute("ALTER TABLE users ADD COLUMN country TEXT DEFAULT NULL")
         except Exception:
@@ -224,6 +222,19 @@ def init_db():
             name TEXT,
             taken_by INTEGER DEFAULT NULL -- user_id
         )""")
+        # --- Автоматическая инициализация стран ---
+        default_countries = [
+            ("hom", "Хомасия"),
+            ("bgg", "Бурград"),
+            ("myr", "Миртания"),
+            ("tdv", "Трудовия"),
+            ("ktv", "Крастовия")
+        ]
+        cur.execute("SELECT COUNT(*) FROM countries")
+        count = cur.fetchone()[0]
+        if count == 0:
+            cur.executemany("INSERT INTO countries (id, name) VALUES (?, ?)", default_countries)
+            conn.commit()
         # --- Таблица заявок на регистрацию страны ---
         cur.execute("""CREATE TABLE IF NOT EXISTS country_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
