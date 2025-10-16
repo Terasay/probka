@@ -491,16 +491,20 @@ async function loadUsers() {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         if (!confirm(`Удалить пользователя #${id}?`)) return;
+        btn.disabled = true;
         try {
           const resp = await apiFetch(`/api/users/${id}`, { method: "DELETE" });
           if (resp && resp.status === "ok") {
+            alert("Пользователь удалён");
             await loadUsers();
           } else {
-            throw new Error("Не удалось удалить пользователя");
+            alert(resp.error || "Не удалось удалить пользователя");
           }
         } catch (err) {
           alert(err.message);
           console.error("[deleteUser]", err);
+        } finally {
+          btn.disabled = false;
         }
       });
     });
@@ -509,16 +513,20 @@ async function loadUsers() {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         if (!confirm(`Сбросить страну у пользователя #${id}?`)) return;
+        btn.disabled = true;
         try {
           const resp = await apiFetch(`/api/users/${id}/reset_country`, { method: "POST" });
           if (resp && resp.status === "ok") {
+            alert("Страна сброшена");
             await loadUsers();
           } else {
-            throw new Error("Не удалось сбросить страну");
+            alert(resp.error || "Не удалось сбросить страну");
           }
         } catch (err) {
           alert(err.message);
           console.error("[resetCountry]", err);
+        } finally {
+          btn.disabled = false;
         }
       });
     });

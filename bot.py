@@ -411,7 +411,6 @@ def get_news():
 @app.post("/api/news/create")
 async def create_news(request: Request):
     data = await request.json()
-    # Проверка: только админ может публиковать новости
     author_id = data.get("author_id")
     if not author_id:
         return JSONResponse({"error": "Нет ID пользователя"}, status_code=403)
@@ -490,7 +489,7 @@ def get_news_likes(news_id: str):
 async def like_news(news_id: str, request: Request):
     data = await request.json()
     user_id = data.get("user_id", "0")
-    value = data.get("value", 1)  # 1 = like, -1 = dislike
+    value = data.get("value", 1)
     like_id = f"{news_id}_{user_id}"
     # Обновить или вставить
     with sqlite3.connect("site.db") as conn:
