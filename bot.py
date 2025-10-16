@@ -57,6 +57,14 @@ async def register_country(request: Request):
     data = await request.json()
     player_name = data.get("playerName", "").strip()
     country_id = data.get("countryId", "").strip()
+    user_id = data.get("userId") or data.get("user_id")
+    if user_id:
+        with sqlite3.connect("site.db") as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+            row = cur.fetchone()
+            if row:
+                player_name = row[0]
     if not player_name or not country_id:
         return {"success": False, "error": "Заполните все поля"}
     with sqlite3.connect("site.db") as conn:
@@ -143,14 +151,14 @@ async def get_my_country_request(user_id: int = None, username: str = None):
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
         if user_id:
-            cur.execute("SELECT player_name FROM users WHERE id = ?", (user_id,))
+            cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
             row = cur.fetchone()
             if not row:
                 return {"request": None}
-            player_name = row[0]
-        else:
-            player_name = username
-        cur.execute("SELECT id, country_id, status, created_at FROM country_requests WHERE player_name = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1", (player_name,))
+            username = row[0]
+        if not username:
+            return {"request": None}
+        cur.execute("SELECT id, country_id, status, created_at FROM country_requests WHERE player_name = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1", (username,))
         req = cur.fetchone()
         if not req:
             return {"request": None}
