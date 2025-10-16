@@ -153,7 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok) {
         const data = await res.json();
         // data: [{id, name, taken_by}]
-        window.countriesList = Array.isArray(data) ? data.map(c => ({ id: c.id, name: c.name })) : COUNTRIES;
+        window.countriesList = Array.isArray(data)
+          ? data.map(c => ({ id: c.id, name: c.name, taken_by: c.taken_by }))
+          : COUNTRIES;
       } else {
         window.countriesList = COUNTRIES;
       }
