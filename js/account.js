@@ -132,13 +132,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const select = document.getElementById("country-select");
     if (!select) return;
     select.innerHTML = "";
-    const requestedCountries = (window.countryRequests || []).map(r => r.country);
+    const requestedCountries = (window.countryRequests || []).map(r => String(r.country));
     const countriesList = window.countriesList || COUNTRIES;
+    console.log("[populateCountrySelect] takenCountries:", takenCountries);
+    console.log("[populateCountrySelect] countriesList:", countriesList);
     countriesList.forEach(c => {
-      if (takenCountries && takenCountries[c.id]) return;
-      if (requestedCountries.includes(c.id)) return;
+      const countryId = String(c.id);
+      if (takenCountries && takenCountries[countryId]) return;
+      if (requestedCountries.includes(countryId)) return;
       const option = document.createElement("option");
-      option.value = c.id;
+      option.value = countryId;
       option.textContent = c.name;
       select.appendChild(option);
     });
