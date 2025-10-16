@@ -132,14 +132,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const select = document.getElementById("country-select");
     if (!select) return;
     select.innerHTML = "";
-    const requestedCountries = (window.countryRequests || []).map(r => String(r.country));
     const countriesList = window.countriesList || COUNTRIES;
     console.log("[populateCountrySelect] countriesList:", countriesList);
     countriesList.forEach(c => {
       const countryId = String(c.id);
       // Если страна занята (taken_by не null/undefined/0/''), пропускаем
-      if (c.taken_by) return;
-      if (requestedCountries.includes(countryId)) return;
+      if (c.taken_by !== null && c.taken_by !== undefined && c.taken_by !== '' && c.taken_by !== 0) return;
+      // Если есть активная заявка на страну, тоже пропускаем
+      const hasActiveRequest = (window.countryRequests || []).some(r => String(r.country) === countryId);
+      if (hasActiveRequest) return;
       const option = document.createElement("option");
       option.value = countryId;
       option.textContent = c.name;
