@@ -134,11 +134,11 @@ document.addEventListener("DOMContentLoaded", () => {
     select.innerHTML = "";
     const requestedCountries = (window.countryRequests || []).map(r => String(r.country));
     const countriesList = window.countriesList || COUNTRIES;
-    console.log("[populateCountrySelect] takenCountries:", takenCountries);
     console.log("[populateCountrySelect] countriesList:", countriesList);
     countriesList.forEach(c => {
       const countryId = String(c.id);
-      if (takenCountries && takenCountries[countryId]) return;
+      // Если страна занята (taken_by не null/undefined/0/''), пропускаем
+      if (c.taken_by) return;
       if (requestedCountries.includes(countryId)) return;
       const option = document.createElement("option");
       option.value = countryId;
