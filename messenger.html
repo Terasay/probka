@@ -11,10 +11,16 @@
     <div id="messenger-app">
         <div class="tg-container">
             <aside class="tg-sidebar">
-                <div class="tg-sidebar-header">Чаты</div>
+                <div class="tg-sidebar-header">
+                    Чаты
+                    <button id="new-chat-btn" title="Новый чат" style="float:right;background:none;border:none;color:#229ed9;font-size:1.3em;cursor:pointer;padding:0 8px;">+</button>
+                </div>
                 <ul class="tg-chat-list" id="chat-list">
                     <!-- Список чатов -->
                 </ul>
+                <div class="tg-account-bar" id="account-bar">
+                    <!-- Плашка аккаунта -->
+                </div>
             </aside>
             <main class="tg-main">
                 <header class="tg-header">
@@ -32,6 +38,7 @@
             </main>
         </div>
     </div>
+    <script src="js/user-session.js"></script>
     <script src="js/messenger.js"></script>
 </body>
 </html>

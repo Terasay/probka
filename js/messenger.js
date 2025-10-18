@@ -9,6 +9,20 @@ const messagesBox = document.getElementById('messages');
 const chatTitle = document.getElementById('chat-title');
 const messageForm = document.getElementById('message-form');
 const messageInput = document.getElementById('message-input');
+const accountBar = document.getElementById('account-bar');
+const newChatBtn = document.getElementById('new-chat-btn');
+function renderAccountBar() {
+	const user = getUser();
+	if (!user) {
+		accountBar.innerHTML = '<span style="color:#888">Не авторизован</span>';
+		return;
+	}
+	const avatar = user.avatar ? user.avatar : '/assets/img/default-avatar.png';
+	accountBar.innerHTML = `
+		<img src="${avatar}" class="tg-account-avatar" alt="avatar" />
+		<span class="tg-account-name">${escapeHtml(user.username)}</span>
+	`;
+}
 
 function getUser() {
 	return window.getCurrentUser ? window.getCurrentUser() : null;
@@ -22,7 +36,25 @@ async function fetchChats() {
 	const res = await fetch(url);
 	chats = await res.json();
 	renderChatList();
+	renderAccountBar();
 	if (chats.length && !currentChatId) selectChat(chats[0].id);
+}
+// Диалог создания нового чата
+if (newChatBtn) {
+	newChatBtn.onclick = async function() {
+		const username = prompt('Введите имя пользователя для приватного чата:');
+		if (!username) return;
+		// Получить id пользователя по имени
+		const res = await fetch('/api/users');
+		const data = await res.json();
+		const users = data.users || [];
+		const target = users.find(u => u.username === username);
+		if (!target) {
+			alert('Пользователь не найден!');
+			return;
+		}
+		await createPrivateChatWith(target.id);
+	};
 }
 
 async function fetchMessages(chatId) {

@@ -37,6 +37,46 @@ body {
 	font-weight: bold;
 	border-bottom: 1px solid #2c394b;
 	background: #232e3c;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.tg-account-bar {
+	background: #202a36;
+	border-top: 1px solid #2c394b;
+	padding: 14px 18px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 56px;
+}
+.tg-account-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	object-fit: cover;
+	background: #444;
+	border: 2px solid #229ed9;
+}
+.tg-account-name {
+	color: #fff;
+	font-size: 1em;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+#new-chat-btn {
+	background: none;
+	border: none;
+	color: #229ed9;
+	font-size: 1.3em;
+	cursor: pointer;
+	padding: 0 8px;
+	transition: color 0.2s;
+}
+#new-chat-btn:hover {
+	color: #1b8cc3;
 }
 .tg-chat-list {
 	list-style: none;
