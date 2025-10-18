@@ -1,3 +1,70 @@
+// --- Модальное окно участников чата ---
+const chatMembersBtn = document.getElementById('chat-members-btn');
+const chatMembersModal = document.getElementById('chat-members-modal');
+const chatMembersList = document.getElementById('chat-members-list');
+const closeChatMembersModalBtn = document.getElementById('close-chat-members-modal');
+
+if (chatMembersBtn && chatMembersModal && chatMembersList) {
+	chatMembersBtn.onclick = async function() {
+		if (!currentChatId) return;
+		await showChatMembersModal(currentChatId);
+	};
+}
+if (closeChatMembersModalBtn) {
+	closeChatMembersModalBtn.onclick = hideChatMembersModal;
+}
+if (chatMembersModal) {
+	chatMembersModal.addEventListener('mousedown', function(e) {
+		if (e.target === chatMembersModal || e.target.classList.contains('chat-members-modal-backdrop')) {
+			hideChatMembersModal();
+		}
+	});
+}
+
+async function showChatMembersModal(chatId) {
+	chatMembersModal.style.display = 'flex';
+	chatMembersList.innerHTML = '<div style="color:#bfc9d8;padding:12px 0;">Загрузка...</div>';
+	try {
+		const res = await fetch(`/api/messenger/chat_members?chat_id=${chatId}`);
+		const data = await res.json();
+		renderChatMembersList(data.members || []);
+	} catch (e) {
+		chatMembersList.innerHTML = '<div style="color:#e74c3c;">Ошибка загрузки участников</div>';
+	}
+}
+
+function hideChatMembersModal() {
+	chatMembersModal.style.display = 'none';
+}
+
+function renderChatMembersList(members) {
+	if (!members.length) {
+		chatMembersList.innerHTML = '<div style="color:#bfc9d8;">Нет участников</div>';
+		return;
+	}
+	chatMembersList.innerHTML = '';
+	members.forEach(member => {
+		const row = document.createElement('div');
+		row.className = 'chat-member-row';
+		const avatar = document.createElement('img');
+		avatar.className = 'chat-member-avatar';
+		avatar.src = member.avatar || '/assets/img/default-avatar.png';
+		avatar.alt = 'avatar';
+		const info = document.createElement('div');
+		info.className = 'chat-member-info';
+		const name = document.createElement('div');
+		name.className = 'chat-member-name';
+		name.textContent = member.username;
+		const role = document.createElement('div');
+		role.className = 'chat-member-role';
+		role.textContent = member.role === 'admin' ? 'Админ' : 'Участник';
+		info.appendChild(name);
+		info.appendChild(role);
+		row.appendChild(avatar);
+		row.appendChild(info);
+		chatMembersList.appendChild(row);
+	});
+}
 
 let chats = [];
 let currentChatId = null;

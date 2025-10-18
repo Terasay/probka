@@ -12,7 +12,24 @@ import uvicorn
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 app = FastAPI()
+
+# --- API: получить участников чата ---
+@app.get("/api/messenger/chat_members")
+async def get_chat_members(chat_id: int):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT u.id, u.username, u.avatar, m.role
+            FROM chat_members m
+            JOIN users u ON m.user_id = u.id
+            WHERE m.chat_id = ?
+        """, (chat_id,))
+        members = [
+            {"id": r[0], "username": r[1], "avatar": r[2], "role": r[3]} for r in cur.fetchall()
+        ]
+    return {"members": members}
 
 # --- API: создать приватный чат (или вернуть существующий) ---
 @app.post("/api/messenger/create_private")

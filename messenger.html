@@ -25,6 +25,14 @@
             <main class="tg-main">
                 <header class="tg-header">
                     <div class="tg-chat-title" id="chat-title">Выберите чат</div>
+                    <button id="chat-members-btn" title="Участники чата" class="chat-members-btn">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 10C8.65685 10 10 8.65685 10 7C10 5.34315 8.65685 4 7 4C5.34315 4 4 5.34315 4 7C4 8.65685 5.34315 10 7 10Z" fill="#229ed9"/>
+                            <path d="M17 10C18.6569 10 20 8.65685 20 7C20 5.34315 18.6569 4 17 4C15.3431 4 14 5.34315 14 7C14 8.65685 15.3431 10 17 10Z" fill="#229ed9"/>
+                            <path d="M12 14C14.7614 14 17 11.7614 17 9C17 6.23858 14.7614 4 12 4C9.23858 4 7 6.23858 7 9C7 11.7614 9.23858 14 12 14Z" fill="#229ed9"/>
+                            <path d="M2 20C2 16.6863 7.33333 15 12 15C16.6667 15 22 16.6863 22 20V21H2V20Z" fill="#229ed9"/>
+                        </svg>
+                    </button>
                 </header>
                 <section class="tg-messages" id="messages">
                     <!-- Сообщения -->
@@ -36,6 +44,19 @@
                     </form>
                 </footer>
             </main>
+        </div>
+        <!-- Модальное окно участников чата -->
+        <div id="chat-members-modal" class="chat-members-modal" style="display:none;">
+            <div class="chat-members-modal-backdrop"></div>
+            <div class="chat-members-modal-content">
+                <div class="chat-members-modal-header">
+                    <span>Участники чата</span>
+                    <button id="close-chat-members-modal" class="close-modal-btn" title="Закрыть">&times;</button>
+                </div>
+                <div id="chat-members-list" class="chat-members-list">
+                    <!-- Список участников будет подгружен JS -->
+                </div>
+            </div>
         </div>
     </div>
     <script src="js/user-session.js"></script>
