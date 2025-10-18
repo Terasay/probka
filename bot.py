@@ -13,7 +13,68 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+
 app = FastAPI()
+
+# --- API: редактировать чат (название и участники) ---
+@app.post("/api/messenger/edit_chat")
+async def edit_chat(request: Request):
+    data = await request.json()
+    chat_id = data.get("chat_id")
+    title = data.get("title", "").strip()
+    user_ids = data.get("user_ids", [])
+    if not chat_id or not title or not user_ids:
+        raise HTTPException(400, "chat_id, title, user_ids обязательны")
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Обновить название
+        cur.execute("UPDATE chats SET title = ? WHERE id = ?", (title, chat_id))
+        # Получить текущих участников
+        cur.execute("SELECT user_id FROM chat_members WHERE chat_id = ?", (chat_id,))
+        current_ids = set(row[0] for row in cur.fetchall())
+        new_ids = set(user_ids)
+        # Добавить новых участников
+        for uid in new_ids - current_ids:
+            cur.execute("INSERT OR IGNORE INTO chat_members (chat_id, user_id, role) VALUES (?, ?, 'member')", (chat_id, uid))
+        # Удалить исключённых участников (кроме создателя чата)
+        cur.execute("SELECT created_by FROM chats WHERE id = ?", (chat_id,))
+        creator_row = cur.fetchone()
+        creator_id = creator_row[0] if creator_row else None
+        for uid in current_ids - new_ids:
+            if uid != creator_id:
+                cur.execute("DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, uid))
+        conn.commit()
+    return {"success": True}
+
+# --- API: редактировать чат (название и участники) ---
+@app.post("/api/messenger/edit_chat")
+async def edit_chat(request: Request):
+    data = await request.json()
+    chat_id = data.get("chat_id")
+    title = data.get("title", "").strip()
+    user_ids = data.get("user_ids", [])
+    if not chat_id or not title or not user_ids:
+        raise HTTPException(400, "chat_id, title, user_ids обязательны")
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Обновить название
+        cur.execute("UPDATE chats SET title = ? WHERE id = ?", (title, chat_id))
+        # Получить текущих участников
+        cur.execute("SELECT user_id FROM chat_members WHERE chat_id = ?", (chat_id,))
+        current_ids = set(row[0] for row in cur.fetchall())
+        new_ids = set(user_ids)
+        # Добавить новых участников
+        for uid in new_ids - current_ids:
+            cur.execute("INSERT OR IGNORE INTO chat_members (chat_id, user_id, role) VALUES (?, ?, 'member')", (chat_id, uid))
+        # Удалить исключённых участников (кроме создателя чата)
+        cur.execute("SELECT created_by FROM chats WHERE id = ?", (chat_id,))
+        creator_row = cur.fetchone()
+        creator_id = creator_row[0] if creator_row else None
+        for uid in current_ids - new_ids:
+            if uid != creator_id:
+                cur.execute("DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, uid))
+        conn.commit()
+    return {"success": True}
 
 # --- API: получить участников чата ---
 @app.get("/api/messenger/chat_members")

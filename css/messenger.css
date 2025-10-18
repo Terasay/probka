@@ -1,3 +1,105 @@
+.chat-edit-modal {
+	position: fixed;
+	top: 0; left: 0; right: 0; bottom: 0;
+	z-index: 1001;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.chat-edit-modal-backdrop {
+	position: absolute;
+	top: 0; left: 0; right: 0; bottom: 0;
+	background: rgba(30, 40, 60, 0.65);
+	z-index: 1;
+}
+.chat-edit-modal-content {
+	position: relative;
+	z-index: 2;
+	background: #232e3c;
+	border-radius: 12px;
+	box-shadow: 0 8px 32px #0008;
+	min-width: 340px;
+	max-width: 96vw;
+	min-height: 220px;
+	max-height: 70vh;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: modal-fade-in 0.18s;
+}
+.chat-edit-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px 12px 20px;
+	border-bottom: 1px solid #2c394b;
+	font-size: 1.1em;
+	font-weight: 500;
+	color: #fff;
+	background: #232e3c;
+}
+.chat-edit-form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 18px 20px 18px 20px;
+}
+.chat-edit-form label {
+	color: #bfc9d8;
+	font-size: 1em;
+	margin-bottom: 2px;
+}
+.chat-edit-form input[type="text"] {
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: none;
+	background: #202a36;
+	color: #fff;
+	font-size: 1em;
+	outline: none;
+	margin-bottom: 4px;
+}
+.edit-chat-users-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+.edit-chat-user-tag {
+	background: #229ed9;
+	color: #fff;
+	border-radius: 12px;
+	padding: 4px 10px;
+	font-size: 0.98em;
+	margin-right: 2px;
+	margin-bottom: 2px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.edit-chat-user-remove {
+	background: none;
+	border: none;
+	color: #e74c3c;
+	font-size: 1.1em;
+	cursor: pointer;
+	margin-left: 2px;
+}
+.edit-chat-save-btn {
+	background: #229ed9;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 10px 0;
+	font-size: 1.1em;
+	cursor: pointer;
+	margin-top: 8px;
+	transition: background 0.18s;
+}
+.edit-chat-save-btn:hover {
+	background: #1b8cc3;
+}
 .chat-edit-btn {
 	background: none;
 	border: none;

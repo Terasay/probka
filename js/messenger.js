@@ -1,3 +1,119 @@
+// --- Модальное окно редактирования чата ---
+const chatEditModal = document.getElementById('chat-edit-modal');
+const closeChatEditModalBtn = document.getElementById('close-chat-edit-modal');
+const chatEditForm = document.getElementById('chat-edit-form');
+const editChatTitleInput = document.getElementById('edit-chat-title');
+const editChatUsersInput = document.getElementById('edit-chat-users');
+const editChatUsersList = document.getElementById('edit-chat-users-list');
+
+let editChatUsers = [];
+
+if (chatEditBtn) {
+	chatEditBtn.onclick = function() {
+		if (!currentChatId) return;
+		showEditChatModal(currentChatId);
+	};
+}
+if (closeChatEditModalBtn) {
+	closeChatEditModalBtn.onclick = hideEditChatModal;
+}
+if (chatEditModal) {
+	chatEditModal.addEventListener('mousedown', function(e) {
+		if (e.target === chatEditModal || e.target.classList.contains('chat-edit-modal-backdrop')) {
+			hideEditChatModal();
+		}
+	});
+}
+
+function showEditChatModal(chatId) {
+	// Заполнить текущие данные
+	const chat = chats.find(c => c.id === chatId);
+	if (!chat) return;
+	chatEditModal.style.display = 'flex';
+	editChatTitleInput.value = chat.title || '';
+	// Получить текущих участников
+	fetch(`/api/messenger/chat_members?chat_id=${chatId}`)
+		.then(res => res.json())
+		.then(data => {
+			editChatUsers = (data.members || []).map(u => u.username);
+			renderEditChatUsersList();
+		});
+	editChatUsersInput.value = '';
+}
+
+function hideEditChatModal() {
+	chatEditModal.style.display = 'none';
+	editChatUsers = [];
+	editChatUsersInput.value = '';
+	editChatUsersList.innerHTML = '';
+}
+
+function renderEditChatUsersList() {
+	editChatUsersList.innerHTML = '';
+	editChatUsers.forEach(username => {
+		const tag = document.createElement('span');
+		tag.className = 'edit-chat-user-tag';
+		tag.textContent = username;
+		const removeBtn = document.createElement('button');
+		removeBtn.className = 'edit-chat-user-remove';
+		removeBtn.textContent = '×';
+		removeBtn.onclick = () => {
+			editChatUsers = editChatUsers.filter(u => u !== username);
+			renderEditChatUsersList();
+		};
+		tag.appendChild(removeBtn);
+		editChatUsersList.appendChild(tag);
+	});
+}
+
+if (editChatUsersInput) {
+	editChatUsersInput.addEventListener('keydown', async function(e) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			const username = editChatUsersInput.value.trim();
+			if (!username || editChatUsers.includes(username)) return;
+			// Проверить существование пользователя
+			const res = await fetch('/api/users');
+			const data = await res.json();
+			const users = data.users || [];
+			if (!users.find(u => u.username === username)) {
+				alert('Пользователь не найден!');
+				return;
+			}
+			editChatUsers.push(username);
+			renderEditChatUsersList();
+			editChatUsersInput.value = '';
+		}
+	});
+}
+
+if (chatEditForm) {
+	chatEditForm.onsubmit = async function(e) {
+		e.preventDefault();
+		const title = editChatTitleInput.value.trim();
+		if (!title) {
+			alert('Введите название чата');
+			return;
+		}
+		// Получить id пользователей по username
+		const res = await fetch('/api/users');
+		const data = await res.json();
+		const users = data.users || [];
+		const userIds = editChatUsers.map(username => {
+			const u = users.find(u => u.username === username);
+			return u ? u.id : null;
+		}).filter(Boolean);
+		// Отправить изменения на сервер
+		await fetch('/api/messenger/edit_chat', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ chat_id: currentChatId, title, user_ids: userIds })
+		});
+		hideEditChatModal();
+		await fetchChats();
+		selectChat(currentChatId);
+	};
+}
 // --- Кнопка редактирования чата ---
 const chatEditBtn = document.getElementById('chat-edit-btn');
 if (chatEditBtn) {

@@ -25,20 +25,22 @@
             <main class="tg-main">
                 <header class="tg-header">
                     <div class="tg-chat-title" id="chat-title">Выберите чат</div>
-                    <button id="chat-edit-btn" title="Редактировать чат" class="chat-edit-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 20h4.586a2 2 0 0 0 1.414-.586l9.293-9.293a2 2 0 0 0 0-2.828l-2.172-2.172a2 2 0 0 0-2.828 0l-9.293 9.293A2 2 0 0 0 4 15.414V20z" fill="#bfc9d8"/>
-                            <path d="M16.243 7.757l-9.193 9.193a1 1 0 0 0-.293.707V18h1.343a1 1 0 0 0 .707-.293l9.193-9.193-2.757-2.757z" fill="#229ed9"/>
-                        </svg>
-                    </button>
-                    <button id="chat-members-btn" title="Участники чата" class="chat-members-btn">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7 10C8.65685 10 10 8.65685 10 7C10 5.34315 8.65685 4 7 4C5.34315 4 4 5.34315 4 7C4 8.65685 5.34315 10 7 10Z" fill="#229ed9"/>
-                            <path d="M17 10C18.6569 10 20 8.65685 20 7C20 5.34315 18.6569 4 17 4C15.3431 4 14 5.34315 14 7C14 8.65685 15.3431 10 17 10Z" fill="#229ed9"/>
-                            <path d="M12 14C14.7614 14 17 11.7614 17 9C17 6.23858 14.7614 4 12 4C9.23858 4 7 6.23858 7 9C7 11.7614 9.23858 14 12 14Z" fill="#229ed9"/>
-                            <path d="M2 20C2 16.6863 7.33333 15 12 15C16.6667 15 22 16.6863 22 20V21H2V20Z" fill="#229ed9"/>
-                        </svg>
-                    </button>
+                    <div style="display:flex;align-items:center;gap:2px;margin-left:auto;">
+                        <button id="chat-edit-btn" title="Редактировать чат" class="chat-edit-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 20h4.586a2 2 0 0 0 1.414-.586l9.293-9.293a2 2 0 0 0 0-2.828l-2.172-2.172a2 2 0 0 0-2.828 0l-9.293 9.293A2 2 0 0 0 4 15.414V20z" fill="#bfc9d8"/>
+                                <path d="M16.243 7.757l-9.193 9.193a1 1 0 0 0-.293.707V18h1.343a1 1 0 0 0 .707-.293l9.193-9.193-2.757-2.757z" fill="#229ed9"/>
+                            </svg>
+                        </button>
+                        <button id="chat-members-btn" title="Участники чата" class="chat-members-btn">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7 10C8.65685 10 10 8.65685 10 7C10 5.34315 8.65685 4 7 4C5.34315 4 4 5.34315 4 7C4 8.65685 5.34315 10 7 10Z" fill="#229ed9"/>
+                                <path d="M17 10C18.6569 10 20 8.65685 20 7C20 5.34315 18.6569 4 17 4C15.3431 4 14 5.34315 14 7C14 8.65685 15.3431 10 17 10Z" fill="#229ed9"/>
+                                <path d="M12 14C14.7614 14 17 11.7614 17 9C17 6.23858 14.7614 4 12 4C9.23858 4 7 6.23858 7 9C7 11.7614 9.23858 14 12 14Z" fill="#229ed9"/>
+                                <path d="M2 20C2 16.6863 7.33333 15 12 15C16.6667 15 22 16.6863 22 20V21H2V20Z" fill="#229ed9"/>
+                            </svg>
+                        </button>
+                    </div>
                 </header>
                 <section class="tg-messages" id="messages">
                     <!-- Сообщения -->
@@ -51,7 +53,24 @@
                 </footer>
             </main>
         </div>
-        <!-- Модальное окно участников чата -->
+        <!-- Модальное окно редактирования чата -->
+        <div id="chat-edit-modal" class="chat-edit-modal" style="display:none;">
+            <div class="chat-edit-modal-backdrop"></div>
+            <div class="chat-edit-modal-content">
+                <div class="chat-edit-modal-header">
+                    <span>Редактировать чат</span>
+                    <button id="close-chat-edit-modal" class="close-modal-btn" title="Закрыть">&times;</button>
+                </div>
+                <form id="chat-edit-form" class="chat-edit-form">
+                    <label for="edit-chat-title">Название чата:</label>
+                    <input type="text" id="edit-chat-title" name="title" autocomplete="off" />
+                    <label for="edit-chat-users">Добавить участников:</label>
+                    <input type="text" id="edit-chat-users" name="users" placeholder="Введите имя пользователя и Enter" autocomplete="off" />
+                    <div id="edit-chat-users-list" class="edit-chat-users-list"></div>
+                    <button type="submit" class="edit-chat-save-btn">Сохранить</button>
+                </form>
+            </div>
+        </div>
         <div id="chat-members-modal" class="chat-members-modal" style="display:none;">
             <div class="chat-members-modal-backdrop"></div>
             <div class="chat-members-modal-content">
