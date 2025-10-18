@@ -1,3 +1,5 @@
+// --- Кнопка редактирования чата ---
+const chatEditBtn = document.getElementById('chat-edit-btn');
 // --- Модальное окно редактирования чата ---
 const chatEditModal = document.getElementById('chat-edit-modal');
 const closeChatEditModalBtn = document.getElementById('close-chat-edit-modal');
