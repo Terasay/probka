@@ -1,3 +1,16 @@
+// --- Кнопка редактирования чата ---
+const chatEditBtn = document.getElementById('chat-edit-btn');
+if (chatEditBtn) {
+	chatEditBtn.onclick = function() {
+		if (!currentChatId) return;
+		showEditChatModal(currentChatId);
+	};
+}
+
+function showEditChatModal(chatId) {
+	// TODO: Реализовать модальное окно редактирования чата
+	alert('Редактирование чата (в разработке)');
+}
 // --- Модальное окно участников чата ---
 const chatMembersBtn = document.getElementById('chat-members-btn');
 const chatMembersModal = document.getElementById('chat-members-modal');
