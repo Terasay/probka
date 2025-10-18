@@ -29,6 +29,7 @@
           <a href="index.html" class="nav-link">Главная</a>
           <a href="exchange.html" class="nav-link">Биржа</a>
           <a href="news.html" class="nav-link">Новости</a>
+          <a href="messenger.html" class="nav-link">Мессенджер</a>
           <a href="forum.html" class="nav-link active">Форум</a>
           <a href="about.html" class="nav-link">О сервере</a>
         </div>
@@ -43,13 +44,11 @@
         <a href="index.html" class="back-btn">← На главную</a>
       </header>
       <section id="forum-topics" class="news-feed">
-        <!-- Форма создания новой темы (только для залогиненных) -->
         <form id="forum-create-form" class="card" style="max-width:600px;margin:0 auto 24px 0;display:none;">
           <h2 style="margin-bottom:12px;">Создать новую тему</h2>
           <input type="text" name="title" placeholder="Заголовок темы" required maxlength="100" style="width:100%;margin-bottom:10px;padding:10px 14px;border-radius:8px;">
           <button type="submit">Создать тему</button>
         </form>
-        <!-- Темы форума будут загружены сюда -->
       </section>
       <section id="forum-messages" class="news-feed" style="display:none;">
         <div class="card">

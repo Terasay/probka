@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger</title>
+    <link rel="stylesheet" href="css/messenger.css">
+</head>
+<body>
+    <div id="messenger-app">
+        <div class="tg-container">
+            <aside class="tg-sidebar">
+                <div class="tg-sidebar-header">Чаты</div>
+                <ul class="tg-chat-list" id="chat-list">
+                    <!-- Список чатов -->
+                </ul>
+            </aside>
+            <main class="tg-main">
+                <header class="tg-header">
+                    <div class="tg-chat-title" id="chat-title">Выберите чат</div>
+                </header>
+                <section class="tg-messages" id="messages">
+                    <!-- Сообщения -->
+                </section>
+                <footer class="tg-footer">
+                    <form id="message-form">
+                        <input type="text" id="message-input" placeholder="Сообщение..." autocomplete="off" />
+                        <button type="submit" id="send-btn">➤</button>
+                    </form>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <script src="js/messenger.js"></script>
+</body>
+</html>
