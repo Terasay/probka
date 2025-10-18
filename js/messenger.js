@@ -30,7 +30,7 @@ function showAccountMenu(e) {
 	const oldMenu = document.getElementById('account-menu');
 	if (oldMenu) {
 		// Если уже открыто — закрыть с анимацией
-		closeAccountMenuAnimated();
+		hideAccountMenuAnimated();
 		return;
 	}
 	const user = getUser();
