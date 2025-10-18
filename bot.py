@@ -3,7 +3,7 @@ import sqlite3
 import shutil
 import logging
 from datetime import datetime, timezone
-from fastapi import FastAPI, Request, Depends, UploadFile, File, Form
+from fastapi import FastAPI, Request, Depends, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
@@ -13,6 +13,92 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# --- API: получить список чатов пользователя (или все чаты для админа) ---
+@app.get("/api/messenger/chats")
+async def get_user_chats(user_id: int, is_admin: bool = False):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        if is_admin:
+            cur.execute("SELECT id, type, title FROM chats")
+            chats = cur.fetchall()
+        else:
+            cur.execute("""
+                SELECT c.id, c.type, c.title FROM chats c
+                JOIN chat_members m ON c.id = m.chat_id
+                WHERE m.user_id = ?
+            """, (user_id,))
+            chats = cur.fetchall()
+    return [{"id": c[0], "type": c[1], "title": c[2]} for c in chats]
+
+# --- API: получить сообщения чата ---
+@app.get("/api/messenger/messages")
+async def get_chat_messages(chat_id: int, user_id: int, is_admin: bool = False):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Проверка доступа
+        if not is_admin:
+            cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
+            if not cur.fetchone():
+                raise HTTPException(403, "Нет доступа к чату")
+        cur.execute("""
+            SELECT id, sender_id, sender_name, content, created_at FROM chat_messages
+            WHERE chat_id = ? ORDER BY id ASC
+        """, (chat_id,))
+        msgs = cur.fetchall()
+    return [
+        {"id": m[0], "sender_id": m[1], "sender_name": m[2], "content": m[3], "created_at": m[4]}
+        for m in msgs
+    ]
+
+# --- API: отправить сообщение в чат ---
+@app.post("/api/messenger/send")
+async def send_message(request: Request):
+    data = await request.json()
+    chat_id = data.get("chat_id")
+    user_id = data.get("user_id")
+    content = data.get("content", "").strip()
+    if not chat_id or not user_id or not content:
+        raise HTTPException(400, "chat_id, user_id, content обязательны")
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Проверка доступа
+        cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
+        if not cur.fetchone():
+            raise HTTPException(403, "Нет доступа к чату")
+        # Имя отправителя
+        cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        sender_name = row[0] if row else "?"
+        # Вставка сообщения
+        cur.execute("""
+            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        """, (chat_id, user_id, sender_name, content))
+        conn.commit()
+    return {"success": True}
+
+# --- API: создать групповой чат ---
+@app.post("/api/messenger/create_group")
+async def create_group_chat(request: Request):
+    data = await request.json()
+    title = data.get("title", "").strip()
+    user_ids = data.get("user_ids", [])
+    creator_id = data.get("creator_id")
+    if not title or not user_ids or not creator_id:
+        raise HTTPException(400, "title, user_ids, creator_id обязательны")
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO chats (type, title, created_at, created_by)
+            VALUES ('group', ?, datetime('now'), ?)
+        """, (title, creator_id))
+        chat_id = cur.lastrowid
+        # Добавить участников
+        for uid in set(user_ids + [creator_id]):
+            cur.execute("INSERT INTO chat_members (chat_id, user_id, role) VALUES (?, ?, ?)", (chat_id, uid, 'admin' if uid == creator_id else 'member'))
+        conn.commit()
+    return {"success": True, "chat_id": chat_id}
 
 # --- API: получить список всех стран и их статусов ---
 @app.get("/api/countries/list")
@@ -336,6 +422,29 @@ def init_db():
             player_name TEXT,
             country_id TEXT,
             status TEXT DEFAULT 'pending',
+            created_at TEXT
+        )""")
+
+        # --- Таблицы для мессенджера ---
+        cur.execute("""CREATE TABLE IF NOT EXISTS chats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT DEFAULT 'private', -- private, group
+            title TEXT,
+            created_at TEXT,
+            created_by INTEGER
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS chat_members (
+            chat_id INTEGER,
+            user_id INTEGER,
+            role TEXT DEFAULT 'member', -- member, admin
+            PRIMARY KEY (chat_id, user_id)
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id INTEGER,
+            sender_id INTEGER,
+            sender_name TEXT,
+            content TEXT,
             created_at TEXT
         )""")
 from fastapi import UploadFile, File, Form
