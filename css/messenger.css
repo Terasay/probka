@@ -1,23 +1,30 @@
 .tg-account-menu {
-	background: #232e3c;
-	border-radius: 12px;
-	box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-	padding: 12px 0;
-	min-width: 160px;
+	background: transparent;
+	border-radius: 0;
+	box-shadow: none;
+	padding: 0;
+	min-width: 180px;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	border: 1px solid #229ed9;
+	border: none;
+	gap: 12px;
 }
 .account-menu-btn {
-	background: none;
+	background: #28285c;
 	border: none;
 	color: #fff;
-	font-size: 1em;
-	padding: 12px 24px;
-	text-align: left;
+	font-size: 2em;
+	font-family: inherit;
+	padding: 16px 0;
+	margin: 0 0 0 0;
+	border-radius: 24px;
+	text-align: center;
 	cursor: pointer;
-	transition: background 0.18s, color 0.18s;
+	box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+	transition: background 0.18s, color 0.18s, opacity 0.22s, transform 0.22s;
+	opacity: 0;
+	transform: translateY(40px);
 }
 .account-menu-btn:hover {
 	background: #229ed9;

@@ -27,17 +27,32 @@ function renderAccountBar() {
 
 function showAccountMenu(e) {
 	e.stopPropagation();
-	if (document.getElementById('account-menu')) return;
+	const oldMenu = document.getElementById('account-menu');
+	if (oldMenu) {
+		// Если уже открыто — закрыть с анимацией
+		closeAccountMenuAnimated();
+		return;
+	}
 	const user = getUser();
 	if (!user) return;
 	const menu = document.createElement('div');
 	menu.id = 'account-menu';
 	menu.className = 'tg-account-menu';
-	menu.innerHTML = `
-		<button class="account-menu-btn" onclick="window.location.href='account.html'">Аккаунт</button>
-		<button class="account-menu-btn">Настройки</button>
-		<button class="account-menu-btn">Выйти</button>
-	`;
+	// Кнопки (от нижней к верхней)
+	const btns = [
+		{ text: 'Выйти', action: () => {/* TODO */} },
+		{ text: 'Настройки', action: () => {/* TODO */} },
+		{ text: 'Аккаунт', action: () => { window.location.href = 'account.html'; } }
+	];
+	btns.forEach((btn, i) => {
+		const b = document.createElement('button');
+		b.className = 'account-menu-btn';
+		b.textContent = btn.text;
+		b.onclick = (ev) => { ev.stopPropagation(); btn.action(); hideAccountMenuAnimated(); };
+		b.style.opacity = '0';
+		b.style.transform = 'translateY(40px)';
+		menu.appendChild(b);
+	});
 	document.body.appendChild(menu);
 	// Позиционирование
 	const rect = accountBar.getBoundingClientRect();
@@ -45,15 +60,35 @@ function showAccountMenu(e) {
 	menu.style.left = rect.left + 'px';
 	menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
 	menu.style.zIndex = 1000;
+	// Анимация появления (снизу вверх)
+	setTimeout(() => {
+		const btns = menu.querySelectorAll('.account-menu-btn');
+		btns.forEach((b, i) => {
+			setTimeout(() => {
+				b.style.transition = 'opacity 0.22s cubic-bezier(.4,2,.6,1), transform 0.22s cubic-bezier(.4,2,.6,1)';
+				b.style.opacity = '1';
+				b.style.transform = 'translateY(0)';
+			}, 80 * i);
+		});
+	}, 10);
 	// Закрытие по клику вне
 	setTimeout(() => {
-		document.addEventListener('mousedown', hideAccountMenu, { once: true });
+		document.addEventListener('mousedown', hideAccountMenuAnimated, { once: true });
 	}, 0);
 }
 
-function hideAccountMenu() {
+function hideAccountMenuAnimated() {
 	const menu = document.getElementById('account-menu');
-	if (menu) menu.remove();
+	if (!menu) return;
+	const btns = menu.querySelectorAll('.account-menu-btn');
+	btns.forEach((b, i) => {
+		setTimeout(() => {
+			b.style.transition = 'opacity 0.18s cubic-bezier(.7,-0.5,1,1), transform 0.18s cubic-bezier(.7,-0.5,1,1)';
+			b.style.opacity = '0';
+			b.style.transform = 'translateY(60px)';
+		}, 60 * i);
+	});
+	setTimeout(() => { if (menu) menu.remove(); }, 60 * btns.length + 120);
 }
 
 function getUser() {
