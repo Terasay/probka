@@ -1,3 +1,28 @@
+.tg-account-menu {
+	background: #232e3c;
+	border-radius: 12px;
+	box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+	padding: 12px 0;
+	min-width: 160px;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	border: 1px solid #229ed9;
+}
+.account-menu-btn {
+	background: none;
+	border: none;
+	color: #fff;
+	font-size: 1em;
+	padding: 12px 24px;
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.18s, color 0.18s;
+}
+.account-menu-btn:hover {
+	background: #229ed9;
+	color: #fff;
+}
 body {
 	margin: 0;
 	padding: 0;

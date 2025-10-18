@@ -22,6 +22,38 @@ function renderAccountBar() {
 		<img src="${avatar}" class="tg-account-avatar" alt="avatar" />
 		<span class="tg-account-name">${escapeHtml(user.username)}</span>
 	`;
+	accountBar.onclick = showAccountMenu;
+}
+
+function showAccountMenu(e) {
+	e.stopPropagation();
+	if (document.getElementById('account-menu')) return;
+	const user = getUser();
+	if (!user) return;
+	const menu = document.createElement('div');
+	menu.id = 'account-menu';
+	menu.className = 'tg-account-menu';
+	menu.innerHTML = `
+		<button class="account-menu-btn" onclick="window.location.href='account.html'">Аккаунт</button>
+		<button class="account-menu-btn">Настройки</button>
+		<button class="account-menu-btn">Выйти</button>
+	`;
+	document.body.appendChild(menu);
+	// Позиционирование
+	const rect = accountBar.getBoundingClientRect();
+	menu.style.position = 'fixed';
+	menu.style.left = rect.left + 'px';
+	menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+	menu.style.zIndex = 1000;
+	// Закрытие по клику вне
+	setTimeout(() => {
+		document.addEventListener('mousedown', hideAccountMenu, { once: true });
+	}, 0);
+}
+
+function hideAccountMenu() {
+	const menu = document.getElementById('account-menu');
+	if (menu) menu.remove();
 }
 
 function getUser() {
