@@ -128,3 +128,18 @@ body {
 	color: #fff;
 	align-self: flex-end;
 }
+
+.msg-del-btn {
+	background: transparent;
+	border: none;
+	color: #ff6b6b;
+	font-size: 1.1em;
+	margin-left: 8px;
+	cursor: pointer;
+	vertical-align: middle;
+	padding: 0 2px;
+	transition: color 0.2s;
+}
+.msg-del-btn:hover {
+	color: #ff2222;
+}

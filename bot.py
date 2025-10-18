@@ -14,6 +14,64 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+# --- API: создать приватный чат (или вернуть существующий) ---
+@app.post("/api/messenger/create_private")
+async def create_private_chat(request: Request):
+    data = await request.json()
+    user1 = data.get("user1_id")
+    user2 = data.get("user2_id")
+    if not user1 or not user2 or user1 == user2:
+        raise HTTPException(400, "user1_id и user2_id обязательны и не должны совпадать")
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Проверить, есть ли уже приватный чат между этими пользователями
+        cur.execute("""
+            SELECT c.id FROM chats c
+            JOIN chat_members m1 ON c.id = m1.chat_id AND m1.user_id = ?
+            JOIN chat_members m2 ON c.id = m2.chat_id AND m2.user_id = ?
+            WHERE c.type = 'private'
+        """, (user1, user2))
+        row = cur.fetchone()
+        if row:
+            return {"chat_id": row[0], "existed": True}
+        # Создать новый чат
+        cur.execute("""
+            INSERT INTO chats (type, title, created_at, created_by)
+            VALUES ('private', NULL, datetime('now'), ?)
+        """, (user1,))
+        chat_id = cur.lastrowid
+        for uid in [user1, user2]:
+            cur.execute("INSERT INTO chat_members (chat_id, user_id, role) VALUES (?, ?, 'member')", (chat_id, uid))
+        conn.commit()
+    return {"chat_id": chat_id, "existed": False}
+
+# --- API: удалить сообщение (автор или админ) ---
+@app.post("/api/messenger/delete_message")
+async def delete_message(request: Request):
+    data = await request.json()
+    msg_id = data.get("msg_id")
+    user_id = data.get("user_id")
+    if not msg_id or not user_id:
+        raise HTTPException(400, "msg_id и user_id обязательны")
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Получить сообщение
+        cur.execute("SELECT chat_id, sender_id FROM chat_messages WHERE id = ?", (msg_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "Сообщение не найдено")
+        chat_id, sender_id = row
+        # Проверить, является ли пользователь автором или админом чата
+        is_author = (sender_id == user_id)
+        cur.execute("SELECT role FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
+        role_row = cur.fetchone()
+        is_admin = (role_row and role_row[0] == 'admin')
+        if not (is_author or is_admin):
+            raise HTTPException(403, "Нет прав на удаление")
+        cur.execute("DELETE FROM chat_messages WHERE id = ?", (msg_id,))
+        conn.commit()
+    return {"success": True}
+
 # --- API: получить список чатов пользователя (или все чаты для админа) ---
 @app.get("/api/messenger/chats")
 async def get_user_chats(user_id: int, is_admin: bool = False):
