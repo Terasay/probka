@@ -522,23 +522,7 @@ function renderMessages() {
 		div.appendChild(replyBtn);
 		messagesBox.appendChild(div);
 	});
-// --- reply preview над input ---
-function setReplyTo(msg) {
-	replyToMsg = msg;
-	const replyPreview = document.getElementById('reply-preview');
-	replyPreview.style.display = 'block';
-	replyPreview.innerHTML = `<div style="background:#232e3c;border-radius:8px;padding:4px 10px;margin-bottom:4px;font-size:0.95em;color:#bfc9d8;display:flex;align-items:center;justify-content:space-between;">
-		<span><span style='font-weight:500;'>${escapeHtml(msg.sender_name)}:</span> ${escapeHtml(msg.content).slice(0,48)}${msg.content.length>48?'…':''}</span>
-		<button id='cancel-reply-btn' style='background:none;border:none;color:#e74c3c;font-size:1.2em;cursor:pointer;margin-left:10px;' title='Отменить'>✖</button>
-	</div>`;
-	document.getElementById('cancel-reply-btn').onclick = clearReplyTo;
-}
-function clearReplyTo() {
-	replyToMsg = null;
-	const replyPreview = document.getElementById('reply-preview');
-	replyPreview.style.display = 'none';
-	replyPreview.innerHTML = '';
-}
+
 	messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
