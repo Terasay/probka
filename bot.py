@@ -47,7 +47,6 @@ async def send_file_message(chat_id: int = Form(...), user_id: int = Form(...), 
         conn.commit()
     return {"success": True, "files": file_urls}
 
-# --- API: редактировать чат (название и участники) ---
 @app.post("/api/messenger/edit_chat")
 async def edit_chat(request: Request):
     data = await request.json()
@@ -58,16 +57,16 @@ async def edit_chat(request: Request):
         raise HTTPException(400, "chat_id, title, user_ids обязательны")
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Обновить название
+
         cur.execute("UPDATE chats SET title = ? WHERE id = ?", (title, chat_id))
-        # Получить текущих участников
+
         cur.execute("SELECT user_id FROM chat_members WHERE chat_id = ?", (chat_id,))
         current_ids = set(row[0] for row in cur.fetchall())
         new_ids = set(user_ids)
-        # Добавить новых участников
+
         for uid in new_ids - current_ids:
             cur.execute("INSERT OR IGNORE INTO chat_members (chat_id, user_id, role) VALUES (?, ?, 'member')", (chat_id, uid))
-        # Удалить исключённых участников (кроме создателя чата)
+
         cur.execute("SELECT created_by FROM chats WHERE id = ?", (chat_id,))
         creator_row = cur.fetchone()
         creator_id = creator_row[0] if creator_row else None
@@ -77,7 +76,6 @@ async def edit_chat(request: Request):
         conn.commit()
     return {"success": True}
 
-# --- API: получить участников чата ---
 @app.get("/api/messenger/chat_members")
 async def get_chat_members(chat_id: int):
     with sqlite3.connect("site.db") as conn:
@@ -93,7 +91,6 @@ async def get_chat_members(chat_id: int):
         ]
     return {"members": members}
 
-# --- API: создать приватный чат (или вернуть существующий) ---
 @app.post("/api/messenger/create_private")
 async def create_private_chat(request: Request):
     data = await request.json()
@@ -103,7 +100,7 @@ async def create_private_chat(request: Request):
         raise HTTPException(400, "user1_id и user2_id обязательны и не должны совпадать")
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Проверить, есть ли уже приватный чат между этими пользователями
+
         cur.execute("""
             SELECT c.id FROM chats c
             JOIN chat_members m1 ON c.id = m1.chat_id AND m1.user_id = ?
@@ -113,7 +110,7 @@ async def create_private_chat(request: Request):
         row = cur.fetchone()
         if row:
             return {"chat_id": row[0], "existed": True}
-        # Создать новый чат
+
         cur.execute("""
             INSERT INTO chats (type, title, created_at, created_by)
             VALUES ('private', NULL, datetime('now'), ?)
@@ -124,7 +121,7 @@ async def create_private_chat(request: Request):
         conn.commit()
     return {"chat_id": chat_id, "existed": False}
 
-# --- API: удалить сообщение (автор или админ) ---
+
 @app.post("/api/messenger/delete_message")
 async def delete_message(request: Request):
     data = await request.json()
@@ -134,13 +131,13 @@ async def delete_message(request: Request):
         raise HTTPException(400, "msg_id и user_id обязательны")
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Получить сообщение
+
         cur.execute("SELECT chat_id, sender_id FROM chat_messages WHERE id = ?", (msg_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(404, "Сообщение не найдено")
         chat_id, sender_id = row
-        # Проверить, является ли пользователь автором или админом чата
+
         is_author = (sender_id == user_id)
         cur.execute("SELECT role FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
         role_row = cur.fetchone()
@@ -151,7 +148,6 @@ async def delete_message(request: Request):
         conn.commit()
     return {"success": True}
 
-# --- API: получить список чатов пользователя (или все чаты для админа) ---
 @app.get("/api/messenger/chats")
 async def get_user_chats(user_id: int, is_admin: bool = False):
     with sqlite3.connect("site.db") as conn:
@@ -166,14 +162,24 @@ async def get_user_chats(user_id: int, is_admin: bool = False):
                 WHERE m.user_id = ?
             """, (user_id,))
             chats = cur.fetchall()
-    return [{"id": c[0], "type": c[1], "title": c[2]} for c in chats]
+        result = []
+        for c in chats:
+            chat_id = c[0]
+            # Получаем последний прочитанный msg_id
+            cur.execute("SELECT last_read_msg_id FROM chat_reads WHERE user_id=? AND chat_id=?", (user_id, chat_id))
+            row = cur.fetchone()
+            last_read = row[0] if row else 0
+            # Получаем количество непрочитанных сообщений
+            cur.execute("SELECT COUNT(*) FROM chat_messages WHERE chat_id=? AND id > ?", (chat_id, last_read))
+            unread_count = cur.fetchone()[0]
+            result.append({"id": chat_id, "type": c[1], "title": c[2], "unread_count": unread_count})
+        return result
 
-# --- API: получить сообщения чата ---
+
 @app.get("/api/messenger/messages")
 async def get_chat_messages(chat_id: int, user_id: int, is_admin: bool = False):
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Проверка доступа
         if not is_admin:
             cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
             if not cur.fetchone():
@@ -188,7 +194,6 @@ async def get_chat_messages(chat_id: int, user_id: int, is_admin: bool = False):
         for m in msgs
     ]
 
-# --- API: отправить сообщение в чат ---
 @app.post("/api/messenger/send")
 async def send_message(request: Request):
     data = await request.json()
@@ -200,15 +205,15 @@ async def send_message(request: Request):
         raise HTTPException(400, "chat_id, user_id, content обязательны")
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Проверка доступа
+
         cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
         if not cur.fetchone():
             raise HTTPException(403, "Нет доступа к чату")
-        # Имя отправителя
+
         cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
         row = cur.fetchone()
         sender_name = row[0] if row else "?"
-        # Вставка сообщения
+
         cur.execute("""
             INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at, reply_to)
             VALUES (?, ?, ?, ?, datetime('now'), ?)
@@ -216,7 +221,6 @@ async def send_message(request: Request):
         conn.commit()
     return {"success": True}
 
-# --- API: создать групповой чат ---
 @app.post("/api/messenger/create_group")
 async def create_group_chat(request: Request):
     data = await request.json()
@@ -232,13 +236,12 @@ async def create_group_chat(request: Request):
             VALUES ('group', ?, datetime('now'), ?)
         """, (title, creator_id))
         chat_id = cur.lastrowid
-        # Добавить участников
+
         for uid in set(user_ids + [creator_id]):
             cur.execute("INSERT INTO chat_members (chat_id, user_id, role) VALUES (?, ?, ?)", (chat_id, uid, 'admin' if uid == creator_id else 'member'))
         conn.commit()
     return {"success": True, "chat_id": chat_id}
 
-# --- API: получить список всех стран и их статусов ---
 @app.get("/api/countries/list")
 async def get_countries_list():
     with sqlite3.connect("site.db") as conn:
@@ -249,7 +252,6 @@ async def get_countries_list():
         ]
     return countries
 
-# --- API: получить список занятых стран ---
 @app.get("/api/countries/taken")
 async def get_taken_countries():
     with sqlite3.connect("site.db") as conn:
@@ -262,19 +264,19 @@ async def get_taken_countries():
 async def reset_user_country(user_id: int):
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Получить текущую страну пользователя
+
         cur.execute("SELECT country FROM users WHERE id = ?", (user_id,))
         row = cur.fetchone()
         if not row or not row[0]:
-            return {"status": "ok"}  # Уже сброшено
+            return {"status": "ok"}
         country_id = row[0]
-        # Сбросить страну у пользователя
+
         cur.execute("UPDATE users SET country = NULL WHERE id = ?", (user_id,))
-        # Освободить страну в таблице стран
+
         cur.execute("UPDATE countries SET taken_by = NULL WHERE id = ? AND taken_by = ?", (country_id, user_id))
         conn.commit()
     return {"status": "ok"}
-# --- API: подать заявку на регистрацию страны ---
+
 
 @app.post("/api/countries/register")
 async def register_country(request: Request):
@@ -293,25 +295,25 @@ async def register_country(request: Request):
         return {"success": False, "error": "Заполните все поля"}
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Проверить, занята ли страна
+
         cur.execute("SELECT taken_by FROM countries WHERE id = ?", (country_id,))
         row = cur.fetchone()
         if row and row[0]:
             return {"success": False, "error": "Страна уже занята"}
-        # Проверить, есть ли уже активная заявка от этого игрока на любую страну
+
         cur.execute("SELECT id FROM country_requests WHERE player_name = ? AND status = 'pending'", (player_name,))
         if cur.fetchone():
             return {"success": False, "error": "У вас уже есть активная заявка на страну. Дождитесь решения или отмените её."}
-        # Проверить, есть ли уже заявка от этого игрока на эту страну в статусе pending (дублирующая проверка, можно убрать)
+
         cur.execute("SELECT id FROM country_requests WHERE player_name = ? AND country_id = ? AND status = 'pending'", (player_name, country_id))
         if cur.fetchone():
             return {"success": False, "error": "У вас уже есть заявка на эту страну"}
-        # Добавить заявку
+
         cur.execute("INSERT INTO country_requests (player_name, country_id, created_at) VALUES (?, ?, ?)", (player_name, country_id, datetime.now(timezone.utc).isoformat()))
         conn.commit()
     return {"success": True}
 
-# --- API: получить список заявок на регистрацию страны (только для админа) ---
+
 @app.get("/api/countries/requests")
 async def get_country_requests():
     with sqlite3.connect("site.db") as conn:
@@ -337,17 +339,17 @@ async def approve_country(request: Request):
         if not row:
             return JSONResponse({"error": "Заявка не найдена"}, status_code=404)
         player_name, country_id = row
-        # Найти пользователя по имени
+
         cur.execute("SELECT id FROM users WHERE username = ?", (player_name,))
         user_row = cur.fetchone()
         user_id = user_row[0] if user_row else None
-        # Если страна уже занята, отказать
+
         cur.execute("SELECT taken_by FROM countries WHERE id = ?", (country_id,))
         taken_row = cur.fetchone()
         if taken_row and taken_row[0]:
             return JSONResponse({"error": "Страна уже занята"}, status_code=400)
         cur.execute("UPDATE users SET country = NULL WHERE country = ? AND id != ?", (country_id, user_id))
-        # Пометить страну как занятую
+
         cur.execute("UPDATE countries SET taken_by = ? WHERE id = ?", (user_id, country_id))
         if user_id:
             cur.execute("UPDATE users SET country = ? WHERE id = ?", (country_id, user_id))
@@ -421,7 +423,7 @@ async def edit_country_request(request: Request):
         conn.commit()
     return {"success": True}
 
-# --- API: удалить свою заявку (только если pending) ---
+
 @app.post("/api/countries/delete_request")
 async def delete_country_request(request: Request):
     data = await request.json()
@@ -431,7 +433,7 @@ async def delete_country_request(request: Request):
         return JSONResponse({"error": "id, user_id обязательны"}, status_code=400)
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Получить заявку и проверить владельца
+
         cur.execute("SELECT player_name, status FROM country_requests WHERE id = ?", (req_id,))
         row = cur.fetchone()
         if not row:
@@ -439,20 +441,20 @@ async def delete_country_request(request: Request):
         player_name, status = row
         if status != 'pending':
             return JSONResponse({"error": "Заявка уже рассмотрена"}, status_code=400)
-        # Проверить, что пользователь владелец заявки
+
         cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
         user_row = cur.fetchone()
         if not user_row or user_row[0] != player_name:
             return JSONResponse({"error": "Нет доступа"}, status_code=403)
-        # Удалить заявку
+
         cur.execute("DELETE FROM country_requests WHERE id = ?", (req_id,))
         conn.commit()
     return {"success": True}
 
-# --- API logout (заглушка) ---
+
 @app.post("/api/logout")
 async def logout():
-    # Заглушка: просто возвращаем OK, т.к. сессий на сервере нет
+
     return {"status": "ok"}
 
 app.add_middleware(
@@ -584,6 +586,13 @@ def init_db():
             sender_name TEXT,
             content TEXT,
             created_at TEXT
+        )""")
+        # --- Таблица для отслеживания прочитанных сообщений ---
+        cur.execute("""CREATE TABLE IF NOT EXISTS chat_reads (
+            user_id INTEGER,
+            chat_id INTEGER,
+            last_read_msg_id INTEGER,
+            PRIMARY KEY (user_id, chat_id)
         )""")
 import os
 from fastapi import UploadFile, File, Form
@@ -953,6 +962,21 @@ async def reply_topic(topic_id: str, request: Request):
         )
         conn.commit()
     return {"status": "ok", "id": msg_id}
+
+# --- API: отметить чат как прочитанный ---
+@app.post("/api/messenger/read_chat")
+async def read_chat(request: Request):
+    data = await request.json()
+    chat_id = data.get("chat_id")
+    user_id = data.get("user_id")
+    last_msg_id = data.get("last_msg_id")
+    if not chat_id or not user_id or not last_msg_id:
+        return JSONResponse({"error": "Missing params"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("REPLACE INTO chat_reads (user_id, chat_id, last_read_msg_id) VALUES (?, ?, ?)", (user_id, chat_id, last_msg_id))
+        conn.commit()
+    return {"success": True}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)

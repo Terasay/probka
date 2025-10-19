@@ -1,10 +1,9 @@
-// --- Прикрепление файлов к сообщению ---
+
 const attachBtn = document.getElementById('attach-btn');
 const messageFileInput = document.getElementById('message-file');
 const messageFormEl = document.getElementById('message-form');
 let attachedFiles = [];
 
-// Элемент для предпросмотра
 let attachPreview = document.createElement('div');
 attachPreview.className = 'attach-preview';
 if (messageFormEl) messageFormEl.insertBefore(attachPreview, messageFormEl.firstChild);
@@ -22,19 +21,19 @@ function renderAttachPreview() {
 	attachedFiles.forEach((file, idx) => {
 		const item = document.createElement('div');
 		item.className = 'attach-preview-item';
-		// Картинка
+
 		if (file.type.startsWith('image/')) {
 			const img = document.createElement('img');
 			img.className = 'attach-preview-img';
 			img.src = URL.createObjectURL(file);
 			item.appendChild(img);
 		}
-		// Имя файла
+
 		const fname = document.createElement('div');
 		fname.className = 'attach-preview-filename';
 		fname.textContent = file.name;
 		item.appendChild(fname);
-		// Кнопка удаления
+
 		const removeBtn = document.createElement('button');
 		removeBtn.className = 'attach-remove-btn';
 		removeBtn.textContent = '×';
@@ -48,9 +47,9 @@ function renderAttachPreview() {
 	});
 	attachPreview.style.display = attachedFiles.length ? 'flex' : 'none';
 }
-// --- Кнопка редактирования чата ---
+
 const chatEditBtn = document.getElementById('chat-edit-btn');
-// --- Модальное окно редактирования чата ---
+
 const chatEditModal = document.getElementById('chat-edit-modal');
 const closeChatEditModalBtn = document.getElementById('close-chat-edit-modal');
 const chatEditForm = document.getElementById('chat-edit-form');
@@ -78,12 +77,12 @@ if (chatEditModal) {
 }
 
 function showEditChatModal(chatId) {
-	// Заполнить текущие данные
+
 	const chat = chats.find(c => c.id === chatId);
 	if (!chat) return;
 	chatEditModal.style.display = 'flex';
 	editChatTitleInput.value = chat.title || '';
-	// Получить текущих участников
+
 	fetch(`/api/messenger/chat_members?chat_id=${chatId}`)
 		.then(res => res.json())
 		.then(data => {
@@ -124,7 +123,7 @@ if (editChatUsersInput) {
 			e.preventDefault();
 			const username = editChatUsersInput.value.trim();
 			if (!username || editChatUsers.includes(username)) return;
-			// Проверить существование пользователя
+
 			const res = await fetch('/api/users');
 			const data = await res.json();
 			const users = data.users || [];
@@ -147,7 +146,7 @@ if (chatEditForm) {
 			alert('Введите название чата');
 			return;
 		}
-		// Получить id пользователей по username
+
 		const res = await fetch('/api/users');
 		const data = await res.json();
 		const users = data.users || [];
@@ -155,7 +154,7 @@ if (chatEditForm) {
 			const u = users.find(u => u.username === username);
 			return u ? u.id : null;
 		}).filter(Boolean);
-		// Отправить изменения на сервер
+
 		await fetch('/api/messenger/edit_chat', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -166,9 +165,7 @@ if (chatEditForm) {
 		selectChat(currentChatId);
 	};
 }
-// --- Кнопка редактирования чата ---
-// (объявление и обработчик уже есть выше)
-// --- Модальное окно участников чата ---
+
 const chatMembersBtn = document.getElementById('chat-members-btn');
 const chatMembersModal = document.getElementById('chat-members-modal');
 const chatMembersList = document.getElementById('chat-members-list');
@@ -242,13 +239,13 @@ let currentChatId = null;
 let currentChatTitle = '';
 let currentMessages = [];
 let replyToMsg = null;
-// --- Сброс reply ---
+
 function clearReplyTo() {
 	replyToMsg = null;
 	const replyPreview = document.getElementById('reply-preview');
 	if (replyPreview) replyPreview.style.display = 'none';
 }
-// --- Установка reply на сообщение ---
+
 function setReplyTo(msg) {
 	replyToMsg = msg;
 	const replyPreview = document.getElementById('reply-preview');
@@ -260,7 +257,7 @@ function setReplyTo(msg) {
 	replyPreview.innerHTML = text + '<button style="margin-left:10px;background:none;border:none;color:#e74c3c;font-size:1em;cursor:pointer;" onclick="clearReplyTo()">×</button>';
 }
 
-// --- Черновики сообщений по чатам ---
+
 let chatDrafts = {};
 function loadDrafts() {
 	try {
@@ -299,7 +296,7 @@ function showAccountMenu(e) {
 	e.stopPropagation();
 	const oldMenu = document.getElementById('account-menu');
 	if (oldMenu) {
-		// Если уже открыто — закрыть с анимацией
+
 		hideAccountMenuAnimated();
 		return;
 	}
@@ -308,7 +305,7 @@ function showAccountMenu(e) {
 	const menu = document.createElement('div');
 	menu.id = 'account-menu';
 	menu.className = 'tg-account-menu';
-	// Кнопки (от нижней к верхней)
+
 	const btns = [
 		{ text: 'Выйти', action: () => {/* TODO */} },
 		{ text: 'Настройки', action: () => {/* TODO */} },
@@ -324,13 +321,13 @@ function showAccountMenu(e) {
 		menu.appendChild(b);
 	});
 	document.body.appendChild(menu);
-	// Позиционирование
+
 	const rect = accountBar.getBoundingClientRect();
 	menu.style.position = 'fixed';
 	menu.style.left = rect.left + 'px';
 	menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
 	menu.style.zIndex = 1000;
-	// Анимация появления (снизу вверх)
+
 	setTimeout(() => {
 		const btns = menu.querySelectorAll('.account-menu-btn');
 		btns.forEach((b, i) => {
@@ -341,7 +338,7 @@ function showAccountMenu(e) {
 			}, 80 * i);
 		});
 	}, 10);
-	// Закрытие по клику вне
+
 	setTimeout(() => {
 		document.addEventListener('mousedown', hideAccountMenuAnimated, { once: true });
 	}, 0);
@@ -416,12 +413,12 @@ async function fetchChats() {
 		}
 	}
 }
-// Диалог создания нового чата
+
 if (newChatBtn) {
 	newChatBtn.onclick = async function() {
 		const username = prompt('Введите имя пользователя для приватного чата:');
 		if (!username) return;
-		// Получить id пользователя по имени
+
 		const res = await fetch('/api/users');
 		const data = await res.json();
 		const users = data.users || [];
@@ -482,15 +479,15 @@ function renderMessages() {
 		let content = msg.content || '';
 		let files = [];
 		let fileBlock = '';
-		// Ищем [files] ...
+
 		const filesMatch = content.match(/\[files\](.*)$/s);
 		if (filesMatch) {
-			// Получаем список файлов
+
 			const filesStr = filesMatch[1].trim();
 			files = filesStr.split(/,\s*/).filter(Boolean);
 			content = content.replace(/\n?\[files\].*$/s, '').trim();
 		}
-		// Формируем HTML для файлов
+
 		if (files.length) {
 			fileBlock = '<div class="msg-files">';
 			files.forEach(url => {
@@ -504,7 +501,7 @@ function renderMessages() {
 			});
 			fileBlock += '</div>';
 		}
-		// --- reply preview (если это ответ) ---
+
 		if (msg.reply_to) {
 			const repliedMsg = currentMessages.find(m => m.id == msg.reply_to);
 			if (repliedMsg) {
@@ -520,7 +517,7 @@ function renderMessages() {
 				div.appendChild(replyDiv);
 			}
 		}
-		// --- Время отправки ---
+
 		let localTime = '';
 		if (msg.created_at) {
 			let dt = new Date(msg.created_at.replace(' ', 'T') + 'Z');
@@ -532,7 +529,7 @@ function renderMessages() {
 			}
 		}
 		div.innerHTML += `<b>${escapeHtml(msg.sender_name)}:</b> ${escapeHtml(content)}${fileBlock}`;
-		// --- Надпись времени ---
+
 		if (localTime) {
 			const timeDiv = document.createElement('div');
 			timeDiv.className = 'msg-time';
@@ -546,7 +543,7 @@ function renderMessages() {
 			div.style.position = 'relative';
 			div.appendChild(timeDiv);
 		}
-		// --- Кнопки управления (удалить/ответить) ---
+
 		let controlsDiv = null;
 		function showControls(e) {
 			e.preventDefault();
@@ -565,7 +562,7 @@ function renderMessages() {
 			controlsDiv.style.padding = '4px 10px';
 			controlsDiv.style.zIndex = '10';
 			controlsDiv.style.alignItems = 'center';
-			// Кнопка удалить
+
 			if (msg.sender_id === user.id || user.role === 'admin') {
 				const delBtn = document.createElement('button');
 				delBtn.textContent = '✖';
@@ -573,7 +570,7 @@ function renderMessages() {
 				delBtn.onclick = (ev) => { ev.stopPropagation(); deleteMessage(msg.id); controlsDiv.remove(); };
 				controlsDiv.appendChild(delBtn);
 			}
-			// Кнопка ответить
+
 			const replyBtn = document.createElement('button');
 			replyBtn.className = 'msg-reply-btn';
 			replyBtn.innerHTML = '↩';
