@@ -244,6 +244,11 @@ let currentMessages = [];
 
 // --- Черновики сообщений по чатам ---
 let chatDrafts = {};
+// Загрузка черновиков из localStorage
+try {
+	const saved = localStorage.getItem('messenger_chatDrafts');
+	if (saved) chatDrafts = JSON.parse(saved);
+} catch(e) { chatDrafts = {}; }
 
 const chatList = document.getElementById('chat-list');
 const messagesBox = document.getElementById('messages');
@@ -443,6 +448,8 @@ async function selectChat(id) {
 	// Сохраняем черновик для текущего чата
 	if (currentChatId !== null) {
 		chatDrafts[currentChatId] = messageInput.value;
+		// Сохраняем в localStorage
+		try { localStorage.setItem('messenger_chatDrafts', JSON.stringify(chatDrafts)); } catch(e) {}
 	}
 	currentChatId = id;
 	const chat = chats.find(c => c.id === id);
@@ -482,6 +489,7 @@ messageForm.addEventListener('submit', async function(e) {
 	}
 	// Очищаем черновик для текущего чата
 	chatDrafts[currentChatId] = '';
+	try { localStorage.setItem('messenger_chatDrafts', JSON.stringify(chatDrafts)); } catch(e) {}
 	messageInput.value = '';
 	await fetchMessages(currentChatId);
 // --- Автосохранение черновика при вводе ---
@@ -489,6 +497,8 @@ if (messageInput) {
 	messageInput.addEventListener('input', function() {
 		if (currentChatId !== null) {
 			chatDrafts[currentChatId] = messageInput.value;
+			// Сохраняем в localStorage
+			try { localStorage.setItem('messenger_chatDrafts', JSON.stringify(chatDrafts)); } catch(e) {}
 		}
 	});
 }
