@@ -353,7 +353,24 @@ async function fetchChats() {
 	const isAdmin = user.role === 'admin';
 	const url = `/api/messenger/chats?user_id=${user.id}&is_admin=${isAdmin}`;
 	const res = await fetch(url);
-	chats = await res.json();
+	let rawChats = await res.json();
+	// Для каждого чата получаем последнее сообщение
+	chats = await Promise.all(rawChats.map(async chat => {
+		let lastMsg = null;
+		try {
+			const msgRes = await fetch(`/api/messenger/messages?chat_id=${chat.id}&user_id=${user.id}&is_admin=${isAdmin}`);
+			const msgs = await msgRes.json();
+			if (msgs.length) {
+				const m = msgs[msgs.length - 1];
+				lastMsg = {
+					text: m.content,
+					sender: m.sender_name,
+					date: m.created_at
+				};
+			}
+		} catch(e) {}
+		return { ...chat, lastMsg };
+	}));
 	renderChatList();
 	renderAccountBar();
 	// --- Выбор чата после загрузки списка ---
@@ -413,9 +430,25 @@ function renderChatList() {
 	chatList.innerHTML = '';
 	chats.forEach(chat => {
 		const li = document.createElement('li');
-		li.textContent = chat.title || `Чат #${chat.id}`;
 		li.className = chat.id === currentChatId ? 'active' : '';
 		li.onclick = () => selectChat(chat.id);
+		// Заголовок чата
+		const titleDiv = document.createElement('div');
+		titleDiv.textContent = chat.title || `Чат #${chat.id}`;
+		titleDiv.style.fontWeight = 'bold';
+		li.appendChild(titleDiv);
+		// Превью последнего сообщения
+		if (chat.lastMsg) {
+			const msgDiv = document.createElement('div');
+			msgDiv.className = 'chat-last-msg';
+			msgDiv.style.fontSize = '0.97em';
+			msgDiv.style.color = '#bfc9d8';
+			msgDiv.style.marginTop = '2px';
+			let preview = chat.lastMsg.text;
+			if (preview.length > 48) preview = preview.slice(0, 48) + '…';
+			msgDiv.textContent = `${chat.lastMsg.sender}: ${preview}`;
+			li.appendChild(msgDiv);
+		}
 		chatList.appendChild(li);
 	});
 }
