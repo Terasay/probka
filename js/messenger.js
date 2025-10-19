@@ -274,6 +274,18 @@ function renderAccountBar() {
 	accountBar.innerHTML = `
 		<img src="${avatar}" class="tg-account-avatar" alt="avatar" />
 		<span class="tg-account-name">${escapeHtml(user.username)}</span>
+
+	// --- Установка reply на сообщение ---
+	function setReplyTo(msg) {
+		replyToMsg = msg;
+		var replyPreview = document.getElementById('reply-preview');
+		if (!replyPreview) return;
+		replyPreview.style.display = 'block';
+		var text = '<b>Ответ на:</b> <span style="color:#229ed9">' + escapeHtml(msg.sender_name) + '</span> ';
+		if (msg.content) text += escapeHtml(msg.content.slice(0, 80));
+		if (msg.files && Array.isArray(msg.files) && msg.files.length) text += ' [файл]';
+		replyPreview.innerHTML = text + '<button style="margin-left:10px;background:none;border:none;color:#e74c3c;font-size:1em;cursor:pointer;" onclick="clearReplyTo()">×</button>';
+	}
 	`;
 	accountBar.onclick = showAccountMenu;
 }
