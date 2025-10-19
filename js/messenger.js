@@ -241,6 +241,7 @@ let chats = [];
 let currentChatId = null;
 let currentChatTitle = '';
 let currentMessages = [];
+let replyToMsg = null;
 
 // --- Черновики сообщений по чатам ---
 let chatDrafts = {};
@@ -486,7 +487,20 @@ function renderMessages() {
 			});
 			fileBlock += '</div>';
 		}
-		div.innerHTML = `<b>${escapeHtml(msg.sender_name)}:</b> ${escapeHtml(content)}${fileBlock}`;
+		// --- reply preview (если это ответ) ---
+		if (msg.reply_to) {
+			const replyDiv = document.createElement('div');
+			replyDiv.className = 'msg-reply-preview';
+			replyDiv.style.background = '#232e3c';
+			replyDiv.style.borderRadius = '8px';
+			replyDiv.style.padding = '4px 10px';
+			replyDiv.style.marginBottom = '4px';
+			replyDiv.style.fontSize = '0.95em';
+			replyDiv.style.color = '#bfc9d8';
+			replyDiv.innerHTML = `<span style="font-weight:500;">${escapeHtml(msg.reply_to.sender_name)}:</span> ${escapeHtml(msg.reply_to.content).slice(0, 48)}${msg.reply_to.content.length > 48 ? '…' : ''}`;
+			div.appendChild(replyDiv);
+		}
+		div.innerHTML += `<b>${escapeHtml(msg.sender_name)}:</b> ${escapeHtml(content)}${fileBlock}`;
 		// Кнопка удаления
 		if (msg.sender_id === user.id || user.role === 'admin') {
 			const delBtn = document.createElement('button');
@@ -495,8 +509,33 @@ function renderMessages() {
 			delBtn.onclick = (e) => { e.stopPropagation(); deleteMessage(msg.id); };
 			div.appendChild(delBtn);
 		}
+		// Кнопка "Ответить"
+		const replyBtn = document.createElement('button');
+		replyBtn.className = 'msg-reply-btn';
+		replyBtn.innerHTML = '↩';
+		replyBtn.title = 'Ответить';
+		replyBtn.style.marginLeft = '8px';
+		replyBtn.onclick = () => setReplyTo(msg);
+		div.appendChild(replyBtn);
 		messagesBox.appendChild(div);
 	});
+// --- reply preview над input ---
+function setReplyTo(msg) {
+	replyToMsg = msg;
+	const replyPreview = document.getElementById('reply-preview');
+	replyPreview.style.display = 'block';
+	replyPreview.innerHTML = `<div style="background:#232e3c;border-radius:8px;padding:4px 10px;margin-bottom:4px;font-size:0.95em;color:#bfc9d8;display:flex;align-items:center;justify-content:space-between;">
+		<span><span style='font-weight:500;'>${escapeHtml(msg.sender_name)}:</span> ${escapeHtml(msg.content).slice(0,48)}${msg.content.length>48?'…':''}</span>
+		<button id='cancel-reply-btn' style='background:none;border:none;color:#e74c3c;font-size:1.2em;cursor:pointer;margin-left:10px;' title='Отменить'>✖</button>
+	</div>`;
+	document.getElementById('cancel-reply-btn').onclick = clearReplyTo;
+}
+function clearReplyTo() {
+	replyToMsg = null;
+	const replyPreview = document.getElementById('reply-preview');
+	replyPreview.style.display = 'none';
+	replyPreview.innerHTML = '';
+}
 	messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
