@@ -242,6 +242,12 @@ let currentChatId = null;
 let currentChatTitle = '';
 let currentMessages = [];
 let replyToMsg = null;
+// --- Сброс reply ---
+function clearReplyTo() {
+	replyToMsg = null;
+	const replyPreview = document.getElementById('reply-preview');
+	if (replyPreview) replyPreview.style.display = 'none';
+}
 // --- Установка reply на сообщение ---
 function setReplyTo(msg) {
 	replyToMsg = msg;
