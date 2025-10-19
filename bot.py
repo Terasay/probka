@@ -179,12 +179,12 @@ async def get_chat_messages(chat_id: int, user_id: int, is_admin: bool = False):
             if not cur.fetchone():
                 raise HTTPException(403, "Нет доступа к чату")
         cur.execute("""
-            SELECT id, sender_id, sender_name, content, created_at FROM chat_messages
+            SELECT id, sender_id, sender_name, content, created_at, reply_to FROM chat_messages
             WHERE chat_id = ? ORDER BY id ASC
         """, (chat_id,))
         msgs = cur.fetchall()
     return [
-        {"id": m[0], "sender_id": m[1], "sender_name": m[2], "content": m[3], "created_at": m[4]}
+        {"id": m[0], "sender_id": m[1], "sender_name": m[2], "content": m[3], "created_at": m[4], "reply_to": m[5]}
         for m in msgs
     ]
 
@@ -195,6 +195,7 @@ async def send_message(request: Request):
     chat_id = data.get("chat_id")
     user_id = data.get("user_id")
     content = data.get("content", "").strip()
+    reply_to = data.get("reply_to")
     if not chat_id or not user_id or not content:
         raise HTTPException(400, "chat_id, user_id, content обязательны")
     with sqlite3.connect("site.db") as conn:
@@ -209,9 +210,9 @@ async def send_message(request: Request):
         sender_name = row[0] if row else "?"
         # Вставка сообщения
         cur.execute("""
-            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at)
-            VALUES (?, ?, ?, ?, datetime('now'))
-        """, (chat_id, user_id, sender_name, content))
+            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at, reply_to)
+            VALUES (?, ?, ?, ?, datetime('now'), ?)
+        """, (chat_id, user_id, sender_name, content, reply_to))
         conn.commit()
     return {"success": True}
 
@@ -590,6 +591,11 @@ from fastapi import UploadFile, File, Form
 # --- API: отправить сообщение с файлами ---
 @app.post("/api/messenger/send_file")
 async def send_file_message(chat_id: int = Form(...), user_id: int = Form(...), content: str = Form(""), files: list[UploadFile] = File([])):
+    reply_to = None
+    try:
+        reply_to = int(Form("reply_to"))
+    except Exception:
+        reply_to = None
     # Проверка доступа
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
@@ -613,9 +619,9 @@ async def send_file_message(chat_id: int = Form(...), user_id: int = Form(...), 
             file_urls.append(f"/{fpath.replace('\\', '/')}" )
         # Вставка сообщения
         cur.execute("""
-            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at)
-            VALUES (?, ?, ?, ?, datetime('now'))
-        """, (chat_id, user_id, sender_name, content.strip() + ("\n[files] " + ", ".join(file_urls) if file_urls else "")))
+            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at, reply_to)
+            VALUES (?, ?, ?, ?, datetime('now'), ?)
+        """, (chat_id, user_id, sender_name, content.strip() + ("\n[files] " + ", ".join(file_urls) if file_urls else ""), reply_to))
         conn.commit()
     return {"success": True, "files": file_urls}
 
