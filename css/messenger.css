@@ -1,3 +1,14 @@
+.msg-time {
+	position: absolute;
+	right: 12px;
+	bottom: 6px;
+	font-size: 0.82em;
+	color: #bfc9d8;
+	opacity: 0.7;
+	pointer-events: none;
+	user-select: none;
+	z-index: 2;
+}
 /* --- Стилизация скроллбаров --- */
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {

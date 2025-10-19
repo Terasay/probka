@@ -503,6 +503,19 @@ function renderMessages() {
 				div.appendChild(replyDiv);
 			}
 		}
+		// --- Время отправки ---
+		let localTime = '';
+		if (msg.created_at) {
+			// msg.created_at в формате 'YYYY-MM-DD HH:mm:ss' (UTC)
+			let dt = new Date(msg.created_at.replace(' ', 'T') + 'Z');
+			// Форматировать как HH:mm или DD.MM.YY HH:mm если не сегодня
+			const now = new Date();
+			if (dt.toDateString() === now.toDateString()) {
+				localTime = dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+			} else {
+				localTime = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+			}
+		}
 		div.innerHTML += `<b>${escapeHtml(msg.sender_name)}:</b> ${escapeHtml(content)}${fileBlock}`;
 		// Кнопка удаления
 		if (msg.sender_id === user.id || user.role === 'admin') {
@@ -520,6 +533,20 @@ function renderMessages() {
 		replyBtn.style.marginLeft = '8px';
 		replyBtn.onclick = () => setReplyTo(msg);
 		div.appendChild(replyBtn);
+		// --- Надпись времени ---
+		if (localTime) {
+			const timeDiv = document.createElement('div');
+			timeDiv.className = 'msg-time';
+			timeDiv.textContent = localTime;
+			timeDiv.style.position = 'absolute';
+			timeDiv.style.right = '12px';
+			timeDiv.style.bottom = '6px';
+			timeDiv.style.fontSize = '0.82em';
+			timeDiv.style.color = '#bfc9d8';
+			timeDiv.style.opacity = '0.7';
+			div.style.position = 'relative';
+			div.appendChild(timeDiv);
+		}
 		messagesBox.appendChild(div);
 	});
 
