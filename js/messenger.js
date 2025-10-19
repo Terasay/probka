@@ -356,7 +356,30 @@ async function fetchChats() {
 	chats = await res.json();
 	renderChatList();
 	renderAccountBar();
-	if (chats.length && !currentChatId) selectChat(chats[0].id);
+	// --- Выбор чата после загрузки списка ---
+	if (chats.length) {
+		let hashChatId = null;
+		if (window.location.hash && window.location.hash.startsWith('#chat-')) {
+			const hashId = window.location.hash.replace('#chat-', '');
+			if (chats.some(c => String(c.id) === hashId)) {
+				hashChatId = hashId;
+			}
+		}
+		if (hashChatId) {
+			selectChat(hashChatId);
+		} else {
+			// Пробуем восстановить последний открытый чат
+			let lastChatId = null;
+			try {
+				lastChatId = localStorage.getItem('lastChatId');
+			} catch(e) {}
+			if (lastChatId && chats.some(c => String(c.id) === lastChatId)) {
+				selectChat(lastChatId);
+			} else {
+				selectChat(chats[0].id);
+			}
+		}
+	}
 }
 // Диалог создания нового чата
 if (newChatBtn) {
