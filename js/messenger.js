@@ -244,11 +244,17 @@ let currentMessages = [];
 
 // --- Черновики сообщений по чатам ---
 let chatDrafts = {};
-// Загрузка черновиков из localStorage
-try {
-	const saved = localStorage.getItem('messenger_chatDrafts');
-	if (saved) chatDrafts = JSON.parse(saved);
-} catch(e) { chatDrafts = {}; }
+function loadDrafts() {
+	try {
+		const saved = localStorage.getItem('messenger_chatDrafts');
+		if (saved) chatDrafts = JSON.parse(saved);
+		else chatDrafts = {};
+	} catch(e) { chatDrafts = {}; }
+}
+function saveDrafts() {
+	try { localStorage.setItem('messenger_chatDrafts', JSON.stringify(chatDrafts)); } catch(e) {}
+}
+loadDrafts();
 
 const chatList = document.getElementById('chat-list');
 const messagesBox = document.getElementById('messages');
@@ -448,16 +454,24 @@ async function selectChat(id) {
 	// Сохраняем черновик для текущего чата
 	if (currentChatId !== null) {
 		chatDrafts[currentChatId] = messageInput.value;
-		// Сохраняем в localStorage
-		try { localStorage.setItem('messenger_chatDrafts', JSON.stringify(chatDrafts)); } catch(e) {}
+		saveDrafts();
 	}
 	currentChatId = id;
+	// Сохраняем последний открытый чат
+	try { localStorage.setItem('messenger_lastChat', String(id)); } catch(e) {}
+	// Обновляем hash в адресе
+	if (history.replaceState) {
+		history.replaceState(null, '', '#chat-' + id);
+	} else {
+		location.hash = '#chat-' + id;
+	}
 	const chat = chats.find(c => c.id === id);
 	currentChatTitle = chat ? (chat.title || `Чат #${chat.id}`) : '';
 	chatTitle.textContent = currentChatTitle;
 	await fetchMessages(id);
 	renderChatList();
 	// Восстанавливаем черновик для выбранного чата
+	loadDrafts();
 	messageInput.value = chatDrafts[id] || '';
 }
 
@@ -489,7 +503,7 @@ messageForm.addEventListener('submit', async function(e) {
 	}
 	// Очищаем черновик для текущего чата
 	chatDrafts[currentChatId] = '';
-	try { localStorage.setItem('messenger_chatDrafts', JSON.stringify(chatDrafts)); } catch(e) {}
+	saveDrafts();
 	messageInput.value = '';
 	await fetchMessages(currentChatId);
 // --- Автосохранение черновика при вводе ---
@@ -497,11 +511,34 @@ if (messageInput) {
 	messageInput.addEventListener('input', function() {
 		if (currentChatId !== null) {
 			chatDrafts[currentChatId] = messageInput.value;
-			// Сохраняем в localStorage
-			try { localStorage.setItem('messenger_chatDrafts', JSON.stringify(chatDrafts)); } catch(e) {}
+			saveDrafts();
 		}
 	});
 }
+
+// --- Открытие чата по hash и восстановление последнего чата ---
+window.addEventListener('DOMContentLoaded', function() {
+	let chatId = null;
+	// 1. По hash
+	if (location.hash && location.hash.startsWith('#chat-')) {
+		chatId = parseInt(location.hash.replace('#chat-', ''));
+	}
+	// 2. Если нет hash — по localStorage
+	if (!chatId) {
+		try {
+			const last = localStorage.getItem('messenger_lastChat');
+			if (last) chatId = parseInt(last);
+		} catch(e) {}
+	}
+	// 3. После загрузки чатов — открыть нужный
+	const origFetchChats = fetchChats;
+	fetchChats = async function() {
+		await origFetchChats();
+		if (chatId && chats.some(c => c.id === chatId)) {
+			selectChat(chatId);
+		}
+	};
+});
 });
 
 async function deleteMessage(msgId) {
