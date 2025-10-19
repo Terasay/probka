@@ -1,3 +1,53 @@
+// --- Прикрепление файлов к сообщению ---
+const attachBtn = document.getElementById('attach-btn');
+const messageFileInput = document.getElementById('message-file');
+const messageFormEl = document.getElementById('message-form');
+let attachedFiles = [];
+
+// Элемент для предпросмотра
+let attachPreview = document.createElement('div');
+attachPreview.className = 'attach-preview';
+if (messageFormEl) messageFormEl.insertBefore(attachPreview, messageFormEl.firstChild);
+
+if (attachBtn && messageFileInput) {
+	attachBtn.onclick = () => messageFileInput.click();
+	messageFileInput.onchange = function() {
+		attachedFiles = Array.from(messageFileInput.files);
+		renderAttachPreview();
+	};
+}
+
+function renderAttachPreview() {
+	attachPreview.innerHTML = '';
+	attachedFiles.forEach((file, idx) => {
+		const item = document.createElement('div');
+		item.className = 'attach-preview-item';
+		// Картинка
+		if (file.type.startsWith('image/')) {
+			const img = document.createElement('img');
+			img.className = 'attach-preview-img';
+			img.src = URL.createObjectURL(file);
+			item.appendChild(img);
+		}
+		// Имя файла
+		const fname = document.createElement('div');
+		fname.className = 'attach-preview-filename';
+		fname.textContent = file.name;
+		item.appendChild(fname);
+		// Кнопка удаления
+		const removeBtn = document.createElement('button');
+		removeBtn.className = 'attach-remove-btn';
+		removeBtn.textContent = '×';
+		removeBtn.onclick = () => {
+			attachedFiles.splice(idx, 1);
+			renderAttachPreview();
+			messageFileInput.value = '';
+		};
+		item.appendChild(removeBtn);
+		attachPreview.appendChild(item);
+	});
+	attachPreview.style.display = attachedFiles.length ? 'flex' : 'none';
+}
 // --- Кнопка редактирования чата ---
 const chatEditBtn = document.getElementById('chat-edit-btn');
 // --- Модальное окно редактирования чата ---
@@ -371,13 +421,29 @@ async function selectChat(id) {
 messageForm.addEventListener('submit', async function(e) {
 	e.preventDefault();
 	const text = messageInput.value.trim();
-	if (!text || !currentChatId) return;
+	if ((!text && attachedFiles.length === 0) || !currentChatId) return;
 	const user = getUser();
-	await fetch('/api/messenger/send', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ chat_id: currentChatId, user_id: user.id, content: text })
-	});
+	// Если есть файлы — отправляем через FormData
+	if (attachedFiles.length > 0) {
+		const formData = new FormData();
+		formData.append('chat_id', currentChatId);
+		formData.append('user_id', user.id);
+		formData.append('content', text);
+		attachedFiles.forEach(f => formData.append('files', f));
+		await fetch('/api/messenger/send_file', {
+			method: 'POST',
+			body: formData
+		});
+		attachedFiles = [];
+		renderAttachPreview();
+		messageFileInput.value = '';
+	} else {
+		await fetch('/api/messenger/send', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ chat_id: currentChatId, user_id: user.id, content: text })
+		});
+	}
 	messageInput.value = '';
 	await fetchMessages(currentChatId);
 });

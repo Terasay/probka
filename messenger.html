@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messenger</title>
+    <title>Мессенджер</title>
     <link rel="stylesheet" href="css/messenger.css">
 </head>
 <body>
@@ -47,6 +47,8 @@
                 </section>
                 <footer class="tg-footer">
                     <form id="message-form">
+                        <input type="file" id="message-file" style="display:none;" multiple />
+                        <button type="button" id="attach-btn" title="Прикрепить файл" style="background:none;border:none;font-size:1.3em;color:#229ed9;cursor:pointer;padding:0 8px;">📎</button>
                         <input type="text" id="message-input" placeholder="Сообщение..." autocomplete="off" />
                         <button type="submit" id="send-btn">➤</button>
                     </form>

@@ -1,3 +1,64 @@
+.attach-preview {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 8px;
+	align-items: flex-end;
+}
+.attach-preview-item {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	max-width: 120px;
+}
+.attach-preview-img {
+	max-width: 90px;
+	max-height: 90px;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px #0002;
+	margin-bottom: 2px;
+}
+.attach-preview-filename {
+	color: #bfc9d8;
+	font-size: 0.95em;
+	word-break: break-all;
+	text-align: center;
+	max-width: 100px;
+}
+.attach-remove-btn {
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	background: #e74c3c;
+	color: #fff;
+	border: none;
+	border-radius: 50%;
+	width: 20px;
+	height: 20px;
+	font-size: 1em;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 2;
+	box-shadow: 0 2px 8px #0003;
+	padding: 0;
+}
+.attach-remove-btn:hover {
+	background: #c0392b;
+}
+#attach-btn {
+	background: none;
+	border: none;
+	font-size: 1.3em;
+	color: #229ed9;
+	cursor: pointer;
+	padding: 0 8px;
+	transition: color 0.18s;
+}
+#attach-btn:hover {
+	color: #1b8cc3;
+}
 .chat-edit-modal {
 	position: fixed;
 	top: 0; left: 0; right: 0; bottom: 0;

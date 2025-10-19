@@ -16,35 +16,36 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# --- API: редактировать чат (название и участники) ---
-@app.post("/api/messenger/edit_chat")
-async def edit_chat(request: Request):
-    data = await request.json()
-    chat_id = data.get("chat_id")
-    title = data.get("title", "").strip()
-    user_ids = data.get("user_ids", [])
-    if not chat_id or not title or not user_ids:
-        raise HTTPException(400, "chat_id, title, user_ids обязательны")
+@app.post("/api/messenger/send_file")
+async def send_file_message(chat_id: int = Form(...), user_id: int = Form(...), content: str = Form(""), files: list[UploadFile] = File([])):
+    # Проверка доступа
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Обновить название
-        cur.execute("UPDATE chats SET title = ? WHERE id = ?", (title, chat_id))
-        # Получить текущих участников
-        cur.execute("SELECT user_id FROM chat_members WHERE chat_id = ?", (chat_id,))
-        current_ids = set(row[0] for row in cur.fetchall())
-        new_ids = set(user_ids)
-        # Добавить новых участников
-        for uid in new_ids - current_ids:
-            cur.execute("INSERT OR IGNORE INTO chat_members (chat_id, user_id, role) VALUES (?, ?, 'member')", (chat_id, uid))
-        # Удалить исключённых участников (кроме создателя чата)
-        cur.execute("SELECT created_by FROM chats WHERE id = ?", (chat_id,))
-        creator_row = cur.fetchone()
-        creator_id = creator_row[0] if creator_row else None
-        for uid in current_ids - new_ids:
-            if uid != creator_id:
-                cur.execute("DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, uid))
+        cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
+        if not cur.fetchone():
+            raise HTTPException(403, "Нет доступа к чату")
+        # Имя отправителя
+        cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        sender_name = row[0] if row else "?"
+        # Сохраняем файлы
+        file_urls = []
+        upload_dir = os.path.join("uploads", str(chat_id))
+        os.makedirs(upload_dir, exist_ok=True)
+        for file in files:
+            ext = os.path.splitext(file.filename)[1].lower()
+            fname = os.urandom(8).hex() + ext
+            fpath = os.path.join(upload_dir, fname)
+            with open(fpath, "wb") as out_file:
+                out_file.write(await file.read())
+            file_urls.append(f"/{fpath.replace('\\', '/')}" )
+        # Вставка сообщения
+        cur.execute("""
+            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        """, (chat_id, user_id, sender_name, content.strip() + ("\n[files] " + ", ".join(file_urls) if file_urls else "")))
         conn.commit()
-    return {"success": True}
+    return {"success": True, "files": file_urls}
 
 # --- API: редактировать чат (название и участники) ---
 @app.post("/api/messenger/edit_chat")
@@ -583,9 +584,42 @@ def init_db():
             content TEXT,
             created_at TEXT
         )""")
-from fastapi import UploadFile, File, Form
-import shutil
 import os
+from fastapi import UploadFile, File, Form
+
+# --- API: отправить сообщение с файлами ---
+@app.post("/api/messenger/send_file")
+async def send_file_message(chat_id: int = Form(...), user_id: int = Form(...), content: str = Form(""), files: list[UploadFile] = File([])):
+    # Проверка доступа
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
+        if not cur.fetchone():
+            raise HTTPException(403, "Нет доступа к чату")
+        # Имя отправителя
+        cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        sender_name = row[0] if row else "?"
+        # Сохраняем файлы
+        file_urls = []
+        upload_dir = os.path.join("uploads", str(chat_id))
+        os.makedirs(upload_dir, exist_ok=True)
+        for file in files:
+            ext = os.path.splitext(file.filename)[1].lower()
+            fname = os.urandom(8).hex() + ext
+            fpath = os.path.join(upload_dir, fname)
+            with open(fpath, "wb") as out_file:
+                out_file.write(await file.read())
+            file_urls.append(f"/{fpath.replace('\\', '/')}" )
+        # Вставка сообщения
+        cur.execute("""
+            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        """, (chat_id, user_id, sender_name, content.strip() + ("\n[files] " + ", ".join(file_urls) if file_urls else "")))
+        conn.commit()
+    return {"success": True, "files": file_urls}
+
+import shutil
 @app.post("/api/account/change_password")
 async def change_password(request: Request):
     data = await request.json()
