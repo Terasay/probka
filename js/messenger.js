@@ -17,12 +17,6 @@ if (attachBtn && messageFileInput) {
 	};
 }
 
-		messageInput.addEventListener('input', function() {
-			if (currentChatId !== null) {
-				chatDrafts[currentChatId] = messageInput.value;
-				saveDrafts();
-			}
-		});
 function renderAttachPreview() {
 	attachPreview.innerHTML = '';
 	attachedFiles.forEach((file, idx) => {
@@ -680,7 +674,7 @@ if (messageInput) {
 }
 
 // --- Открытие чата по hash и восстановление последнего чата ---
-window.addEventListener('DOMContentLoaded', async function() {
+window.addEventListener('DOMContentLoaded', function() {
 	let chatIdFromHash = null;
 	if (location.hash && location.hash.startsWith('#chat-')) {
 		chatIdFromHash = parseInt(location.hash.replace('#chat-', ''));
