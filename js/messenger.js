@@ -1,4 +1,3 @@
-
 const attachBtn = document.getElementById('attach-btn');
 const messageFileInput = document.getElementById('message-file');
 const messageFormEl = document.getElementById('message-form');
@@ -452,17 +451,24 @@ function renderChatList() {
 		titleDiv.textContent = chat.title || `Чат #${chat.id}`;
 		titleDiv.style.fontWeight = 'bold';
 		li.appendChild(titleDiv);
+		// --- Badge непрочитанных сообщений ---
+		if (chat.unread_count && chat.unread_count > 0) {
+			const badge = document.createElement('span');
+			badge.className = 'unread-badge';
+			badge.textContent = chat.unread_count > 99 ? '99+' : chat.unread_count;
+			badge.title = 'Непрочитанные сообщения';
+			li.appendChild(badge);
+		}
 		// Превью последнего сообщения
 		if (chat.lastMsg) {
-			const msgDiv = document.createElement('div');
-			msgDiv.className = 'chat-last-msg';
-			msgDiv.style.fontSize = '0.62em';
-			msgDiv.style.color = '#bfc9d8';
-			msgDiv.style.marginTop = '2px';
-			let preview = chat.lastMsg.text;
-			if (preview.length > 36) preview = preview.slice(0, 36) + '…';
-			msgDiv.textContent = `${chat.lastMsg.sender}: ${preview}`;
-			li.appendChild(msgDiv);
+			const preview = document.createElement('div');
+			preview.className = 'chat-preview';
+			let text = chat.lastMsg.content ? chat.lastMsg.content.slice(0, 40) : '';
+			if (chat.lastMsg.files && chat.lastMsg.files.length) text += ' [файл]';
+			preview.textContent = text;
+			preview.style.color = '#bfc9d8';
+			preview.style.fontSize = '0.95em';
+			li.appendChild(preview);
 		}
 		chatList.appendChild(li);
 	});
@@ -621,7 +627,21 @@ async function selectChat(id) {
 	currentChatTitle = chat ? (chat.title || `Чат #${chat.id}`) : '';
 	chatTitle.textContent = currentChatTitle;
 	await fetchMessages(id);
-	renderChatList();
+	// --- Отмечаем чат как прочитанный ---
+	const user = getUser();
+	if (chat && user && chat.lastMsg) {
+		try {
+			await fetch('/api/messenger/read_chat', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ chat_id: id, user_id: user.id, last_msg_id: chat.lastMsg.id })
+			});
+		} catch(e) {}
+		// После отметки обновляем список чатов для сброса badge
+		await fetchChats();
+	} else {
+		renderChatList();
+	}
 	// Восстанавливаем черновик для выбранного чата
 	loadDrafts();
 	messageInput.value = chatDrafts[id] || '';
