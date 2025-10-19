@@ -441,7 +441,7 @@ function renderChatList() {
 		if (chat.lastMsg) {
 			const msgDiv = document.createElement('div');
 			msgDiv.className = 'chat-last-msg';
-			msgDiv.style.fontSize = '0.38em'; // уменьшено в ~2.5 раза
+			msgDiv.style.fontSize = '0.45em';
 			msgDiv.style.color = '#bfc9d8';
 			msgDiv.style.marginTop = '2px';
 			let preview = chat.lastMsg.text;
