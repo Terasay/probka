@@ -1,3 +1,16 @@
+.msg-controls {
+	position: absolute;
+	right: 8px;
+	top: 8px;
+	background: #232e3c;
+	border-radius: 8px;
+	box-shadow: 0 2px 12px #0006;
+	display: flex;
+	gap: 6px;
+	padding: 4px 10px;
+	z-index: 10;
+	align-items: center;
+}
 .msg-time {
 	position: absolute;
 	right: 12px;

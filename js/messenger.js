@@ -506,9 +506,7 @@ function renderMessages() {
 		// --- Время отправки ---
 		let localTime = '';
 		if (msg.created_at) {
-			// msg.created_at в формате 'YYYY-MM-DD HH:mm:ss' (UTC)
 			let dt = new Date(msg.created_at.replace(' ', 'T') + 'Z');
-			// Форматировать как HH:mm или DD.MM.YY HH:mm если не сегодня
 			const now = new Date();
 			if (dt.toDateString() === now.toDateString()) {
 				localTime = dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
@@ -517,22 +515,6 @@ function renderMessages() {
 			}
 		}
 		div.innerHTML += `<b>${escapeHtml(msg.sender_name)}:</b> ${escapeHtml(content)}${fileBlock}`;
-		// Кнопка удаления
-		if (msg.sender_id === user.id || user.role === 'admin') {
-			const delBtn = document.createElement('button');
-			delBtn.textContent = '✖';
-			delBtn.className = 'msg-del-btn';
-			delBtn.onclick = (e) => { e.stopPropagation(); deleteMessage(msg.id); };
-			div.appendChild(delBtn);
-		}
-		// Кнопка "Ответить"
-		const replyBtn = document.createElement('button');
-		replyBtn.className = 'msg-reply-btn';
-		replyBtn.innerHTML = '↩';
-		replyBtn.title = 'Ответить';
-		replyBtn.style.marginLeft = '8px';
-		replyBtn.onclick = () => setReplyTo(msg);
-		div.appendChild(replyBtn);
 		// --- Надпись времени ---
 		if (localTime) {
 			const timeDiv = document.createElement('div');
@@ -547,6 +529,53 @@ function renderMessages() {
 			div.style.position = 'relative';
 			div.appendChild(timeDiv);
 		}
+		// --- Кнопки управления (удалить/ответить) ---
+		let controlsDiv = null;
+		function showControls(e) {
+			e.preventDefault();
+			// Удалить старое меню
+			document.querySelectorAll('.msg-controls').forEach(el => el.remove());
+			controlsDiv = document.createElement('div');
+			controlsDiv.className = 'msg-controls';
+			controlsDiv.style.position = 'absolute';
+			controlsDiv.style.right = '8px';
+			controlsDiv.style.top = '8px';
+			controlsDiv.style.background = '#232e3c';
+			controlsDiv.style.borderRadius = '8px';
+			controlsDiv.style.boxShadow = '0 2px 12px #0006';
+			controlsDiv.style.display = 'flex';
+			controlsDiv.style.gap = '6px';
+			controlsDiv.style.padding = '4px 10px';
+			controlsDiv.style.zIndex = '10';
+			controlsDiv.style.alignItems = 'center';
+			// Кнопка удалить
+			if (msg.sender_id === user.id || user.role === 'admin') {
+				const delBtn = document.createElement('button');
+				delBtn.textContent = '✖';
+				delBtn.className = 'msg-del-btn';
+				delBtn.onclick = (ev) => { ev.stopPropagation(); deleteMessage(msg.id); controlsDiv.remove(); };
+				controlsDiv.appendChild(delBtn);
+			}
+			// Кнопка ответить
+			const replyBtn = document.createElement('button');
+			replyBtn.className = 'msg-reply-btn';
+			replyBtn.innerHTML = '↩';
+			replyBtn.title = 'Ответить';
+			replyBtn.onclick = (ev) => { ev.stopPropagation(); setReplyTo(msg); controlsDiv.remove(); };
+			controlsDiv.appendChild(replyBtn);
+			// Добавить меню к сообщению
+			div.appendChild(controlsDiv);
+			// Закрыть меню при клике вне
+			setTimeout(() => {
+				document.addEventListener('mousedown', function handler(ev) {
+					if (!controlsDiv.contains(ev.target)) {
+						controlsDiv.remove();
+						document.removeEventListener('mousedown', handler);
+					}
+				});
+			}, 0);
+		}
+		div.oncontextmenu = showControls;
 		messagesBox.appendChild(div);
 	});
 
