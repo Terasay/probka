@@ -572,7 +572,7 @@ body {
 }
 .tg-message {
 	max-width: 70%;
-	padding: 10px 16px;
+	padding: 10px 16px 28px 16px;
 	border-radius: 16px;
 	font-size: 1em;
 	line-height: 1.4;
