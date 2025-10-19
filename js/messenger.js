@@ -518,25 +518,27 @@ if (messageInput) {
 
 // --- Открытие чата по hash и восстановление последнего чата ---
 window.addEventListener('DOMContentLoaded', function() {
-	let chatId = null;
-	// 1. По hash
+	let chatIdFromHash = null;
 	if (location.hash && location.hash.startsWith('#chat-')) {
-		chatId = parseInt(location.hash.replace('#chat-', ''));
+		chatIdFromHash = parseInt(location.hash.replace('#chat-', ''));
 	}
-	// 2. Если нет hash — по localStorage
-	if (!chatId) {
-		try {
-			const last = localStorage.getItem('messenger_lastChat');
-			if (last) chatId = parseInt(last);
-		} catch(e) {}
-	}
-	// 3. После загрузки чатов — открыть нужный
+	let chatIdFromStorage = null;
+	try {
+		const last = localStorage.getItem('messenger_lastChat');
+		if (last) chatIdFromStorage = parseInt(last);
+	} catch(e) {}
+
 	const origFetchChats = fetchChats;
 	fetchChats = async function() {
 		await origFetchChats();
-		if (chatId && chats.some(c => c.id === chatId)) {
-			selectChat(chatId);
+		let toOpen = null;
+		// Если есть hash — всегда открываем по нему
+		if (chatIdFromHash && chats.some(c => c.id === chatIdFromHash)) {
+			toOpen = chatIdFromHash;
+		} else if (chatIdFromStorage && chats.some(c => c.id === chatIdFromStorage)) {
+			toOpen = chatIdFromStorage;
 		}
+		if (toOpen) selectChat(toOpen);
 	};
 });
 });
