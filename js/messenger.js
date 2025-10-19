@@ -237,9 +237,13 @@ function renderChatMembersList(members) {
 }
 
 let chats = [];
+
 let currentChatId = null;
 let currentChatTitle = '';
 let currentMessages = [];
+
+// --- Черновики сообщений по чатам ---
+let chatDrafts = {};
 
 const chatList = document.getElementById('chat-list');
 const messagesBox = document.getElementById('messages');
@@ -436,12 +440,18 @@ function escapeHtml(text) {
 }
 
 async function selectChat(id) {
+	// Сохраняем черновик для текущего чата
+	if (currentChatId !== null) {
+		chatDrafts[currentChatId] = messageInput.value;
+	}
 	currentChatId = id;
 	const chat = chats.find(c => c.id === id);
 	currentChatTitle = chat ? (chat.title || `Чат #${chat.id}`) : '';
 	chatTitle.textContent = currentChatTitle;
 	await fetchMessages(id);
 	renderChatList();
+	// Восстанавливаем черновик для выбранного чата
+	messageInput.value = chatDrafts[id] || '';
 }
 
 messageForm.addEventListener('submit', async function(e) {
@@ -470,8 +480,18 @@ messageForm.addEventListener('submit', async function(e) {
 			body: JSON.stringify({ chat_id: currentChatId, user_id: user.id, content: text })
 		});
 	}
+	// Очищаем черновик для текущего чата
+	chatDrafts[currentChatId] = '';
 	messageInput.value = '';
 	await fetchMessages(currentChatId);
+// --- Автосохранение черновика при вводе ---
+if (messageInput) {
+	messageInput.addEventListener('input', function() {
+		if (currentChatId !== null) {
+			chatDrafts[currentChatId] = messageInput.value;
+		}
+	});
+}
 });
 
 async function deleteMessage(msgId) {
