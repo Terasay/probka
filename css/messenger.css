@@ -1,3 +1,42 @@
+/* --- Файлы в сообщениях --- */
+.msg-files {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 6px;
+	align-items: flex-end;
+}
+.msg-file-img {
+	max-width: 120px;
+	max-height: 120px;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px #0002;
+	margin-bottom: 2px;
+	background: #181e25;
+	object-fit: cover;
+	display: block;
+	transition: box-shadow 0.18s;
+}
+.msg-file-img:hover {
+	box-shadow: 0 4px 16px #229ed988;
+}
+.msg-file-link {
+	display: inline-block;
+	background: #202a36;
+	color: #229ed9;
+	border-radius: 7px;
+	padding: 4px 10px;
+	font-size: 0.98em;
+	text-decoration: none;
+	margin-bottom: 2px;
+	margin-right: 4px;
+	transition: background 0.18s, color 0.18s;
+	word-break: break-all;
+}
+.msg-file-link:hover {
+	background: #229ed9;
+	color: #fff;
+}
 .attach-preview {
 	display: flex;
 	gap: 10px;

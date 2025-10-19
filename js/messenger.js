@@ -389,7 +389,33 @@ function renderMessages() {
 	currentMessages.forEach(msg => {
 		const div = document.createElement('div');
 		div.className = 'tg-message' + (msg.sender_id === user.id ? ' out' : '');
-		div.innerHTML = `<b>${msg.sender_name}:</b> ${escapeHtml(msg.content)}`;
+		// --- Парсинг файлов ---
+		let content = msg.content || '';
+		let files = [];
+		let fileBlock = '';
+		// Ищем [files] ...
+		const filesMatch = content.match(/\[files\](.*)$/s);
+		if (filesMatch) {
+			// Получаем список файлов
+			const filesStr = filesMatch[1].trim();
+			files = filesStr.split(/,\s*/).filter(Boolean);
+			content = content.replace(/\n?\[files\].*$/s, '').trim();
+		}
+		// Формируем HTML для файлов
+		if (files.length) {
+			fileBlock = '<div class="msg-files">';
+			files.forEach(url => {
+				const ext = url.split('.').pop().toLowerCase();
+				if (["jpg","jpeg","png","gif","webp","bmp"].includes(ext)) {
+					fileBlock += `<a href="${url}" target="_blank"><img src="${url}" class="msg-file-img" alt="img" /></a>`;
+				} else {
+					const fname = url.split('/').pop();
+					fileBlock += `<a href="${url}" target="_blank" class="msg-file-link">📎 ${fname}</a>`;
+				}
+			});
+			fileBlock += '</div>';
+		}
+		div.innerHTML = `<b>${escapeHtml(msg.sender_name)}:</b> ${escapeHtml(content)}${fileBlock}`;
 		// Кнопка удаления
 		if (msg.sender_id === user.id || user.role === 'admin') {
 			const delBtn = document.createElement('button');
