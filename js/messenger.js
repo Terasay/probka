@@ -489,16 +489,19 @@ function renderMessages() {
 		}
 		// --- reply preview (если это ответ) ---
 		if (msg.reply_to) {
-			const replyDiv = document.createElement('div');
-			replyDiv.className = 'msg-reply-preview';
-			replyDiv.style.background = '#232e3c';
-			replyDiv.style.borderRadius = '8px';
-			replyDiv.style.padding = '4px 10px';
-			replyDiv.style.marginBottom = '4px';
-			replyDiv.style.fontSize = '0.95em';
-			replyDiv.style.color = '#bfc9d8';
-			replyDiv.innerHTML = `<span style="font-weight:500;">${escapeHtml(msg.reply_to.sender_name)}:</span> ${escapeHtml(msg.reply_to.content).slice(0, 48)}${msg.reply_to.content.length > 48 ? '…' : ''}`;
-			div.appendChild(replyDiv);
+			const repliedMsg = currentMessages.find(m => m.id == msg.reply_to);
+			if (repliedMsg) {
+				const replyDiv = document.createElement('div');
+				replyDiv.className = 'msg-reply-preview';
+				replyDiv.style.background = '#232e3c';
+				replyDiv.style.borderRadius = '8px';
+				replyDiv.style.padding = '4px 10px';
+				replyDiv.style.marginBottom = '4px';
+				replyDiv.style.fontSize = '0.95em';
+				replyDiv.style.color = '#bfc9d8';
+				replyDiv.innerHTML = `<span style=\"font-weight:500;\">${escapeHtml(repliedMsg.sender_name)}:</span> ${escapeHtml(repliedMsg.content).slice(0, 48)}${repliedMsg.content.length > 48 ? '…' : ''}`;
+				div.appendChild(replyDiv);
+			}
 		}
 		div.innerHTML += `<b>${escapeHtml(msg.sender_name)}:</b> ${escapeHtml(content)}${fileBlock}`;
 		// Кнопка удаления
@@ -581,6 +584,7 @@ messageForm.addEventListener('submit', async function(e) {
 		formData.append('chat_id', currentChatId);
 		formData.append('user_id', user.id);
 		formData.append('content', text);
+		if (replyToMsg) formData.append('reply_to', replyToMsg.id);
 		attachedFiles.forEach(f => formData.append('files', f));
 		await fetch('/api/messenger/send_file', {
 			method: 'POST',
@@ -593,9 +597,10 @@ messageForm.addEventListener('submit', async function(e) {
 		await fetch('/api/messenger/send', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ chat_id: currentChatId, user_id: user.id, content: text })
+			body: JSON.stringify({ chat_id: currentChatId, user_id: user.id, content: text, reply_to: replyToMsg ? replyToMsg.id : null })
 		});
 	}
+	clearReplyTo();
 	// Очищаем черновик для текущего чата
 	chatDrafts[currentChatId] = '';
 	saveDrafts();
