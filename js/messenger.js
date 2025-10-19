@@ -27,23 +27,6 @@ function renderAttachPreview() {
 	attachPreview.innerHTML = '';
 	attachedFiles.forEach((file, idx) => {
 		const item = document.createElement('div');
-		// Проверяем hash в адресе
-		const hash = window.location.hash;
-		if (hash && hash.startsWith('#chat-')) {
-			const chatId = parseInt(hash.replace('#chat-', ''));
-			if (!isNaN(chatId)) {
-				// Ждем загрузки чатов, затем выбираем нужный чат
-				await fetchChats();
-				// Проверяем, что такой чат есть
-				if (chats.find(c => c.id === chatId)) {
-					await selectChat(chatId);
-				}
-			} else {
-				fetchChats();
-			}
-		} else {
-			fetchChats();
-		}
 		item.className = 'attach-preview-item';
 		// Картинка
 		if (file.type.startsWith('image/')) {
