@@ -1,3 +1,26 @@
+/* --- Стилизация скроллбаров --- */
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+	width: 10px;
+	background: #202a36;
+}
+::-webkit-scrollbar-thumb {
+	background: #263142;
+	border-radius: 8px;
+	border: 2px solid #232e3c;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: #229ed9;
+}
+::-webkit-scrollbar-track {
+	background: #202a36;
+	border-radius: 8px;
+}
+/* Firefox */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #263142 #202a36;
+}
 /* --- Файлы в сообщениях --- */
 .msg-files {
 	display: flex;

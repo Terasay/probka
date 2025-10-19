@@ -445,7 +445,7 @@ function renderChatList() {
 			msgDiv.style.color = '#bfc9d8';
 			msgDiv.style.marginTop = '2px';
 			let preview = chat.lastMsg.text;
-			if (preview.length > 48) preview = preview.slice(0, 48) + '…';
+			if (preview.length > 36) preview = preview.slice(0, 36) + '…';
 			msgDiv.textContent = `${chat.lastMsg.sender}: ${preview}`;
 			li.appendChild(msgDiv);
 		}
