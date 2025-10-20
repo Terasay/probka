@@ -988,7 +988,10 @@ async def read_chat(request: Request):
         return JSONResponse({"error": "Missing params"}, status_code=400)
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        cur.execute("REPLACE INTO chat_reads (user_id, chat_id, last_read_msg_id) VALUES (?, ?, ?)", (user_id, chat_id, last_msg_id))
+        # Найти максимальный id чужого сообщения (от других пользователей)
+        cur.execute("SELECT MAX(id) FROM chat_messages WHERE chat_id=? AND sender_id != ? AND id <= ?", (chat_id, user_id, last_msg_id))
+        max_other_id = cur.fetchone()[0] or 0
+        cur.execute("REPLACE INTO chat_reads (user_id, chat_id, last_read_msg_id) VALUES (?, ?, ?)", (user_id, chat_id, max_other_id))
         conn.commit()
     return {"success": True}
 
