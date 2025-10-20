@@ -169,8 +169,8 @@ async def get_user_chats(user_id: int, is_admin: bool = False):
             cur.execute("SELECT last_read_msg_id FROM chat_reads WHERE user_id=? AND chat_id=?", (user_id, chat_id))
             row = cur.fetchone()
             last_read = row[0] if row else 0
-            # Получаем количество непрочитанных сообщений
-            cur.execute("SELECT COUNT(*) FROM chat_messages WHERE chat_id=? AND id > ?", (chat_id, last_read))
+            # Получаем количество непрочитанных сообщений (только чужие)
+            cur.execute("SELECT COUNT(*) FROM chat_messages WHERE chat_id=? AND id > ? AND sender_id != ?", (chat_id, last_read, user_id))
             unread_count = cur.fetchone()[0]
             # Получаем последнее сообщение
             cur.execute("SELECT id, sender_id, sender_name, content FROM chat_messages WHERE chat_id=? ORDER BY id DESC LIMIT 1", (chat_id,))
