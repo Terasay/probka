@@ -172,7 +172,21 @@ async def get_user_chats(user_id: int, is_admin: bool = False):
             # Получаем количество непрочитанных сообщений
             cur.execute("SELECT COUNT(*) FROM chat_messages WHERE chat_id=? AND id > ?", (chat_id, last_read))
             unread_count = cur.fetchone()[0]
-            result.append({"id": chat_id, "type": c[1], "title": c[2], "unread_count": unread_count})
+            # Получаем последнее сообщение
+            cur.execute("SELECT id, sender_id, sender_name, content FROM chat_messages WHERE chat_id=? ORDER BY id DESC LIMIT 1", (chat_id,))
+            last_msg_row = cur.fetchone()
+            lastMsg = None
+            if last_msg_row:
+                # Если нет непрочитанных, показываем последнее сообщение
+                # Если есть непрочитанные, показываем только если оно уже прочитано
+                if unread_count == 0 or (last_msg_row[0] <= last_read):
+                    lastMsg = {
+                        "id": last_msg_row[0],
+                        "sender_id": last_msg_row[1],
+                        "sender_name": last_msg_row[2],
+                        "content": last_msg_row[3]
+                    }
+            result.append({"id": chat_id, "type": c[1], "title": c[2], "unread_count": unread_count, "lastMsg": lastMsg})
         return result
 
 

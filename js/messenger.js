@@ -459,7 +459,7 @@ function renderChatList() {
 			badge.title = 'Непрочитанные сообщения';
 			li.appendChild(badge);
 		}
-		// Превью последнего сообщения
+		// Превью последнего сообщения только если оно есть
 		if (chat.lastMsg) {
 			const preview = document.createElement('div');
 			preview.className = 'chat-preview';
