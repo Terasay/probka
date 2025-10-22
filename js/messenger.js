@@ -368,7 +368,7 @@ async function fetchChats() {
 	const url = `/api/messenger/chats?user_id=${user.id}&is_admin=${isAdmin}`;
 	const res = await fetch(url);
 	let rawChats = await res.json();
-	// Для каждого чата получаем последнее сообщение
+	// Для каждого чата получаем последнее сообщение с нужными полями
 	chats = await Promise.all(rawChats.map(async chat => {
 		let lastMsg = null;
 		try {
@@ -377,9 +377,11 @@ async function fetchChats() {
 			if (msgs.length) {
 				const m = msgs[msgs.length - 1];
 				lastMsg = {
-					text: m.content,
-					sender: m.sender_name,
-					date: m.created_at
+					content: m.content,
+					files: m.files || [],
+					sender_id: m.sender_id,
+					sender_name: m.sender_name,
+					created_at: m.created_at
 				};
 			}
 		} catch(e) {}
@@ -442,6 +444,7 @@ async function fetchMessages(chatId) {
 
 function renderChatList() {
 	chatList.innerHTML = '';
+	const user = getUser();
 	chats.forEach(chat => {
 		const li = document.createElement('li');
 		li.className = chat.id === currentChatId ? 'active' : '';
@@ -463,8 +466,17 @@ function renderChatList() {
 		if (chat.lastMsg) {
 			const preview = document.createElement('div');
 			preview.className = 'chat-preview';
-			let text = chat.lastMsg.content ? chat.lastMsg.content.slice(0, 40) : '';
-			if (chat.lastMsg.files && chat.lastMsg.files.length) text += ' [файл]';
+			let text = '';
+			if (user && chat.lastMsg.sender_id === user.id) {
+				text += 'Вы: ';
+			}
+			if (chat.lastMsg.content) {
+				text += chat.lastMsg.content.slice(0, 40);
+			}
+			if (chat.lastMsg.files && chat.lastMsg.files.length) {
+				if (!chat.lastMsg.content) text += '[файл]';
+				else text += ' [файл]';
+			}
 			preview.textContent = text;
 			preview.style.color = '#bfc9d8';
 			preview.style.fontSize = '0.95em';
