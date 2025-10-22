@@ -15,7 +15,7 @@
 	position: absolute;
 	right: 12px;
 	bottom: 6px;
-	font-size: 0.82em;
+	font-size: 0.72em; /* уменьшено */
 	color: #bfc9d8;
 	opacity: 0.7;
 	pointer-events: none;
@@ -581,6 +581,7 @@ body {
 	color: #fff;
 	align-self: flex-start;
 	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	min-width: 90px; /* минимальная ширина для коротких сообщений */
 }
 .tg-message.out {
 	background: #229ed9;
