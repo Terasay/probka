@@ -629,16 +629,29 @@ async function selectChat(id) {
 	await fetchMessages(id);
 	// --- Отмечаем чат как прочитанный ---
 	const user = getUser();
-	if (chat && user && chat.lastMsg) {
-		try {
-			await fetch('/api/messenger/read_chat', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ chat_id: id, user_id: user.id, last_msg_id: chat.lastMsg.id })
-			});
-		} catch(e) {}
-		// После отметки обновляем список чатов для сброса badge
-		await fetchChats();
+	if (chat && user) {
+		// Найти максимальный id чужого сообщения
+		let maxOtherMsgId = 0;
+		for (let i = currentMessages.length - 1; i >= 0; i--) {
+			const msg = currentMessages[i];
+			if (msg.sender_id !== user.id) {
+				maxOtherMsgId = msg.id;
+				break;
+			}
+		}
+		if (maxOtherMsgId > 0) {
+			try {
+				await fetch('/api/messenger/read_chat', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ chat_id: id, user_id: user.id, last_msg_id: maxOtherMsgId })
+				});
+			} catch(e) {}
+			// После отметки обновляем список чатов для сброса badge
+			await fetchChats();
+		} else {
+			renderChatList();
+		}
 	} else {
 		renderChatList();
 	}
