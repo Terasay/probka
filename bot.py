@@ -14,7 +14,45 @@ logger = logging.getLogger(__name__)
 
 
 
+from fastapi import WebSocket, WebSocketDisconnect
+from typing import Dict, List
+
 app = FastAPI()
+
+# --- Хранилище подключений WebSocket по chat_id ---
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[int, List[WebSocket]] = {}
+
+    async def connect(self, chat_id: int, websocket: WebSocket):
+        await websocket.accept()
+        if chat_id not in self.active_connections:
+            self.active_connections[chat_id] = []
+        self.active_connections[chat_id].append(websocket)
+
+    def disconnect(self, chat_id: int, websocket: WebSocket):
+        if chat_id in self.active_connections:
+            self.active_connections[chat_id].remove(websocket)
+            if not self.active_connections[chat_id]:
+                del self.active_connections[chat_id]
+
+    async def broadcast(self, chat_id: int, message: dict):
+        if chat_id in self.active_connections:
+            for connection in self.active_connections[chat_id]:
+                await connection.send_json(message)
+
+manager = ConnectionManager()
+
+# --- WebSocket endpoint для чата ---
+@app.websocket("/ws/chat/{chat_id}")
+async def chat_websocket(websocket: WebSocket, chat_id: int):
+    await manager.connect(chat_id, websocket)
+    try:
+        while True:
+            # Клиент может отправлять ping или ничего не отправлять
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(chat_id, websocket)
 
 @app.post("/api/messenger/send_file")
 async def send_file_message(chat_id: int = Form(...), user_id: int = Form(...), content: str = Form(""), files: list[UploadFile] = File([])):
@@ -148,46 +186,47 @@ async def delete_message(request: Request):
         conn.commit()
     return {"success": True}
 
-@app.get("/api/messenger/chats")
-async def get_user_chats(user_id: int, is_admin: bool = False):
+@app.post("/api/messenger/send")
+async def send_message(request: Request):
+    data = await request.json()
+    chat_id = data.get("chat_id")
+    user_id = data.get("user_id")
+    content = data.get("content", "").strip()
+    reply_to = data.get("reply_to")
+    if not chat_id or not user_id or not content:
+        raise HTTPException(400, "chat_id, user_id, content обязательны")
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        if is_admin:
-            cur.execute("SELECT id, type, title FROM chats")
-            chats = cur.fetchall()
-        else:
-            cur.execute("""
-                SELECT c.id, c.type, c.title FROM chats c
-                JOIN chat_members m ON c.id = m.chat_id
-                WHERE m.user_id = ?
-            """, (user_id,))
-            chats = cur.fetchall()
-        result = []
-        for c in chats:
-            chat_id = c[0]
-            # Получаем последний прочитанный msg_id
-            cur.execute("SELECT last_read_msg_id FROM chat_reads WHERE user_id=? AND chat_id=?", (user_id, chat_id))
-            row = cur.fetchone()
-            last_read = row[0] if row else 0
-            # Получаем количество непрочитанных сообщений (только чужие)
-            cur.execute("SELECT COUNT(*) FROM chat_messages WHERE chat_id=? AND id > ? AND sender_id != ?", (chat_id, last_read, user_id))
-            unread_count = cur.fetchone()[0]
-            # Получаем последнее сообщение
-            cur.execute("SELECT id, sender_id, sender_name, content FROM chat_messages WHERE chat_id=? ORDER BY id DESC LIMIT 1", (chat_id,))
-            last_msg_row = cur.fetchone()
-            lastMsg = None
-            if last_msg_row:
-                # Если нет непрочитанных, показываем последнее сообщение
-                # Если есть непрочитанные, показываем только если оно уже прочитано
-                if unread_count == 0 or (last_msg_row[0] <= last_read):
-                    lastMsg = {
-                        "id": last_msg_row[0],
-                        "sender_id": last_msg_row[1],
-                        "sender_name": last_msg_row[2],
-                        "content": last_msg_row[3]
-                    }
-            result.append({"id": chat_id, "type": c[1], "title": c[2], "unread_count": unread_count, "lastMsg": lastMsg})
-        return result
+
+        cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
+        if not cur.fetchone():
+            raise HTTPException(403, "Нет доступа к чату")
+
+        cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        sender_name = row[0] if row else "?"
+
+        cur.execute("""
+            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at, reply_to)
+            VALUES (?, ?, ?, ?, datetime('now'), ?)
+        """, (chat_id, user_id, sender_name, content, reply_to))
+        msg_id = cur.lastrowid
+        conn.commit()
+
+        # Получаем только что добавленное сообщение
+        cur.execute("SELECT id, sender_id, sender_name, content, created_at, reply_to FROM chat_messages WHERE id = ?", (msg_id,))
+        m = cur.fetchone()
+        msg = {
+            "id": m[0],
+            "sender_id": m[1],
+            "sender_name": m[2],
+            "content": m[3],
+            "created_at": m[4],
+            "reply_to": m[5]
+        }
+    # Рассылаем новое сообщение всем подключённым клиентам этого чата
+    await manager.broadcast(chat_id, {"type": "new_message", "message": msg})
+    return {"success": True}
 
 
 @app.get("/api/messenger/messages")

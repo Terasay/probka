@@ -233,11 +233,42 @@ function renderChatMembersList(members) {
 }
 
 let chats = [];
-
 let currentChatId = null;
 let currentChatTitle = '';
 let currentMessages = [];
 let replyToMsg = null;
+
+// --- WebSocket для чата ---
+let chatSocket = null;
+function connectChatWebSocket(chatId) {
+	if (chatSocket) {
+		chatSocket.close();
+		chatSocket = null;
+	}
+	let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + `/ws/chat/${chatId}`;
+	if (location.port && location.port !== '80' && location.port !== '443') {
+		wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + location.port + `/ws/chat/${chatId}`;
+	}
+	chatSocket = new WebSocket(wsUrl);
+	chatSocket.onmessage = function(event) {
+		try {
+			const data = JSON.parse(event.data);
+			if (data.type === 'new_message' && data.message) {
+				if (String(currentChatId) === String(chatId)) {
+					currentMessages.push(data.message);
+					renderMessages();
+				}
+			}
+		} catch(e) {}
+	};
+	chatSocket.onclose = function() {
+		setTimeout(() => {
+			if (String(currentChatId) === String(chatId)) {
+				connectChatWebSocket(chatId);
+			}
+		}, 2000);
+	};
+}
 
 function clearReplyTo() {
 	replyToMsg = null;
@@ -675,6 +706,7 @@ async function selectChat(id) {
 		saveDrafts();
 	}
 	currentChatId = id;
+	connectChatWebSocket(id);
 	// Сохраняем последний открытый чат
 	try { localStorage.setItem('messenger_lastChat', String(id)); } catch(e) {}
 	// Обновляем hash в адресе
