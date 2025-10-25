@@ -802,6 +802,7 @@ messageForm.addEventListener('submit', async function(e) {
 		if (sendBtn) sendBtn.disabled = false;
 		messageInput.disabled = false;
 	}
+});
 // --- Автосохранение черновика при вводе ---
 if (messageInput) {
 	messageInput.addEventListener('input', function() {
@@ -827,28 +828,50 @@ window.addEventListener('DOMContentLoaded', function() {
 	const origFetchChats = fetchChats;
 	fetchChats = async function() {
 		await origFetchChats();
-		let toOpen = null;
-		// Если есть hash — всегда открываем по нему
-		if (chatIdFromHash && chats.some(c => c.id === chatIdFromHash)) {
-			toOpen = chatIdFromHash;
-		} else if (chatIdFromStorage && chats.some(c => c.id === chatIdFromStorage)) {
-			toOpen = chatIdFromStorage;
+		let chatSocket = null;
+		let wsReconnectTimeout = null;
+		function connectChatWebSocket(chatId) {
+			// Если уже есть соединение — корректно закрываем и ждем onclose
+			if (chatSocket) {
+				chatSocket.onclose = function() {
+					// Открываем новое соединение только после полного закрытия старого
+					wsReconnectTimeout = setTimeout(() => {
+						openNewWebSocket(chatId);
+					}, 120); // небольшая задержка
+				};
+				chatSocket.close();
+				chatSocket = null;
+			} else {
+				openNewWebSocket(chatId);
+			}
 		}
-		if (toOpen) selectChat(toOpen);
-	};
-});
-});
 
-async function deleteMessage(msgId) {
-	const user = getUser();
-	if (!user) return;
-	await fetch('/api/messenger/delete_message', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ msg_id: msgId, user_id: user.id })
-	});
-	await fetchMessages(currentChatId);
-}
+		function openNewWebSocket(chatId) {
+			let wsPort = location.port ? location.port : '8080';
+			let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + wsPort + `/ws/chat/${chatId}`;
+			chatSocket = new WebSocket(wsUrl);
+			chatSocket.onmessage = function(event) {
+				try {
+					const data = JSON.parse(event.data);
+					if (data.type === 'new_message' && data.message) {
+						if (String(currentChatId) === String(chatId)) {
+							currentMessages.push(data.message);
+							renderMessages();
+						}
+					}
+				} catch(e) {}
+			};
+			chatSocket.onclose = function() {
+				setTimeout(() => {
+					if (String(currentChatId) === String(chatId)) {
+						connectChatWebSocket(chatId);
+					}
+				}, 2000);
+			};
+		};
+	}
+
+});
 
 // Пример создания приватного чата (вызывайте при выборе пользователя)
 async function createPrivateChatWith(user2id) {
