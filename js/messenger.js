@@ -552,12 +552,19 @@ function renderMessages() {
 				replyDiv.style.color = '#bfc9d8';
 
 				let replyHtml = `<span style="font-weight:500;">${escapeHtml(repliedMsg.sender_name)}:</span> `;
-				if (repliedMsg.content) {
-					replyHtml += escapeHtml(repliedMsg.content).slice(0, 48);
-					if (repliedMsg.content.length > 48) replyHtml += '…';
+				let replyContent = repliedMsg.content || '';
+				let replyFiles = [];
+				const filesMatch = replyContent.match(/\[files\](.*)$/s);
+				if (filesMatch) {
+					replyFiles = filesMatch[1].trim().split(/,\s*/).filter(Boolean);
+					replyContent = replyContent.replace(/\n?\[files\].*$/s, '').trim();
 				}
-				if (repliedMsg.files && Array.isArray(repliedMsg.files) && repliedMsg.files.length) {
-					repliedMsg.files.forEach(file => {
+				if (replyContent) {
+					replyHtml += escapeHtml(replyContent).slice(0, 48);
+					if (replyContent.length > 48) replyHtml += '…';
+				}
+				if (replyFiles.length) {
+					replyFiles.forEach(file => {
 						if (typeof file === 'string' && (file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png') || file.endsWith('.gif') || file.endsWith('.webp'))) {
 							replyHtml += `<img src="${file}" style="max-width:32px;max-height:32px;border-radius:5px;margin-left:6px;vertical-align:middle;box-shadow:0 1px 4px #0002;">`;
 						} else if (typeof file === 'string') {
