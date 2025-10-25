@@ -241,31 +241,45 @@ let replyToMsg = null;
 // --- WebSocket для чата ---
 let chatSocket = null;
 function connectChatWebSocket(chatId) {
-	if (chatSocket) {
-		chatSocket.close();
-		chatSocket = null;
-	}
-	let wsPort = location.port ? location.port : '8080';
-	let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + wsPort + `/ws/chat/${chatId}`;
-	chatSocket = new WebSocket(wsUrl);
-	chatSocket.onmessage = function(event) {
-		try {
-			const data = JSON.parse(event.data);
-			if (data.type === 'new_message' && data.message) {
-				if (String(currentChatId) === String(chatId)) {
-					currentMessages.push(data.message);
-					renderMessages();
-				}
-			}
-		} catch(e) {}
-	};
-	chatSocket.onclose = function() {
-		setTimeout(() => {
-			if (String(currentChatId) === String(chatId)) {
-				connectChatWebSocket(chatId);
-			}
-		}, 2000);
-	};
+    if (chatSocket) {
+        chatSocket.onclose = null; // Убираем обработчик, чтобы избежать лишних вызовов
+        chatSocket.close();
+    }
+
+    let wsPort = location.port ? location.port : '8080';
+    let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + wsPort + `/ws/chat/${chatId}`;
+    chatSocket = new WebSocket(wsUrl);
+
+    chatSocket.onopen = function() {
+        console.log('WebSocket connection established');
+    };
+
+    chatSocket.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'new_message' && data.message) {
+                if (String(currentChatId) === String(chatId)) {
+                    currentMessages.push(data.message);
+                    renderMessages();
+                }
+            }
+        } catch (e) {
+            console.error('Error processing WebSocket message:', e);
+        }
+    };
+
+    chatSocket.onclose = function(event) {
+        console.warn('WebSocket connection closed:', event);
+        setTimeout(() => {
+            if (String(currentChatId) === String(chatId)) {
+                connectChatWebSocket(chatId); // Повторное подключение
+            }
+        }, 5000); // Задержка перед повторным подключением
+    };
+
+    chatSocket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
 }
 
 function clearReplyTo() {
