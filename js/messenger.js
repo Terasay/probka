@@ -701,8 +701,11 @@ async function selectChat(id) {
 					body: JSON.stringify({ chat_id: id, user_id: user.id, last_msg_id: maxOtherMsgId })
 				});
 			} catch(e) {}
-			// После отметки обновляем список чатов для сброса badge
+			// После отметки обновляем только список чатов и badge, не сбрасываем выбор
 			await fetchChats();
+			// Восстановить выбранный чат и заголовок
+			currentChatId = id;
+			chatTitle.textContent = currentChatTitle;
 		} else {
 			renderChatList();
 		}
