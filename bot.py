@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 import shutil
@@ -43,6 +42,29 @@ class ConnectionManager:
                 await connection.send_json(message)
 
 manager = ConnectionManager()
+
+# --- Глобальное хранилище подключений WebSocket ---
+class GlobalConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                logging.error(f"Error sending message: {e}")
+
+# Инициализация глобального менеджера
+global_manager = GlobalConnectionManager()
 
 # --- Восстановить endpoint для списка чатов ---
 @app.get("/api/messenger/chats")
@@ -93,6 +115,16 @@ async def chat_websocket(websocket: WebSocket, chat_id: int):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(chat_id, websocket)
+
+# --- WebSocket endpoint для глобального мессенджера ---
+@app.websocket("/ws/messenger")
+async def messenger_websocket(websocket: WebSocket):
+    await global_manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Ожидание сообщений от клиента (можно игнорировать)
+    except WebSocketDisconnect:
+        global_manager.disconnect(websocket)
 
 @app.post("/api/messenger/send_file")
 async def send_file_message(chat_id: int = Form(...), user_id: int = Form(...), content: str = Form(""), files: list[UploadFile] = File([])):
@@ -234,40 +266,41 @@ async def send_message(request: Request):
     content = data.get("content", "").strip()
     reply_to = data.get("reply_to")
     if not chat_id or not user_id or not content:
-        raise HTTPException(400, "chat_id, user_id, content обязательны")
+        raise HTTPException(400, "chat_id, user_id и content обязательны")
+
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-
-        cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
-        if not cur.fetchone():
-            raise HTTPException(403, "Нет доступа к чату")
-
         cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
         row = cur.fetchone()
         sender_name = row[0] if row else "?"
 
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at, reply_to)
             VALUES (?, ?, ?, ?, datetime('now'), ?)
-        """, (chat_id, user_id, sender_name, content, reply_to))
-        msg_id = cur.lastrowid
+            """,
+            (chat_id, user_id, sender_name, content, reply_to),
+        )
         conn.commit()
+        msg_id = cur.lastrowid
 
-        # Получаем только что добавленное сообщение
-        cur.execute("SELECT id, sender_id, sender_name, content, created_at, reply_to FROM chat_messages WHERE id = ?", (msg_id,))
-        m = cur.fetchone()
         msg = {
-            "id": m[0],
-            "sender_id": m[1],
-            "sender_name": m[2],
-            "content": m[3],
-            "created_at": m[4],
-            "reply_to": m[5]
+            "id": msg_id,
+            "chat_id": chat_id,
+            "sender_id": user_id,
+            "sender_name": sender_name,
+            "content": content,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "reply_to": reply_to,
         }
-    # Рассылаем новое сообщение всем подключённым клиентам этого чата
-    await manager.broadcast(chat_id, {"type": "new_message", "message": msg})
-    return {"success": True}
 
+        # Рассылка сообщения всем подключённым клиентам чата
+        await manager.broadcast(chat_id, {"type": "new_message", "message": msg})
+
+        # Рассылка уведомления всем глобальным клиентам
+        await global_manager.broadcast({"type": "new_message", "chat_id": chat_id, "message": msg})
+
+    return {"success": True}
 
 @app.get("/api/messenger/messages")
 async def get_chat_messages(chat_id: int, user_id: int, is_admin: bool = False):
