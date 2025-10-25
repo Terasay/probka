@@ -245,10 +245,8 @@ function connectChatWebSocket(chatId) {
 		chatSocket.close();
 		chatSocket = null;
 	}
-	let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + `/ws/chat/${chatId}`;
-	if (location.port && location.port !== '80' && location.port !== '443') {
-		wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + location.port + `/ws/chat/${chatId}`;
-	}
+	let wsPort = location.port ? location.port : '8080';
+	let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + wsPort + `/ws/chat/${chatId}`;
 	chatSocket = new WebSocket(wsUrl);
 	chatSocket.onmessage = function(event) {
 		try {
