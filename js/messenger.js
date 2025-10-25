@@ -422,6 +422,12 @@ async function fetchChats() {
 			}
 		}
 	}
+	if (currentChatId && chats.some(c => String(c.id) === String(currentChatId))) {
+		const chat = chats.find(c => String(c.id) === String(currentChatId));
+		currentChatTitle = chat ? (chat.title || `Чат #${chat.id}`) : '';
+		chatTitle.textContent = currentChatTitle;
+		// Не вызываем selectChat, чтобы не триггерить повторную загрузку
+	}
 }
 
 if (newChatBtn) {
