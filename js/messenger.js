@@ -485,14 +485,16 @@ function renderChatList() {
 				text += chat.lastMsg.content.slice(0, 40);
 			}
 			if (chat.lastMsg.files && chat.lastMsg.files.length) {
+				let filesHtml = '';
 				chat.lastMsg.files.forEach(file => {
 					if (typeof file === 'string' && (file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png') || file.endsWith('.gif') || file.endsWith('.webp'))) {
-						text += ` <img src="${file}" style="max-width:32px;max-height:32px;border-radius:5px;vertical-align:middle;box-shadow:0 1px 4px #0002;">`;
+						filesHtml += `<img src="${file}" style="max-width:38px;max-height:38px;border-radius:6px;margin-left:6px;vertical-align:middle;box-shadow:0 1px 4px #0002;">`;
 					} else if (typeof file === 'string') {
 						const fname = file.split('/').pop();
-						text += ` <span style="display:inline-block;background:#202a36;color:#229ed9;border-radius:5px;padding:2px 7px;font-size:0.92em;vertical-align:middle;"><svg style="width:1em;height:1em;vertical-align:middle;margin-right:2px;opacity:0.7;" viewBox="0 0 24 24"><path fill='#229ed9' d='M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6zm7 1.5V9h5.5L13 3.5zM6 4h6v5a2 2 0 0 0 2 2h5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z'/></svg>${escapeHtml(fname)}</span>`;
+						filesHtml += `<span style="display:inline-block;background:#202a36;color:#229ed9;border-radius:5px;padding:2px 7px;font-size:0.92em;margin-left:6px;vertical-align:middle;"><svg style="width:1em;height:1em;vertical-align:middle;margin-right:2px;opacity:0.7;" viewBox="0 0 24 24"><path fill='#229ed9' d='M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6zm7 1.5V9h5.5L13 3.5zM6 4h6v5a2 2 0 0 0 2 2h5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z'/></svg>${escapeHtml(fname)}</span>`;
 					}
 				});
+				text += filesHtml;
 			}
 			preview.innerHTML = text;
 			preview.style.color = '#bfc9d8';
