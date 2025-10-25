@@ -891,6 +891,65 @@ window.addEventListener('DOMContentLoaded', function() {
 
 });
 
+// --- Глобальный WebSocket для мессенджера ---
+let globalSocket = null;
+
+function connectGlobalWebSocket() {
+    if (globalSocket) {
+        if (globalSocket.readyState === WebSocket.OPEN || globalSocket.readyState === WebSocket.CONNECTING) {
+            console.log('Global WebSocket is already open or connecting.');
+            return;
+        }
+        globalSocket.onclose = null;
+        globalSocket.close();
+    }
+
+    let wsPort = location.port ? location.port : '8080';
+    let wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.hostname + ':' + wsPort + '/ws/messenger';
+    globalSocket = new WebSocket(wsUrl);
+
+    globalSocket.onopen = function() {
+        console.log('Global WebSocket connection established');
+    };
+
+    globalSocket.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'new_message' && data.message) {
+                showNotification(data.chat_id, data.message);
+            }
+        } catch (e) {
+            console.error('Error processing global WebSocket message:', e);
+        }
+    };
+
+    globalSocket.onclose = function(event) {
+        console.warn('Global WebSocket connection closed:', event);
+        setTimeout(connectGlobalWebSocket, 5000); // Повторное подключение через 5 секунд
+    };
+
+    globalSocket.onerror = function(error) {
+        console.error('Global WebSocket error:', error);
+    };
+}
+
+function showNotification(chatId, message) {
+    const notification = document.createElement('div');
+    notification.className = 'chat-notification';
+    notification.innerHTML = `
+        <strong>Чат #${chatId}</strong><br>
+        <span>${escapeHtml(message.sender_name)}: ${escapeHtml(message.content)}</span>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 5000); // Уведомление исчезает через 5 секунд
+}
+
+// Подключение глобального WebSocket при загрузке страницы
+window.addEventListener('DOMContentLoaded', connectGlobalWebSocket);
+
 // Пример создания приватного чата (вызывайте при выборе пользователя)
 async function createPrivateChatWith(user2id) {
 	const user = getUser();
