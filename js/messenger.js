@@ -242,6 +242,10 @@ let replyToMsg = null;
 let chatSocket = null;
 function connectChatWebSocket(chatId) {
     if (chatSocket) {
+        if (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING) {
+            console.log('WebSocket is already open or connecting. Skipping reconnection.');
+            return;
+        }
         chatSocket.onclose = null; // Убираем обработчик, чтобы избежать лишних вызовов
         chatSocket.close();
     }
