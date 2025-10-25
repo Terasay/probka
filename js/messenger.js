@@ -469,6 +469,8 @@ function renderChatList() {
 			let text = '';
 			if (user && chat.lastMsg.sender_id === user.id) {
 				text += 'Вы: ';
+			} else if (chat.lastMsg.sender_name) {
+				text += chat.lastMsg.sender_name + ': ';
 			}
 			if (chat.lastMsg.content) {
 				text += chat.lastMsg.content.slice(0, 40);

@@ -414,8 +414,8 @@ body {
 
 .tg-container {
 	display: flex;
-	width: 900px;
-	height: 600px;
+	width: 1080px;
+	height: 720px;
 	background: #232e3c;
 	border-radius: 18px;
 	box-shadow: 0 4px 32px rgba(0,0,0,0.25);
