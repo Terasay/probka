@@ -1,3 +1,4 @@
+
 import os
 import sqlite3
 import shutil
@@ -42,6 +43,45 @@ class ConnectionManager:
                 await connection.send_json(message)
 
 manager = ConnectionManager()
+
+# --- Восстановить endpoint для списка чатов ---
+@app.get("/api/messenger/chats")
+async def get_user_chats(user_id: int, is_admin: bool = False):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        if is_admin:
+            cur.execute("SELECT id, type, title FROM chats")
+            chats = cur.fetchall()
+        else:
+            cur.execute("""
+                SELECT c.id, c.type, c.title
+                FROM chats c
+                JOIN chat_members m ON c.id = m.chat_id
+                WHERE m.user_id = ?
+            """, (user_id,))
+            chats = cur.fetchall()
+        result = []
+        for c in chats:
+            chat_id = c[0]
+            # Подсчёт непрочитанных сообщений
+            cur.execute("SELECT last_read_msg_id FROM chat_reads WHERE user_id = ? AND chat_id = ?", (user_id, chat_id))
+            row = cur.fetchone()
+            last_read = row[0] if row else 0
+            cur.execute("SELECT COUNT(*) FROM chat_messages WHERE chat_id = ? AND id > ?", (chat_id, last_read))
+            unread_count = cur.fetchone()[0]
+            # Последнее сообщение
+            cur.execute("SELECT id, sender_id, sender_name, content FROM chat_messages WHERE chat_id = ? ORDER BY id DESC LIMIT 1", (chat_id,))
+            last_msg_row = cur.fetchone()
+            lastMsg = None
+            if last_msg_row:
+                lastMsg = {
+                    "id": last_msg_row[0],
+                    "sender_id": last_msg_row[1],
+                    "sender_name": last_msg_row[2],
+                    "content": last_msg_row[3]
+                }
+            result.append({"id": chat_id, "type": c[1], "title": c[2], "unread_count": unread_count, "lastMsg": lastMsg})
+        return result
 
 # --- WebSocket endpoint для чата ---
 @app.websocket("/ws/chat/{chat_id}")
