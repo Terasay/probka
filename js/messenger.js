@@ -716,37 +716,53 @@ async function selectChat(id) {
 
 messageForm.addEventListener('submit', async function(e) {
 	e.preventDefault();
-	const text = messageInput.value.trim();
-	if ((!text && attachedFiles.length === 0) || !currentChatId) return;
-	const user = getUser();
-	// Если есть файлы — отправляем через FormData
-	if (attachedFiles.length > 0) {
-		const formData = new FormData();
-		formData.append('chat_id', currentChatId);
-		formData.append('user_id', user.id);
-		formData.append('content', text);
-		if (replyToMsg) formData.append('reply_to', replyToMsg.id);
-		attachedFiles.forEach(f => formData.append('files', f));
-		await fetch('/api/messenger/send_file', {
-			method: 'POST',
-			body: formData
-		});
-		attachedFiles = [];
-		renderAttachPreview();
-		messageFileInput.value = '';
-	} else {
-		await fetch('/api/messenger/send', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ chat_id: currentChatId, user_id: user.id, content: text, reply_to: replyToMsg ? replyToMsg.id : null })
-		});
+	if (window.isSendingMessage) return;
+	window.isSendingMessage = true;
+	const sendBtn = document.getElementById('send-btn');
+	if (sendBtn) sendBtn.disabled = true;
+	messageInput.disabled = true;
+	try {
+		const text = messageInput.value.trim();
+		if ((!text && attachedFiles.length === 0) || !currentChatId) {
+			window.isSendingMessage = false;
+			if (sendBtn) sendBtn.disabled = false;
+			messageInput.disabled = false;
+			return;
+		}
+		const user = getUser();
+		// Если есть файлы — отправляем через FormData
+		if (attachedFiles.length > 0) {
+			const formData = new FormData();
+			formData.append('chat_id', currentChatId);
+			formData.append('user_id', user.id);
+			formData.append('content', text);
+			if (replyToMsg) formData.append('reply_to', replyToMsg.id);
+			attachedFiles.forEach(f => formData.append('files', f));
+			await fetch('/api/messenger/send_file', {
+				method: 'POST',
+				body: formData
+			});
+			attachedFiles = [];
+			renderAttachPreview();
+			messageFileInput.value = '';
+		} else {
+			await fetch('/api/messenger/send', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ chat_id: currentChatId, user_id: user.id, content: text, reply_to: replyToMsg ? replyToMsg.id : null })
+			});
+		}
+		clearReplyTo();
+		// Очищаем черновик для текущего чата
+		chatDrafts[currentChatId] = '';
+		saveDrafts();
+		messageInput.value = '';
+		await fetchMessages(currentChatId);
+	} finally {
+		window.isSendingMessage = false;
+		if (sendBtn) sendBtn.disabled = false;
+		messageInput.disabled = false;
 	}
-	clearReplyTo();
-	// Очищаем черновик для текущего чата
-	chatDrafts[currentChatId] = '';
-	saveDrafts();
-	messageInput.value = '';
-	await fetchMessages(currentChatId);
 // --- Автосохранение черновика при вводе ---
 if (messageInput) {
 	messageInput.addEventListener('input', function() {
