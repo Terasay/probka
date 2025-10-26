@@ -269,7 +269,7 @@ function connectChatWebSocket(chatId) {
 					} else {
 						// Показываем уведомление для других чатов, только если сообщение не от текущего пользователя
 						const user = getUser();
-						if (user && data.message.sender_id !== user.id) {
+						if (user && String(data.message.sender_id) !== String(user.id)) {
 							showNotification(data.message.chat_id, data.message);
 						}
 					}
