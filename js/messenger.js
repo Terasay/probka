@@ -973,8 +973,8 @@ function formatMessageTime(timestamp) {
 
 // Обновление логики уведомлений
 function handleIncomingMessage(message) {
-    if (message.sender_id === currentUser.id) {
-        // Игнорируем уведомления от самого себя
+    if (message.chat_id === currentChatId || message.sender_id === currentUser.id) {
+        // Игнорируем уведомления от текущего чата или от самого себя
         return;
     }
 
