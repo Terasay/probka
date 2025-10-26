@@ -267,8 +267,11 @@ function connectChatWebSocket(chatId) {
 						currentMessages.push(data.message);
 						renderMessages();
 					} else {
-						// Показываем уведомление для других чатов
-						showNotification(data.message.chat_id, data.message);
+						// Показываем уведомление для других чатов, только если сообщение не от текущего пользователя
+						const user = getUser();
+						if (user && data.message.sender_id !== user.id) {
+							showNotification(data.message.chat_id, data.message);
+						}
 					}
 				}
 			} catch (e) {
