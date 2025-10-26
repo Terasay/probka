@@ -258,19 +258,23 @@ function connectChatWebSocket(chatId) {
         console.log('WebSocket connection established');
     };
 
-    chatSocket.onmessage = function(event) {
-        try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'new_message' && data.message) {
-                if (String(currentChatId) === String(chatId)) {
-                    currentMessages.push(data.message);
-                    renderMessages();
-                }
-            }
-        } catch (e) {
-            console.error('Error processing WebSocket message:', e);
-        }
-    };
+		chatSocket.onmessage = function(event) {
+			try {
+				const data = JSON.parse(event.data);
+				if (data.type === 'new_message' && data.message) {
+					// Добавляем новое сообщение в текущий чат, если chatId совпадает
+					if (String(data.message.chat_id) === String(currentChatId)) {
+						currentMessages.push(data.message);
+						renderMessages();
+					} else {
+						// Показываем уведомление для других чатов
+						showNotification(data.message.chat_id, data.message);
+					}
+				}
+			} catch (e) {
+				console.error('Error processing WebSocket message:', e);
+			}
+		};
 
     chatSocket.onclose = function(event) {
         console.warn('WebSocket connection closed:', event);
@@ -940,7 +944,10 @@ function showNotification(chatId, message) {
         <strong>Чат #${chatId}</strong><br>
         <span>${escapeHtml(message.sender_name)}: ${escapeHtml(message.content)}</span>
     `;
-    document.body.appendChild(notification);
+		document.body.appendChild(notification);
+		notification.innerHTML += `
+			<div style="font-size:0.9em;color:#888;margin-top:2px;">${formatMessageTime(message.created_at)}</div>
+		`;
 
     setTimeout(() => {
         notification.remove();
