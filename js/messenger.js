@@ -964,5 +964,23 @@ async function createPrivateChatWith(user2id) {
 	selectChat(data.chat_id);
 }
 
+// Функция для обработки времени сообщений
+function formatMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    if (isNaN(date)) return 'Invalid date';
+    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Обновление логики уведомлений
+function handleIncomingMessage(message) {
+    if (message.sender_id === currentUser.id) {
+        // Игнорируем уведомления от самого себя
+        return;
+    }
+
+    // Отображение уведомления
+    showNotification(message.content, formatMessageTime(message.created_at));
+}
+
 // Инициализация
 fetchChats();

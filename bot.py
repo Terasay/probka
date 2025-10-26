@@ -328,7 +328,7 @@ async def send_message(request: Request):
     content = data.get("content", "").strip()
     reply_to = data.get("reply_to")
     if not chat_id or not user_id or not content:
-        raise HTTPException(400, "chat_id, user_id, content обязательны")
+        raise HTTPException(400, "chat_id, user_id и content обязательны")
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
 
@@ -1104,6 +1104,25 @@ async def read_chat(request: Request):
         cur.execute("SELECT MAX(id) FROM chat_messages WHERE chat_id=? AND sender_id != ? AND id <= ?", (chat_id, user_id, last_msg_id))
         max_other_id = cur.fetchone()[0] or 0
         cur.execute("REPLACE INTO chat_reads (user_id, chat_id, last_read_msg_id) VALUES (?, ?, ?)", (user_id, chat_id, max_other_id))
+        conn.commit()
+    return {"success": True}
+
+# --- Обновление статуса сообщений как прочитанных для отправителя ---
+@app.post("/api/messenger/mark_as_read")
+async def mark_as_read(chat_id: int, user_id: int):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        # Обновляем последний прочитанный ID сообщения для отправителя
+        cur.execute(
+            """
+            UPDATE chat_reads
+            SET last_read_msg_id = (
+                SELECT MAX(id) FROM chat_messages WHERE chat_id = ?
+            )
+            WHERE user_id = ? AND chat_id = ?
+        """,
+            (chat_id, user_id, chat_id),
+        )
         conn.commit()
     return {"success": True}
 
