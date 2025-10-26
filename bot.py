@@ -258,49 +258,47 @@ async def delete_message(request: Request):
         conn.commit()
     return {"success": True}
 
-# --- Обновление статуса сообщений как прочитанных для отправителя при отправке ---
 @app.post("/api/messenger/send")
 async def send_message(request: Request):
     data = await request.json()
     chat_id = data.get("chat_id")
     user_id = data.get("user_id")
     content = data.get("content", "").strip()
-
+    reply_to = data.get("reply_to")
     if not chat_id or not user_id or not content:
         raise HTTPException(400, "chat_id, user_id и content обязательны")
 
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
-        # Проверка доступа
-        cur.execute("SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?", (chat_id, user_id))
-        if not cur.fetchone():
-            raise HTTPException(403, "Нет доступа к чату")
-
-        # Имя отправителя
         cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
         row = cur.fetchone()
         sender_name = row[0] if row else "?"
 
-        # Вставка сообщения
         cur.execute(
             """
-            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at)
-            VALUES (?, ?, ?, ?, datetime('now'))
+            INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at, reply_to)
+            VALUES (?, ?, ?, ?, datetime('now'), ?)
             """,
-            (chat_id, user_id, sender_name, content),
+            (chat_id, user_id, sender_name, content, reply_to),
         )
         conn.commit()
+        msg_id = cur.lastrowid
 
-        # Обновление статуса как прочитанное для отправителя
-        cur.execute(
-            """
-            INSERT INTO chat_reads (chat_id, user_id, last_read_msg_id)
-            VALUES (?, ?, (SELECT MAX(id) FROM chat_messages WHERE chat_id = ?))
-            ON CONFLICT(chat_id, user_id) DO UPDATE SET last_read_msg_id = excluded.last_read_msg_id
-            """,
-            (chat_id, user_id, chat_id),
-        )
-        conn.commit()
+        msg = {
+            "id": msg_id,
+            "chat_id": chat_id,
+            "sender_id": user_id,
+            "sender_name": sender_name,
+            "content": content,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "reply_to": reply_to,
+        }
+
+        # Рассылка сообщения всем подключённым клиентам чата
+        await manager.broadcast(chat_id, {"type": "new_message", "message": msg})
+
+        # Рассылка уведомления всем глобальным клиентам
+        await global_manager.broadcast({"type": "new_message", "chat_id": chat_id, "message": msg})
 
     return {"success": True}
 
