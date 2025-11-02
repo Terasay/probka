@@ -507,6 +507,7 @@ async function login() {
   }
   try {
     const data = await apiFetch("/api/login", {
+      credentials: "include",
       method: "POST",
       body: JSON.stringify({ username, password })
     });
@@ -536,6 +537,7 @@ async function registerHandler() {
   try {
     const data = await apiFetch("/api/register", {
       method: "POST",
+      credentials: "include",
       body: JSON.stringify({ username, password })
     });
     if (data && data.status === "ok" && data.user) {
