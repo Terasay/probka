@@ -651,6 +651,7 @@ async def logout():
         key="access_token",
         path="/",
         samesite="lax",
+        httponly=True,
         secure=False
     )
     print("[DEBUG] Cookie access_token удалена при logout")
