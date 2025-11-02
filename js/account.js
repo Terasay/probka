@@ -488,9 +488,21 @@ async function handleAvatarUpload(e) {
 }
 
 async function apiFetch(path, options = {}) {
+  let token = null;
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw) {
+      const user = JSON.parse(raw);
+      if (user && user.token) token = user.token;
+    }
+  } catch (e) {}
+
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const res = await fetch(`${API_URL}${path}`, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    headers,
     ...options
   });
 
@@ -522,12 +534,13 @@ async function login() {
       body: JSON.stringify({ username, password })
     });
 
-    if (data && data.user) {
+    if (data && data.user && data.token) {
+      const userWithToken = { ...data.user, token: data.token };
       if (window.setUserSession) {
-        window.setUserSession(data.user);
+        window.setUserSession(userWithToken);
       } else {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        window.user = data.user;
+        localStorage.setItem("user", JSON.stringify(userWithToken));
+        window.user = userWithToken;
       }
       updateUI(window.user);
       console.log("[login] ok user:", window.user);
@@ -554,7 +567,16 @@ async function registerHandler() {
       body: JSON.stringify({ username, password })
     });
 
-    if (data && data.status === "ok") {
+    if (data && data.status === "ok" && data.user && data.token) {
+      // После регистрации сразу логиним
+      const userWithToken = { ...data.user, token: data.token };
+      if (window.setUserSession) {
+        window.setUserSession(userWithToken);
+      } else {
+        localStorage.setItem("user", JSON.stringify(userWithToken));
+        window.user = userWithToken;
+      }
+      updateUI(window.user);
       alert("Регистрация успешна — теперь можно войти");
       document.getElementById("login-password").value = "";
     } else {
