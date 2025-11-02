@@ -984,6 +984,30 @@ async def get_users(user=Depends(require_admin)):
         ]
     return {"status": "ok", "users": users}
 
+# --- Эндпоинт для обновления токена ---
+@app.post("/api/token/refresh")
+async def refresh_token(user=Depends(get_current_user)):
+    """
+    Принимает валидный токен (в заголовке Authorization), возвращает новый токен и user-данные.
+    """
+    # user содержит id, username, role
+    # Получаем актуальные данные пользователя из БД
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, username, role, country, avatar FROM users WHERE id = ?", (user["id"],))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        user_data = {
+            "id": row[0],
+            "username": row[1],
+            "role": row[2],
+            "country": row[3],
+            "avatar": row[4] or ""
+        }
+    new_token = create_jwt_token(user_data)
+    return {"status": "ok", "user": user_data, "token": new_token}
+
 
 @app.delete("/api/users/{user_id}")
 async def delete_user(user_id: int, user=Depends(require_admin)):
