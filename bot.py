@@ -627,7 +627,7 @@ async def get_users_activity(user=Depends(require_admin)):
         cur.execute("SELECT id, username FROM users ORDER BY id")
         users = cur.fetchall()
         cur.execute("SELECT user_id, last_messenger_visit, last_message_sent FROM user_activity")
-        activity = {row[0]: {"last_messenger_visit": row[1], "last_message_sent": row[2]} for row in cur.fetchall()}
+        activity = {row[0]: {"last_messenger_visit": row[1], "last_message_at": row[2]} for row in cur.fetchall()}
         result = []
         for u in users:
             uid = u[0]
@@ -636,9 +636,9 @@ async def get_users_activity(user=Depends(require_admin)):
                 "id": uid,
                 "username": u[1],
                 "last_messenger_visit": act.get("last_messenger_visit"),
-                "last_message_sent": act.get("last_message_sent")
+                "last_message_at": act.get("last_message_at")
             })
-    return {"status": "ok", "activity": result}
+        return {"status": "ok", "users": result}
 
 
 @app.post("/api/logout")
