@@ -55,6 +55,7 @@ function renderUsersTable(users) {
   html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">Роль</th>';
   html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">Страна</th>';
   html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">Дата регистрации</th>';
+  html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">Действия</th>';
   html += '</tr></thead><tbody>';
   for (const u of users) {
     html += `<tr>`;
@@ -63,8 +64,46 @@ function renderUsersTable(users) {
     html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>${u.role}</td>`;
     html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>${u.country || '-'}</td>`;
     html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>${u.created_at ? new Date(u.created_at).toLocaleString('ru-RU') : '-'}</td>`;
+    html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>`;
+    html += `<button class='btn-remove-country' data-id='${u.id}' style='margin-right:8px;padding:4px 10px;font-size:15px;background:#333;color:#39FF14;border:none;border-radius:6px;cursor:pointer;'>Удалить страну</button>`;
+    html += `<button class='btn-remove-user' data-id='${u.id}' style='padding:4px 10px;font-size:15px;background:#b00;color:#fff;border:none;border-radius:6px;cursor:pointer;'>Удалить аккаунт</button>`;
+    html += `</td>`;
     html += `</tr>`;
   }
   html += '</tbody></table>';
+  setTimeout(() => attachUserActions(), 0);
   return html;
+}
+
+function attachUserActions() {
+  document.querySelectorAll('.btn-remove-country').forEach(btn => {
+    btn.onclick = async function() {
+      const userId = btn.getAttribute('data-id');
+      if (!confirm('Удалить страну у пользователя?')) return;
+      try {
+        const res = await fetch(`/api/users/${userId}/reset_country`, { method: 'POST' });
+        if (res.ok) {
+          btn.closest('tr').querySelector('td:nth-child(4)').textContent = '-';
+          alert('Страна удалена!');
+        } else {
+          alert('Ошибка при удалении страны');
+        }
+      } catch(e) { alert('Ошибка сети'); }
+    };
+  });
+  document.querySelectorAll('.btn-remove-user').forEach(btn => {
+    btn.onclick = async function() {
+      const userId = btn.getAttribute('data-id');
+      if (!confirm('Удалить аккаунт пользователя?')) return;
+      try {
+        const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+        if (res.ok) {
+          btn.closest('tr').remove();
+          alert('Аккаунт удалён!');
+        } else {
+          alert('Ошибка при удалении аккаунта');
+        }
+      } catch(e) { alert('Ошибка сети'); }
+    };
+  });
 }
