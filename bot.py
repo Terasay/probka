@@ -49,7 +49,23 @@ def get_current_user(request: Request):
         raise HTTPException(status_code=401, detail="Требуется авторизация")
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return payload
+        user_id = payload.get("id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
+        with sqlite3.connect("site.db") as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT id, username, role, country, avatar FROM users WHERE id=?", (user_id,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=401, detail="Пользователь не найден")
+            user = {
+                "id": row[0],
+                "username": row[1],
+                "role": row[2],
+                "country": row[3],
+                "avatar": row[4]
+            }
+            return user
     except Exception:
         raise HTTPException(status_code=401, detail="Недействительный токен")
 
