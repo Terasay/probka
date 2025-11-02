@@ -522,6 +522,7 @@ async function apiFetch(path, options = {}) {
       window.dispatchEvent(new Event('user-session-changed'));
       updateUI(null);
       throw new Error("Токен отозван, требуется повторный вход");
+      // return; // Не выполнять дальнейший код
     }
     throw new Error(data?.error || data?.detail || `Ошибка (${res.status})`);
   }
@@ -744,7 +745,10 @@ function updateUI(user) {
     if (user.role === "admin") {
       if (adminPanel) {
         adminPanel.style.display = "block";
-        loadUsers();
+        // Только если user валиден, вызываем loadUsers
+        if (user && user.token) {
+          loadUsers();
+        }
       }
     } else {
       if (adminPanel) adminPanel.style.display = "none";
