@@ -34,34 +34,6 @@
     </footer>
   </div>
 
-  <script>
-    async function checkAdminAccess() {
-      let token = null;
-      try {
-        const raw = localStorage.getItem("user");
-        if (raw) {
-          const user = JSON.parse(raw);
-          if (user && user.token) token = user.token;
-        }
-      } catch (e) {}
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      try {
-        const res = await fetch("/api/users", { method: "GET", headers });
-        if (res.status === 200) {
-          document.getElementById("admin-content").style.display = "block";
-          document.getElementById("admin-error").style.display = "none";
-          // Здесь будет содержимое админ-панели
-          document.getElementById("admin-content").innerHTML = "<p>Добро пожаловать, админ! Здесь будет функционал панели.</p>";
-        } else {
-          throw new Error("Forbidden");
-        }
-      } catch (err) {
-        document.getElementById("admin-content").style.display = "none";
-        document.getElementById("admin-error").style.display = "block";
-      }
-    }
-    document.addEventListener('DOMContentLoaded', checkAdminAccess);
-  </script>
+  <script src="js/admin.js"></script>
 </body>
 </html>
