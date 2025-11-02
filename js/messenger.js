@@ -958,7 +958,18 @@ function showNotification(chatId, message) {
 }
 
 // Подключение глобального WebSocket при загрузке страницы
-window.addEventListener('DOMContentLoaded', connectGlobalWebSocket);
+window.addEventListener('DOMContentLoaded', function() {
+	connectGlobalWebSocket();
+	// Запись активности пользователя (вход в мессенджер)
+	const user = getUser && getUser();
+	if (user && user.id) {
+		fetch('/api/messenger/visit', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ user_id: user.id })
+		});
+	}
+});
 
 // Пример создания приватного чата (вызывайте при выборе пользователя)
 async function createPrivateChatWith(user2id) {
