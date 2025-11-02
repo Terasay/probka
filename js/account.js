@@ -576,6 +576,7 @@ async function logout() {
       console.warn("[logout] server logout failed:", e.message);
     }
   } finally {
+    window.user = null;
     updateUI(null);
   }
 }
