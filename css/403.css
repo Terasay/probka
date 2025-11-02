@@ -25,6 +25,12 @@
 	justify-content: center;
 	margin-bottom: 48px;
 }
+.terminal-403__row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
 .terminal-403__code {
 	font-size: 96px;
 	font-weight: bold;
