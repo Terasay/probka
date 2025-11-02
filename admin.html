@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Админ-панель — ZXC</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="js/user-session.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let t = 'dark';
+      try { t = localStorage.getItem('theme') || 'dark'; } catch(e) {}
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.id = 'theme-link';
+      l.href = 'css/theme-' + t + '.css';
+      document.head.appendChild(l);
+      document.body.classList.remove('theme-dark', 'theme-pink', 'theme-light', 'theme-gray', 'theme-red');
+      document.body.classList.add('theme-' + t);
+    });
+  </script>
+  <script defer src="js/theme.js"></script>
 </head>
 <body>
   <nav class="master-menu">
