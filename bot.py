@@ -1,3 +1,5 @@
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
 import os
 import sqlite3
 import shutil
@@ -18,6 +20,34 @@ from fastapi import WebSocket, WebSocketDisconnect
 from typing import Dict, List
 
 app = FastAPI()
+
+# --- JWT настройки ---
+JWT_SECRET = os.environ.get("JWT_SECRET", "supersecretkey")
+JWT_ALGORITHM = "HS256"
+security = HTTPBearer()
+
+def create_jwt_token(user: dict):
+    payload = {
+        "id": user["id"],
+        "username": user["username"],
+        "role": user["role"]
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except Exception:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+
+def require_admin(user=Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Требуется роль администратора")
+    return user
+
+def require_user(user=Depends(get_current_user)):
+    return user
 
 # --- Хранилище подключений WebSocket по chat_id ---
 class ConnectionManager:
@@ -834,17 +864,17 @@ async def like_forum_message(message_id: str, request: Request):
         conn.commit()
     return {"status": "ok"}
 
+
+# --- Регистрация ---
 @app.post("/api/register")
 async def register(request: Request):
     data = await request.json()
     username = data.get("username", "").strip()
     password = data.get("password", "").strip()
-
     if not username or not password:
         return JSONResponse({"error": "Пустой логин или пароль"}, status_code=400)
     if len(username) < 3 or len(password) < 4:
         return JSONResponse({"error": "Слишком короткий логин или пароль"}, status_code=400)
-
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
         cur.execute("SELECT id FROM users WHERE username = ?", (username,))
@@ -852,18 +882,22 @@ async def register(request: Request):
             return JSONResponse({"error": "Пользователь уже существует"}, status_code=400)
         password_hash = bcrypt.hash(password)
         cur.execute(
-            "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
-            (username, password_hash, datetime.now(timezone.utc).isoformat())
+            "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
+            (username, password_hash, "user", datetime.now(timezone.utc).isoformat())
         )
         conn.commit()
-    return {"status": "ok"}
+        user_id = cur.lastrowid
+    user = {"id": user_id, "username": username, "role": "user"}
+    token = create_jwt_token(user)
+    return {"status": "ok", "user": user, "token": token}
 
+
+# --- Логин ---
 @app.post("/api/login")
 async def login(request: Request):
     data = await request.json()
     username = data.get("username", "").strip()
     password = data.get("password", "").strip()
-
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
         cur.execute("SELECT id, username, password_hash, role, country, avatar FROM users WHERE username = ?", (username,))
@@ -877,10 +911,13 @@ async def login(request: Request):
             "country": row[4],
             "avatar": row[5] or ""
         }
-    return {"status": "ok", "user": user}
+        token = create_jwt_token(user)
+    return {"status": "ok", "user": user, "token": token}
 
+
+# --- Только для админа ---
 @app.get("/api/users")
-async def get_users():
+async def get_users(user=Depends(require_admin)):
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
         cur.execute("SELECT id, username, role, created_at, country FROM users ORDER BY id")
@@ -890,8 +927,9 @@ async def get_users():
         ]
     return {"status": "ok", "users": users}
 
+
 @app.delete("/api/users/{user_id}")
-async def delete_user(user_id: int):
+async def delete_user(user_id: int, user=Depends(require_admin)):
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
         cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
