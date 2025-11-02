@@ -34,9 +34,12 @@ def create_jwt_token(user: dict):
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_current_user(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
     except Exception:
         raise HTTPException(status_code=401, detail="Недействительный токен")
@@ -643,8 +646,9 @@ async def get_users_activity(user=Depends(require_admin)):
 
 @app.post("/api/logout")
 async def logout():
-
-    return {"status": "ok"}
+    response = JSONResponse({"status": "ok"})
+    response.delete_cookie("access_token")
+    return response
 
 app.add_middleware(
     CORSMiddleware,
@@ -927,7 +931,16 @@ async def register(request: Request):
         user_id = cur.lastrowid
     user = {"id": user_id, "username": username, "role": "user"}
     token = create_jwt_token(user)
-    return {"status": "ok", "user": user, "token": token}
+    response = JSONResponse({"status": "ok", "user": user})
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=60*60*24*7
+    )
+    return response
 
 
 # --- Логин ---
@@ -950,7 +963,16 @@ async def login(request: Request):
             "avatar": row[5] or ""
         }
         token = create_jwt_token(user)
-    return {"status": "ok", "user": user, "token": token}
+    response = JSONResponse({"status": "ok", "user": user})
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=60*60*24*7
+    )
+    return response
 
 
 # --- Только для админа ---

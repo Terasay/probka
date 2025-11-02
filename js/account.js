@@ -471,13 +471,13 @@ async function handleAvatarUpload(e) {
   try {
     const res = await fetch("/api/account/upload_avatar", {
       method: "POST",
-      body: formData
+      body: formData,
+      credentials: "include"
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || "Ошибка загрузки");
     if (window.user) {
       window.user.avatar = data.avatar;
-      localStorage.setItem("user", JSON.stringify(window.user));
       updateUI(window.user);
     }
     document.getElementById("avatar-upload-input").value = "";
@@ -488,35 +488,21 @@ async function handleAvatarUpload(e) {
 }
 
 async function apiFetch(path, options = {}) {
-  let token = null;
-  try {
-    const raw = localStorage.getItem("user");
-    if (raw) {
-      const user = JSON.parse(raw);
-      if (user && user.token) token = user.token;
-    }
-  } catch (e) {}
-
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
   const res = await fetch(`${API_URL}${path}`, {
     credentials: "include",
     headers,
     ...options
   });
-
   let data = null;
   try {
     data = await res.json();
   } catch (e) {
     throw new Error(`Сервер вернул невалидный JSON (status ${res.status})`);
   }
-
   if (!res.ok) {
     throw new Error(data?.error || data?.detail || `Ошибка (${res.status})`);
   }
-
   return data;
 }
 
@@ -527,20 +513,15 @@ async function login() {
     alert("Введите логин и пароль");
     return;
   }
-
   try {
     const data = await apiFetch("/api/login", {
       method: "POST",
       body: JSON.stringify({ username, password })
     });
-
-    if (data && data.user && data.token) {
-      const userWithToken = { ...data.user, token: data.token };
+    if (data && data.user) {
+      window.user = data.user;
       if (window.setUserSession) {
-        window.setUserSession(userWithToken);
-      } else {
-        localStorage.setItem("user", JSON.stringify(userWithToken));
-        window.user = userWithToken;
+        window.setUserSession(window.user);
       }
       updateUI(window.user);
       console.log("[login] ok user:", window.user);
@@ -560,21 +541,15 @@ async function registerHandler() {
     alert("Введите логин и пароль");
     return;
   }
-
   try {
     const data = await apiFetch("/api/register", {
       method: "POST",
       body: JSON.stringify({ username, password })
     });
-
-    if (data && data.status === "ok" && data.user && data.token) {
-      // После регистрации сразу логиним
-      const userWithToken = { ...data.user, token: data.token };
+    if (data && data.status === "ok" && data.user) {
+      window.user = data.user;
       if (window.setUserSession) {
-        window.setUserSession(userWithToken);
-      } else {
-        localStorage.setItem("user", JSON.stringify(userWithToken));
-        window.user = userWithToken;
+        window.setUserSession(window.user);
       }
       updateUI(window.user);
       alert("Регистрация успешна — теперь можно войти");
@@ -592,11 +567,9 @@ async function logout() {
   try {
     if (window.setUserSession) {
       window.setUserSession(null);
-    } else {
-      localStorage.removeItem("user");
-      window.user = null;
-      window.dispatchEvent(new Event('user-session-changed'));
     }
+    window.user = null;
+    window.dispatchEvent(new Event('user-session-changed'));
     try {
       await apiFetch("/api/logout", { method: "POST" });
     } catch (e) {
