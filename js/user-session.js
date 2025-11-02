@@ -30,7 +30,10 @@ window.user = null;
   }
 
   // Инициализация window.user при загрузке страницы
-  fetchUserFromCookie();
+  fetchUserFromCookie().then(() => {
+    updateNavUser(window.user);
+    window.dispatchEvent(new Event('user-session-changed'));
+  });
 
   // Следить за изменениями куки (логин/логаут в других вкладках)
   window.addEventListener('user-session-changed', function() {
