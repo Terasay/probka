@@ -9,9 +9,29 @@
     }
   }
 
-  // Инициализация window.user как null при загрузке
-  window.user = null;
-  updateNavUser(null);
+
+  // Инициализация window.user по cookie при загрузке
+  async function initUserSession() {
+    try {
+      const res = await fetch("/api/account/me", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user && data.user.id && data.user.username && data.user.role) {
+          window.user = data.user;
+        } else {
+          window.user = null;
+        }
+      } else {
+        window.user = null;
+      }
+    } catch (e) {
+      window.user = null;
+    }
+    updateNavUser(window.user);
+    window.dispatchEvent(new Event('user-session-changed'));
+  }
+
+  initUserSession();
 
   // Для других скриптов
   window.getCurrentUser = function() {

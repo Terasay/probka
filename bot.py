@@ -26,6 +26,15 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "supersecretkey")
 JWT_ALGORITHM = "HS256"
 security = HTTPBearer()
 
+# --- Получить текущего пользователя по cookie ---
+@app.get("/api/account/me")
+async def get_me(request: Request):
+    try:
+        user = get_current_user(request)
+        return {"user": user}
+    except HTTPException:
+        return JSONResponse({"user": None}, status_code=401)
+
 def create_jwt_token(user: dict):
     payload = {
         "id": user["id"],
