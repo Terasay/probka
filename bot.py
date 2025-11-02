@@ -648,7 +648,11 @@ async def get_users_activity(user=Depends(require_admin)):
 
 
 @app.post("/api/logout")
-async def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def logout(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    # Проверяем наличие заголовка Authorization
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Отсутствует заголовок Authorization: Bearer <токен>")
     token = credentials.credentials
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
