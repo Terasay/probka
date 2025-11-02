@@ -1003,16 +1003,9 @@ function handleIncomingMessage(message) {
     showNotification(message.content, formatMessageTime(message.created_at));
 }
 
-// Инициализация
-async function waitForUser() {
-	// Ждём, пока window.user не станет объектом или явно null
-	for (let i = 0; i < 30; i++) {
-		if (typeof window.user !== "undefined") break;
-		await new Promise(r => setTimeout(r, 50));
+// Инициализация чатов только после получения пользователя
+window.addEventListener('user-session-changed', function() {
+	if (window.user) {
+		fetchChats();
 	}
-}
-
-window.addEventListener('DOMContentLoaded', async function() {
-	await waitForUser();
-	await fetchChats();
 });
