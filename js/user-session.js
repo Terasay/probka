@@ -12,12 +12,14 @@ window.user = null;
         if (data.user && data.user.id && data.user.username && data.user.role) {
           window.user = data.user;
           updateNavUser(window.user);
+          window.dispatchEvent(new Event('user-session-changed'));
           return;
         }
       }
     } catch(e) {}
-    window.user = null;
-    updateNavUser(null);
+  window.user = null;
+  updateNavUser(null);
+  window.dispatchEvent(new Event('user-session-changed'));
   }
 
   function updateNavUser(user) {
