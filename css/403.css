@@ -5,40 +5,38 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(120deg, #232946 0%, #1a1a2e 100%);
+	background: linear-gradient(120deg, #f9b233 0%, #f7c873 100%);
 }
 .forbidden-content {
-	background: rgba(255,255,255,0.04);
-	border-radius: 18px;
+	background: rgba(255,255,255,0.08);
+	border-radius: 22px;
 	box-shadow: 0 8px 32px #0006;
-	padding: 48px 32px;
+	padding: 56px 36px 36px 36px;
 	text-align: center;
-	max-width: 420px;
+	max-width: 480px;
 	margin: 0 auto;
 }
-.forbidden-icon {
-	font-size: 54px;
+.forbidden-svg {
 	margin-bottom: 18px;
+	display: flex;
+	justify-content: center;
 }
 .forbidden-title {
-	font-size: 32px;
+	font-size: 30px;
 	font-weight: 700;
-	color: #e63946;
+	color: #222;
 	margin-bottom: 18px;
-	letter-spacing: 2px;
+	letter-spacing: 1px;
 }
 .forbidden-text {
-	font-size: 20px;
-	color: #fff;
+	font-size: 19px;
+	color: #222;
 	margin-bottom: 24px;
 }
 .forbidden-text a {
-	color: #60a5fa;
+	color: #e63946;
 	text-decoration: underline;
-}
-.forbidden-cowboy {
-	font-size: 48px;
-	margin-top: 12px;
+	font-weight: 500;
 }
 .forbidden-footer {
 	color: #9ca3af;

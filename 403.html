@@ -9,10 +9,33 @@
 <body>
   <div class="forbidden-wrap">
     <div class="forbidden-content">
-      <div class="forbidden-icon">🪓</div>
-      <h1 class="forbidden-title">403 — Доступ запрещён</h1>
-      <p class="forbidden-text">Тебе здесь не рады, ковбои.<br>Попробуй вернуться на <a href="index.html">главную</a> или <a href="account.html">войти под другим аккаунтом</a>.</p>
-      <div class="forbidden-cowboy">🤠</div>
+      <div class="forbidden-svg">
+        <!-- Стилизованная SVG иллюстрация: охрана и нарушитель -->
+        <svg width="220" height="110" viewBox="0 0 220 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="220" height="110" rx="18" fill="#f9b233"/>
+          <text x="110" y="45" text-anchor="middle" font-size="44" font-family="Inter, Arial, sans-serif" fill="#fff" font-weight="bold">403</text>
+          <text x="110" y="70" text-anchor="middle" font-size="16" font-family="Inter, Arial, sans-serif" fill="#222">This is a forbidden area.</text>
+          <!-- Нарушитель -->
+          <circle cx="40" cy="90" r="14" fill="#222"/>
+          <rect x="34" y="104" width="12" height="18" rx="6" fill="#222" transform="rotate(-25 34 104)"/>
+          <rect x="48" y="104" width="12" height="18" rx="6" fill="#222" transform="rotate(25 48 104)"/>
+          <rect x="36" y="80" width="16" height="24" rx="8" fill="#222"/>
+          <ellipse cx="40" cy="90" rx="7" ry="3" fill="#fff"/>
+          <!-- Охрана -->
+          <circle cx="110" cy="90" r="14" fill="#222"/>
+          <rect x="104" y="104" width="12" height="18" rx="6" fill="#222"/>
+          <rect x="116" y="104" width="12" height="18" rx="6" fill="#222"/>
+          <rect x="106" y="80" width="16" height="24" rx="8" fill="#222"/>
+          <rect x="110" y="90" width="40" height="6" rx="3" fill="#222" transform="rotate(-15 110 90)"/>
+          <!-- Охрана 2 -->
+          <circle cx="180" cy="90" r="14" fill="#222"/>
+          <rect x="174" y="104" width="12" height="18" rx="6" fill="#222"/>
+          <rect x="186" y="104" width="12" height="18" rx="6" fill="#222"/>
+          <rect x="176" y="80" width="16" height="24" rx="8" fill="#222"/>
+        </svg>
+      </div>
+      <h1 class="forbidden-title">Тебе здесь не рады, ковбои</h1>
+      <p class="forbidden-text">Доступ запрещён.<br>Попробуй вернуться на <a href="index.html">главную</a> или <a href="account.html">войти под другим аккаунтом</a>.</p>
     </div>
     <footer class="forbidden-footer">Terasay Corporation © 2025</footer>
   </div>
