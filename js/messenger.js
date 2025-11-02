@@ -1004,4 +1004,15 @@ function handleIncomingMessage(message) {
 }
 
 // Инициализация
-fetchChats();
+async function waitForUser() {
+	// Ждём, пока window.user не станет объектом или явно null
+	for (let i = 0; i < 30; i++) {
+		if (typeof window.user !== "undefined") break;
+		await new Promise(r => setTimeout(r, 50));
+	}
+}
+
+window.addEventListener('DOMContentLoaded', async function() {
+	await waitForUser();
+	await fetchChats();
+});
