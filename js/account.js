@@ -312,20 +312,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  let savedUser = null;
-  try {
-    savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      window.user = JSON.parse(savedUser);
-    } else {
-      window.user = null;
-    }
-  } catch (e) {
-    window.user = null;
-    localStorage.removeItem("user");
-  }
-
-      const myCountryPanel = document.getElementById("my-country-request-panel");
+  window.user = null;
+  const myCountryPanel = document.getElementById("my-country-request-panel");
   updateUI(window.user);
 
   window.addEventListener('user-session-changed', updateCountryButtonState);
