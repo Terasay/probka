@@ -33,6 +33,11 @@
 
   initUserSession();
 
+    // Если есть глобальная restoreSession из account.js, используем её для инициализации window.user
+    if (typeof window.restoreSession === "function") {
+      window.restoreSession();
+    }
+
   // Для других скриптов
   window.getCurrentUser = function() {
     return window.user || null;
