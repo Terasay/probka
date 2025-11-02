@@ -35,14 +35,8 @@ def create_jwt_token(user: dict):
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    with sqlite3.connect("site.db") as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT 1 FROM revoked_tokens WHERE token = ?", (token,))
-        if cur.fetchone():
-            raise HTTPException(status_code=401, detail="Токен отозван, требуется повторный вход")
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
     except Exception:
         raise HTTPException(status_code=401, detail="Недействительный токен")
@@ -648,16 +642,8 @@ async def get_users_activity(user=Depends(require_admin)):
 
 
 @app.post("/api/logout")
-async def logout(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    # Проверяем наличие заголовка Authorization
-    auth_header = request.headers.get("authorization")
-    if not auth_header or not auth_header.lower().startswith("bearer "):
-        raise HTTPException(status_code=401, detail="Отсутствует заголовок Authorization: Bearer <токен>")
-    token = credentials.credentials
-    with sqlite3.connect("site.db") as conn:
-        cur = conn.cursor()
-        cur.execute("INSERT OR IGNORE INTO revoked_tokens (token, revoked_at) VALUES (?, ?)", (token, datetime.now(timezone.utc).isoformat()))
-        conn.commit()
+async def logout():
+
     return {"status": "ok"}
 
 app.add_middleware(
@@ -801,11 +787,6 @@ def init_db():
             chat_id INTEGER,
             last_read_msg_id INTEGER,
             PRIMARY KEY (user_id, chat_id)
-        )""")
-        # --- Таблица для хранения отозванных токенов ---
-        cur.execute("""CREATE TABLE IF NOT EXISTS revoked_tokens (
-            token TEXT PRIMARY KEY,
-            revoked_at TEXT
         )""")
 import os
 from fastapi import UploadFile, File, Form
@@ -983,30 +964,6 @@ async def get_users(user=Depends(require_admin)):
             for r in cur.fetchall()
         ]
     return {"status": "ok", "users": users}
-
-# --- Эндпоинт для обновления токена ---
-@app.post("/api/token/refresh")
-async def refresh_token(user=Depends(get_current_user)):
-    """
-    Принимает валидный токен (в заголовке Authorization), возвращает новый токен и user-данные.
-    """
-    # user содержит id, username, role
-    # Получаем актуальные данные пользователя из БД
-    with sqlite3.connect("site.db") as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT id, username, role, country, avatar FROM users WHERE id = ?", (user["id"],))
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
-        user_data = {
-            "id": row[0],
-            "username": row[1],
-            "role": row[2],
-            "country": row[3],
-            "avatar": row[4] or ""
-        }
-    new_token = create_jwt_token(user_data)
-    return {"status": "ok", "user": user_data, "token": new_token}
 
 
 @app.delete("/api/users/{user_id}")

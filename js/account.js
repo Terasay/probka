@@ -488,8 +488,15 @@ async function handleAvatarUpload(e) {
 }
 
 async function apiFetch(path, options = {}) {
-  // Берём токен только из window.user
-  let token = window.user && window.user.token ? window.user.token : null;
+  let token = null;
+  try {
+    const raw = localStorage.getItem("user");
+    if (raw) {
+      const user = JSON.parse(raw);
+      if (user && user.token) token = user.token;
+    }
+  } catch (e) {}
+
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -507,16 +514,6 @@ async function apiFetch(path, options = {}) {
   }
 
   if (!res.ok) {
-    // Если токен отозван или 401 — сбрасываем пользователя
-    if (res.status === 401 || (data?.error && String(data.error).includes("Токен отозван"))) {
-      // Очищаем localStorage и window.user
-      localStorage.removeItem("user");
-      window.user = null;
-      window.dispatchEvent(new Event('user-session-changed'));
-      updateUI(null);
-      throw new Error("Токен отозван, требуется повторный вход");
-      // return; // Не выполнять дальнейший код
-    }
     throw new Error(data?.error || data?.detail || `Ошибка (${res.status})`);
   }
 
@@ -539,14 +536,11 @@ async function login() {
 
     if (data && data.user && data.token) {
       const userWithToken = { ...data.user, token: data.token };
-      // Очищаем localStorage перед записью нового токена
-      localStorage.removeItem("user");
       if (window.setUserSession) {
         window.setUserSession(userWithToken);
       } else {
         localStorage.setItem("user", JSON.stringify(userWithToken));
         window.user = userWithToken;
-        console.log("[login] user token:", userWithToken.token);
       }
       updateUI(window.user);
       console.log("[login] ok user:", window.user);
@@ -576,8 +570,6 @@ async function registerHandler() {
     if (data && data.status === "ok" && data.user && data.token) {
       // После регистрации сразу логиним
       const userWithToken = { ...data.user, token: data.token };
-      // Очищаем localStorage перед записью нового токена
-      localStorage.removeItem("user");
       if (window.setUserSession) {
         window.setUserSession(userWithToken);
       } else {
@@ -598,19 +590,17 @@ async function registerHandler() {
 
 async function logout() {
   try {
-    // Сначала отправляем запрос на сервер с токеном
-    try {
-      await apiFetch("/api/logout", { method: "POST" });
-    } catch (e) {
-      console.warn("[logout] server logout failed:", e.message);
-    }
-    // После успешного/неуспешного запроса сбрасываем user
     if (window.setUserSession) {
       window.setUserSession(null);
     } else {
       localStorage.removeItem("user");
       window.user = null;
       window.dispatchEvent(new Event('user-session-changed'));
+    }
+    try {
+      await apiFetch("/api/logout", { method: "POST" });
+    } catch (e) {
+      console.warn("[logout] server logout failed:", e.message);
     }
   } finally {
     updateUI(null);
@@ -739,10 +729,7 @@ function updateUI(user) {
     if (user.role === "admin") {
       if (adminPanel) {
         adminPanel.style.display = "block";
-        // Только если user валиден, вызываем loadUsers
-        if (user && user.token) {
-          loadUsers();
-        }
+        loadUsers();
       }
     } else {
       if (adminPanel) adminPanel.style.display = "none";
