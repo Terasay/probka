@@ -52,5 +52,7 @@
     }
     updateNavUser(window.user);
     window.dispatchEvent(new Event('user-session-changed'));
+      // После логина/логаута всегда обновляем window.user из /api/account/me
+      initUserSession();
   };
 })();
