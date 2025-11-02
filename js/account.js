@@ -23,6 +23,26 @@ document.addEventListener("DOMContentLoaded", () => {
       return null;
     }
   }
+    // --- Восстановление сессии пользователя через куку ---
+    async function restoreSession() {
+      try {
+        const res = await fetch("/api/account/me", { credentials: "include" });
+        const data = await res.json();
+        if (data.user) {
+          window.user = data.user;
+          if (window.setUserSession) window.setUserSession(window.user);
+          updateUI(window.user);
+        } else {
+          window.user = null;
+          updateUI(null);
+        }
+      } catch (e) {
+        window.user = null;
+        updateUI(null);
+      }
+    }
+    // Вызвать восстановление сессии при загрузке страницы
+    restoreSession();
 
   function renderMyCountryRequestPanel(req) {
     const panel = document.getElementById("my-country-request-panel");
