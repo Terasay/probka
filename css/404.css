@@ -1,0 +1,27 @@
+body {
+	background: #000;
+	color: #0f0;
+	font-family: monospace;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100vh;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+}
+.cursor {
+	animation: blink 1s step-start infinite;
+}
+@keyframes blink {
+	50% { opacity: 0; }
+}
+.home-link {
+	color: #0f0;
+	text-decoration: none;
+	font-family: inherit;
+}
+.home-link:hover {
+	text-decoration: underline;
+}
