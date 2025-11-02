@@ -488,21 +488,10 @@ async function handleAvatarUpload(e) {
 }
 
 async function apiFetch(path, options = {}) {
-  let token = null;
-  try {
-    const raw = localStorage.getItem("user");
-    if (raw) {
-      const user = JSON.parse(raw);
-      if (user && user.token) token = user.token;
-    }
-  } catch (e) {}
-
+  // Берём токен только из window.user
+  let token = window.user && window.user.token ? window.user.token : null;
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  if (path === "/api/users") {
-    console.log("[apiFetch] /api/users token:", token);
-    console.log("[apiFetch] /api/users headers:", headers);
-  }
 
   const res = await fetch(`${API_URL}${path}`, {
     credentials: "include",
