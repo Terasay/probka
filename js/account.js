@@ -314,7 +314,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.user = null;
   const myCountryPanel = document.getElementById("my-country-request-panel");
-  updateUI(window.user);
+  // updateUI(window.user); // убираем прямой вызов, инициализация только по событию
+
+  window.addEventListener('user-session-changed', () => {
+    updateUI(window.user);
+  });
 
   window.addEventListener('user-session-changed', updateCountryButtonState);
 

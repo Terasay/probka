@@ -26,5 +26,6 @@
       window.user = null;
     }
     updateNavUser(window.user);
+    window.dispatchEvent(new Event('user-session-changed'));
   };
 })();
