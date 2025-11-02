@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Админ-панель — ZXC</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="master-menu">
+    <div class="nav-inner">
+      <div class="nav-left">
+        <a href="index.html" class="nav-link">Главная</a>
+        <a href="exchange.html" class="nav-link">Биржа</a>
+        <a href="news.html" class="nav-link">Новости</a>
+        <a href="messenger.html" class="nav-link">Мессенджер</a>
+        <a href="forum.html" class="nav-link">Форум</a>
+        <a href="about.html" class="nav-link">О сервере</a>
+      </div>
+      <div class="nav-right">
+        <a href="account.html" class="nav-link account-link">Аккаунт</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="container" id="admin-container">
+      <h1>Админ-панель</h1>
+      <div id="admin-content" style="display:none;"></div>
+      <div id="admin-error" style="display:none;color:#b00;font-size:18px;margin-top:32px;text-align:center;">Доступ запрещён. Только для админов.</div>
+    </div>
+    <footer class="footer">
+      Terasay Corporation © 2025
+    </footer>
+  </div>
+
+  <script>
+    async function checkAdminAccess() {
+      let token = null;
+      try {
+        const raw = localStorage.getItem("user");
+        if (raw) {
+          const user = JSON.parse(raw);
+          if (user && user.token) token = user.token;
+        }
+      } catch (e) {}
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      try {
+        const res = await fetch("/api/users", { method: "GET", headers });
+        if (res.status === 200) {
+          document.getElementById("admin-content").style.display = "block";
+          document.getElementById("admin-error").style.display = "none";
+          // Здесь будет содержимое админ-панели
+          document.getElementById("admin-content").innerHTML = "<p>Добро пожаловать, админ! Здесь будет функционал панели.</p>";
+        } else {
+          throw new Error("Forbidden");
+        }
+      } catch (err) {
+        document.getElementById("admin-content").style.display = "none";
+        document.getElementById("admin-error").style.display = "block";
+      }
+    }
+    document.addEventListener('DOMContentLoaded', checkAdminAccess);
+  </script>
+</body>
+</html>
