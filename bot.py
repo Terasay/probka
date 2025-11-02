@@ -35,8 +35,14 @@ def create_jwt_token(user: dict):
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM revoked_tokens WHERE token = ?", (token,))
+        if cur.fetchone():
+            raise HTTPException(status_code=401, detail="Токен отозван, требуется повторный вход")
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
     except Exception:
         raise HTTPException(status_code=401, detail="Недействительный токен")
@@ -642,8 +648,12 @@ async def get_users_activity(user=Depends(require_admin)):
 
 
 @app.post("/api/logout")
-async def logout():
-
+async def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("INSERT OR IGNORE INTO revoked_tokens (token, revoked_at) VALUES (?, ?)", (token, datetime.now(timezone.utc).isoformat()))
+        conn.commit()
     return {"status": "ok"}
 
 app.add_middleware(
@@ -787,6 +797,11 @@ def init_db():
             chat_id INTEGER,
             last_read_msg_id INTEGER,
             PRIMARY KEY (user_id, chat_id)
+        )""")
+        # --- Таблица для хранения отозванных токенов ---
+        cur.execute("""CREATE TABLE IF NOT EXISTS revoked_tokens (
+            token TEXT PRIMARY KEY,
+            revoked_at TEXT
         )""")
 import os
 from fastapi import UploadFile, File, Form
