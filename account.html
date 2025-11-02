@@ -32,6 +32,7 @@
       </div>
       <div class="nav-right">
         <a href="account.html" class="nav-link account-link">Аккаунт</a>
+        <a href="admin.html" class="nav-link admin-link" style="display:none;">Админ-панель</a>
       </div>
     </div>
   </nav>
@@ -132,5 +133,27 @@
 
   <script src="js/account.js"></script>
   <script src="js/theme.js"></script>
+  <script>
+    // Показывать кнопку "Админ-панель" только для админов
+    document.addEventListener('DOMContentLoaded', function() {
+      function updateAdminLink() {
+        let user = null;
+        try {
+          const raw = localStorage.getItem('user');
+          if (raw) user = JSON.parse(raw);
+        } catch(e) {}
+        const adminLink = document.querySelector('.nav-link.admin-link');
+        if (adminLink) {
+          if (user && user.role === 'admin') {
+            adminLink.style.display = 'inline-block';
+          } else {
+            adminLink.style.display = 'none';
+          }
+        }
+      }
+      updateAdminLink();
+      window.addEventListener('user-session-changed', updateAdminLink);
+    });
+  </script>
 </body>
 </html>
