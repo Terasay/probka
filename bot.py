@@ -304,6 +304,9 @@ async def send_message(request: Request):
         row = cur.fetchone()
         sender_name = row[0] if row else "?"
 
+        now = datetime.now(timezone.utc).isoformat()
+        cur.execute("INSERT OR REPLACE INTO user_activity (user_id, last_message_sent) VALUES (?, ?)", (user_id, now))
+
         cur.execute(
             """
             INSERT INTO chat_messages (chat_id, sender_id, sender_name, content, created_at, reply_to)
@@ -607,6 +610,36 @@ async def delete_country_request(request: Request):
         conn.commit()
     return {"success": True}
 
+@app.post("/api/messenger/visit")
+async def messenger_visit(user=Depends(require_user)):
+    user_id = user["id"]
+    now = datetime.now(timezone.utc).isoformat()
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("INSERT OR REPLACE INTO user_activity (user_id, last_messenger_visit) VALUES (?, ?)", (user_id, now))
+        conn.commit()
+    return {"success": True}
+
+@app.get("/api/users/activity")
+async def get_users_activity(user=Depends(require_admin)):
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, username FROM users ORDER BY id")
+        users = cur.fetchall()
+        cur.execute("SELECT user_id, last_messenger_visit, last_message_sent FROM user_activity")
+        activity = {row[0]: {"last_messenger_visit": row[1], "last_message_sent": row[2]} for row in cur.fetchall()}
+        result = []
+        for u in users:
+            uid = u[0]
+            act = activity.get(uid, {})
+            result.append({
+                "id": uid,
+                "username": u[1],
+                "last_messenger_visit": act.get("last_messenger_visit"),
+                "last_message_sent": act.get("last_message_sent")
+            })
+    return {"status": "ok", "activity": result}
+
 
 @app.post("/api/logout")
 async def logout():
@@ -626,6 +659,11 @@ def init_db():
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
         # ...создание таблиц...
+        cur.execute("""CREATE TABLE IF NOT EXISTS user_activity (
+            user_id INTEGER PRIMARY KEY,
+            last_messenger_visit TEXT,
+            last_message_sent TEXT
+        )""")
         cur.execute("""CREATE TABLE IF NOT EXISTS news (
             id TEXT PRIMARY KEY,
             author TEXT,
