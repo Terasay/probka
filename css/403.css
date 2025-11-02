@@ -1,46 +1,55 @@
 
-.forbidden-wrap {
+
+.terminal-403 {
 	min-height: 100vh;
+	background: #111;
+	color: #39FF14;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(120deg, #f9b233 0%, #f7c873 100%);
+	font-family: 'VT323', 'Press Start 2P', monospace;
 }
-.forbidden-content {
-	background: rgba(255,255,255,0.08);
-	border-radius: 22px;
-	box-shadow: 0 8px 32px #0006;
-	padding: 56px 36px 36px 36px;
-	text-align: center;
-	max-width: 480px;
-	margin: 0 auto;
-}
-.forbidden-svg {
-	margin-bottom: 18px;
+.terminal-403__main {
 	display: flex;
+	flex-direction: column;
+	align-items: center;
 	justify-content: center;
+	margin-bottom: 48px;
 }
-.forbidden-title {
-	font-size: 30px;
-	font-weight: 700;
-	color: #222;
-	margin-bottom: 18px;
-	letter-spacing: 1px;
+.terminal-403__code {
+	font-size: 96px;
+	font-weight: bold;
+	letter-spacing: 4px;
+	text-shadow: 0 0 16px #39FF14, 0 0 32px #39FF14;
+	margin-bottom: 8px;
 }
-.forbidden-text {
-	font-size: 19px;
-	color: #222;
-	margin-bottom: 24px;
+.terminal-403__text {
+	font-size: 32px;
+	letter-spacing: 2px;
+	text-shadow: 0 0 8px #39FF14;
+	margin-bottom: 0;
 }
-.forbidden-text a {
-	color: #e63946;
-	text-decoration: underline;
-	font-weight: 500;
+.terminal-403__cursor {
+	display: inline-block;
+	width: 18px;
+	height: 32px;
+	background: #39FF14;
+	margin-left: 8px;
+	vertical-align: middle;
+	border-radius: 2px;
+	box-shadow: 0 0 8px #39FF14;
+	animation: blink-cursor 1s steps(2, start) infinite;
 }
-.forbidden-footer {
-	color: #9ca3af;
-	font-size: 15px;
-	margin-top: 32px;
+@keyframes blink-cursor {
+	0%, 49% { opacity: 1; }
+	50%, 100% { opacity: 0; }
+}
+.terminal-403__footer {
+	font-size: 24px;
+	color: #39FF14;
 	text-align: center;
+	margin-top: 32px;
+	letter-spacing: 2px;
+	text-shadow: 0 0 8px #39FF14;
 }
