@@ -514,6 +514,15 @@ async function apiFetch(path, options = {}) {
   }
 
   if (!res.ok) {
+    // Если токен отозван или 401 — сбрасываем пользователя
+    if (res.status === 401 || (data?.error && String(data.error).includes("Токен отозван"))) {
+      // Очищаем localStorage и window.user
+      localStorage.removeItem("user");
+      window.user = null;
+      window.dispatchEvent(new Event('user-session-changed'));
+      updateUI(null);
+      throw new Error("Токен отозван, требуется повторный вход");
+    }
     throw new Error(data?.error || data?.detail || `Ошибка (${res.status})`);
   }
 
