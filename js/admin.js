@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   const headers = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   let usersData = null;
+  let activityData = null;
   try {
     const res = await fetch("/api/users", { method: "GET", headers });
     if (res.status === 200) {
@@ -44,7 +45,67 @@ document.addEventListener('DOMContentLoaded', async function() {
       usersPanel.style.display = "none";
     }
   });
+
+  // Кнопка раскрытия активности
+  const toggleActivityBtn = document.getElementById("toggle-activity");
+  const activityPanel = document.getElementById("activity-panel");
+  let activityExpanded = false;
+  toggleActivityBtn.addEventListener("click", async function() {
+    activityExpanded = !activityExpanded;
+    if (activityExpanded) {
+      toggleActivityBtn.textContent = "Скрыть активность";
+      activityPanel.style.display = "block";
+      if (!activityData) {
+        try {
+          const res = await fetch("/api/users/activity", { method: "GET", headers });
+          if (res.status === 200) {
+            const data = await res.json();
+            activityData = data.users || [];
+          } else {
+            activityPanel.innerHTML = '<div style="color:#b00;font-size:17px;">Ошибка загрузки активности</div>';
+            return;
+          }
+        } catch(e) {
+          activityPanel.innerHTML = '<div style="color:#b00;font-size:17px;">Ошибка сети</div>';
+          return;
+        }
+      }
+      activityPanel.innerHTML = renderActivityTable(activityData);
+    } else {
+      toggleActivityBtn.textContent = "Показать активность";
+      activityPanel.style.display = "none";
+    }
+  });
 });
+
+function renderActivityTable(users) {
+  if (!users || !users.length) return '<div style="color:#888;font-size:17px;">Нет данных</div>';
+  let html = '<table style="width:100%;border-collapse:collapse;background:#181818;color:#fff;font-size:16px;box-shadow:0 2px 12px #0003;">';
+  html += '<thead><tr style="background:#222;color:#39FF14;font-size:17px;">';
+  html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">ID</th>';
+  html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">Логин</th>';
+  html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">Последнее сообщение</th>';
+  html += '<th style="padding:8px 12px;border-bottom:1px solid #333;">Вход в мессенджер</th>';
+  html += '</tr></thead><tbody>';
+  for (const u of users) {
+    html += `<tr>`;
+    html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>${u.id}</td>`;
+    html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>${u.username}</td>`;
+    html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>${u.last_message_at ? formatDate(u.last_message_at) : '-'}</td>`;
+    html += `<td style='padding:7px 12px;border-bottom:1px solid #222;'>${u.last_messenger_visit ? formatDate(u.last_messenger_visit) : '-'}</td>`;
+    html += `</tr>`;
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function formatDate(dt) {
+  if (!dt) return '-';
+  try {
+    const d = new Date(dt);
+    return d.toLocaleString('ru-RU');
+  } catch(e) { return dt; }
+}
 
 function renderUsersTable(users) {
   if (!users || !users.length) return '<div style="color:#888;font-size:17px;">Нет пользователей</div>';
