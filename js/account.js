@@ -536,6 +536,8 @@ async function login() {
 
     if (data && data.user && data.token) {
       const userWithToken = { ...data.user, token: data.token };
+      // Очищаем localStorage перед записью нового токена
+      localStorage.removeItem("user");
       if (window.setUserSession) {
         window.setUserSession(userWithToken);
       } else {
@@ -570,6 +572,8 @@ async function registerHandler() {
     if (data && data.status === "ok" && data.user && data.token) {
       // После регистрации сразу логиним
       const userWithToken = { ...data.user, token: data.token };
+      // Очищаем localStorage перед записью нового токена
+      localStorage.removeItem("user");
       if (window.setUserSession) {
         window.setUserSession(userWithToken);
       } else {
