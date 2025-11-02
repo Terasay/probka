@@ -226,11 +226,9 @@ function setupNewsCreateForm() {
 }
 
 // Инициализация
-document.addEventListener('DOMContentLoaded', () => {
+// Инициализация только после получения пользователя
+window.addEventListener('user-session-changed', () => {
   showAdminPanelIfNeeded();
   setupNewsCreateForm();
   loadNews();
-
-  // Поддержка динамического показа панели для админа после логина без перезагрузки
-  window.addEventListener('user-session-changed', showAdminPanelIfNeeded);
 });
