@@ -571,7 +571,7 @@ async function logout() {
     window.user = null;
     window.dispatchEvent(new Event('user-session-changed'));
     try {
-      await apiFetch("/api/logout", { method: "POST" });
+      await apiFetch("/api/logout", { method: "POST", credentials: "include" });
     } catch (e) {
       console.warn("[logout] server logout failed:", e.message);
     }
