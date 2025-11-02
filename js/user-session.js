@@ -2,14 +2,15 @@
 // Глобальная поддержка window.user и синхронизация с localStorage
 
 (function() {
-  function syncUserFromStorage() {
+  // Получить пользователя из куки через /api/account/me
+  async function fetchUserFromCookie() {
     try {
-      const raw = localStorage.getItem('user');
-      if (raw) {
-        const user = JSON.parse(raw);
-        if (user && user.id && user.username && user.role) {
-          window.user = user;
-          updateNavUser(user);
+      const res = await fetch("/api/account/me", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user && data.user.id && data.user.username && data.user.role) {
+          window.user = data.user;
+          updateNavUser(window.user);
           return;
         }
       }
@@ -25,12 +26,12 @@
     }
   }
 
-  // Синхронизация при загрузке
-  syncUserFromStorage();
+  // Инициализация window.user при загрузке страницы
+  fetchUserFromCookie();
 
-  // Следить за изменениями localStorage (другие вкладки)
-  window.addEventListener('storage', function(e) {
-    if (e.key === 'user') syncUserFromStorage();
+  // Следить за изменениями куки (логин/логаут в других вкладках)
+  window.addEventListener('user-session-changed', function() {
+    fetchUserFromCookie();
   });
 
   // Для других скриптов
@@ -39,14 +40,8 @@
   };
 
   // Для account.js: обновлять window.user при логине/логауте
-  window.setUserSession = function(user) {
-    if (user && user.id && user.username && user.role) {
-      localStorage.setItem('user', JSON.stringify(user));
-      window.user = user;
-    } else {
-      localStorage.removeItem('user');
-      window.user = null;
-    }
-    syncUserFromStorage();
+  // После логина/логаута всегда обновляем window.user из /api/account/me
+  window.setUserSession = function() {
+    fetchUserFromCookie();
   };
 })();
