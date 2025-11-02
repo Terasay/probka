@@ -647,7 +647,13 @@ async def get_users_activity(user=Depends(require_admin)):
 @app.post("/api/logout")
 async def logout():
     response = JSONResponse({"status": "ok"})
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        samesite="lax",
+        secure=False
+    )
+    print("[DEBUG] Cookie access_token удалена при logout")
     return response
 
 app.add_middleware(
