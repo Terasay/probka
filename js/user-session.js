@@ -1,6 +1,7 @@
 // user-session.js
 // Глобальная поддержка window.user и синхронизация с localStorage
 
+window.user = null;
 (function() {
   // Получить пользователя из куки через /api/account/me
   async function fetchUserFromCookie() {
