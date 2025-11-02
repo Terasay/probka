@@ -936,7 +936,7 @@ async def register(request: Request):
         key="access_token",
         value=token,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite="lax",
         max_age=60*60*24*7
     )
