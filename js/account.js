@@ -590,17 +590,19 @@ async function registerHandler() {
 
 async function logout() {
   try {
+    // Сначала отправляем запрос на сервер с токеном
+    try {
+      await apiFetch("/api/logout", { method: "POST" });
+    } catch (e) {
+      console.warn("[logout] server logout failed:", e.message);
+    }
+    // После успешного/неуспешного запроса сбрасываем user
     if (window.setUserSession) {
       window.setUserSession(null);
     } else {
       localStorage.removeItem("user");
       window.user = null;
       window.dispatchEvent(new Event('user-session-changed'));
-    }
-    try {
-      await apiFetch("/api/logout", { method: "POST" });
-    } catch (e) {
-      console.warn("[logout] server logout failed:", e.message);
     }
   } finally {
     updateUI(null);
