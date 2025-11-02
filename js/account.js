@@ -499,6 +499,10 @@ async function apiFetch(path, options = {}) {
 
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (path === "/api/users") {
+    console.log("[apiFetch] /api/users token:", token);
+    console.log("[apiFetch] /api/users headers:", headers);
+  }
 
   const res = await fetch(`${API_URL}${path}`, {
     credentials: "include",
@@ -553,6 +557,7 @@ async function login() {
       } else {
         localStorage.setItem("user", JSON.stringify(userWithToken));
         window.user = userWithToken;
+        console.log("[login] user token:", userWithToken.token);
       }
       updateUI(window.user);
       console.log("[login] ok user:", window.user);
