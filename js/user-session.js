@@ -1,7 +1,23 @@
 // user-session.js
-// Глобальная поддержка window.user без localStorage
+// Глобальная поддержка window.user и синхронизация с localStorage
 
 (function() {
+  function syncUserFromStorage() {
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const user = JSON.parse(raw);
+        if (user && user.id && user.username && user.role) {
+          window.user = user;
+          updateNavUser(user);
+          return;
+        }
+      }
+    } catch(e) {}
+    window.user = null;
+    updateNavUser(null);
+  }
+
   function updateNavUser(user) {
     const navBtn = document.querySelector('.nav-link.account-link');
     if (navBtn) {
@@ -9,34 +25,13 @@
     }
   }
 
+  // Синхронизация при загрузке
+  syncUserFromStorage();
 
-  // Инициализация window.user по cookie при загрузке
-  async function initUserSession() {
-    try {
-      const res = await fetch("/api/account/me", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user && data.user.id && data.user.username && data.user.role) {
-          window.user = data.user;
-        } else {
-          window.user = null;
-        }
-      } else {
-        window.user = null;
-      }
-    } catch (e) {
-      window.user = null;
-    }
-    updateNavUser(window.user);
-    window.dispatchEvent(new Event('user-session-changed'));
-  }
-
-  initUserSession();
-
-    // Если есть глобальная restoreSession из account.js, используем её для инициализации window.user
-    if (typeof window.restoreSession === "function") {
-      window.restoreSession();
-    }
+  // Следить за изменениями localStorage (другие вкладки)
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'user') syncUserFromStorage();
+  });
 
   // Для других скриптов
   window.getCurrentUser = function() {
@@ -46,13 +41,12 @@
   // Для account.js: обновлять window.user при логине/логауте
   window.setUserSession = function(user) {
     if (user && user.id && user.username && user.role) {
+      localStorage.setItem('user', JSON.stringify(user));
       window.user = user;
     } else {
+      localStorage.removeItem('user');
       window.user = null;
     }
-    updateNavUser(window.user);
-    window.dispatchEvent(new Event('user-session-changed'));
-      // После логина/логаута всегда обновляем window.user из /api/account/me
-      initUserSession();
+    syncUserFromStorage();
   };
 })();
