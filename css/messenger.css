@@ -15,15 +15,13 @@
 	position: absolute;
 	right: 12px;
 	bottom: 6px;
-	font-size: 0.72em; /* уменьшено */
+	font-size: 0.72em;
 	color: #bfc9d8;
 	opacity: 0.7;
 	pointer-events: none;
 	user-select: none;
 	z-index: 2;
 }
-/* --- Стилизация скроллбаров --- */
-/* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
 	width: 10px;
 	background: #202a36;
@@ -40,12 +38,10 @@
 	background: #202a36;
 	border-radius: 8px;
 }
-/* Firefox */
 * {
 	scrollbar-width: thin;
 	scrollbar-color: #263142 #202a36;
 }
-/* --- Файлы в сообщениях --- */
 .msg-files {
 	display: flex;
 	flex-wrap: wrap;
@@ -263,7 +259,6 @@
 .chat-edit-btn:hover svg path {
 	fill: #1b8cc3;
 }
-/* Модальное окно участников чата */
 .chat-members-modal {
 	position: fixed;
 	top: 0; left: 0; right: 0; bottom: 0;
@@ -581,7 +576,7 @@ body {
 	color: #fff;
 	align-self: flex-start;
 	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-	min-width: 90px; /* минимальная ширина для коротких сообщений */
+	min-width: 90px;
 }
 .tg-message.out {
 	background: #229ed9;

@@ -11,7 +11,6 @@ const COUNTRIES = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-  // --- Панель своей заявки на страну ---
   async function fetchMyCountryRequest() {
     if (!window.user) return null;
     const userId = window.user.id;
@@ -23,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return null;
     }
   }
-    // --- Восстановление сессии пользователя через куку ---
     async function restoreSession() {
       try {
         const res = await fetch("/api/account/me", { credentials: "include" });
@@ -41,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUI(null);
       }
     }
-    // Вызвать восстановление сессии при загрузке страницы
     restoreSession();
 
   function renderMyCountryRequestPanel(req) {
@@ -74,17 +71,13 @@ document.addEventListener("DOMContentLoaded", () => {
       ` : ''}
     `;
     if (req.status === 'pending') {
-      // Заполнить select странами
       const select = document.getElementById("edit-country-select");
       if (select) {
         const countriesList = window.countriesList || COUNTRIES;
         select.innerHTML = "";
         countriesList.forEach(c => {
-          // Страны, которые не заняты и не имеют других pending заявок
           if (c.taken_by !== null && c.taken_by !== undefined && c.taken_by !== '' && c.taken_by !== 0) return;
-          // Исключить текущую страну заявки
           if (String(c.id) === String(req.country_id)) return;
-          // Исключить страны с другими активными заявками
           const hasActiveRequest = (window.countryRequests || []).some(r => String(r.country) === String(c.id));
           if (hasActiveRequest) return;
           const option = document.createElement("option");
@@ -93,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
           select.appendChild(option);
         });
       }
-      // Кнопка изменить
       const editBtn = document.getElementById("edit-country-btn");
       if (editBtn && select) {
         editBtn.onclick = async () => {
@@ -121,7 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         };
       }
-      // Кнопка удалить
       const delBtn = document.getElementById("delete-country-request-btn");
       if (delBtn) {
         delBtn.onclick = async () => {
@@ -158,14 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener('user-session-changed', updateMyCountryRequestPanel);
   window.addEventListener('country-requests-updated', updateMyCountryRequestPanel);
-  // После логина/регистрации/отправки заявки обновлять панель
   setTimeout(updateMyCountryRequestPanel, 500);
   async function fetchTakenCountries() {
     try {
       const res = await fetch("/api/countries/taken");
       if (res.ok) {
         const data = await res.json();
-        // data: [[id, taken_by], ...]
         takenCountries = {};
         data.forEach(([id, taken_by]) => {
           if (taken_by) takenCountries[id] = taken_by;
@@ -282,9 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("[populateCountrySelect] countriesList:", countriesList);
     countriesList.forEach(c => {
       const countryId = String(c.id);
-      // Если страна занята (taken_by не null/undefined/0/''), пропускаем
       if (c.taken_by !== null && c.taken_by !== undefined && c.taken_by !== '' && c.taken_by !== 0) return;
-      // Если есть активная заявка на страну, тоже пропускаем
       const hasActiveRequest = (window.countryRequests || []).some(r => String(r.country) === countryId);
       if (hasActiveRequest) return;
       const option = document.createElement("option");
@@ -299,7 +286,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/countries/list");
       if (res.ok) {
         const data = await res.json();
-        // data: [{id, name, taken_by}]
         window.countriesList = Array.isArray(data)
           ? data.map(c => ({ id: c.id, name: c.name, taken_by: c.taken_by }))
           : COUNTRIES;
@@ -334,7 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.user = null;
   const myCountryPanel = document.getElementById("my-country-request-panel");
-  // updateUI(window.user); // убираем прямой вызов, инициализация только по событию
 
   window.addEventListener('user-session-changed', () => {
     updateUI(window.user);
@@ -428,7 +413,6 @@ document.addEventListener("DOMContentLoaded", () => {
             statusDiv.style.color = "green";
             playerNameInput.value = "";
             countrySelect.value = "";
-            // Обновить заявки и список стран
             await updateCountryRequests();
           } else {
             statusDiv.textContent = data.error || "Ошибка отправки заявки";

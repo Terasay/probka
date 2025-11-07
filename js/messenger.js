@@ -431,7 +431,6 @@ async function fetchChats() {
 	const url = `/api/messenger/chats?user_id=${user.id}&is_admin=${isAdmin}`;
 	const res = await fetch(url);
 	let rawChats = await res.json();
-	// Для каждого чата получаем последнее сообщение с нужными полями
 	chats = await Promise.all(rawChats.map(async chat => {
 		let lastMsg = null;
 		try {
@@ -452,7 +451,6 @@ async function fetchChats() {
 	}));
 	renderChatList();
 	renderAccountBar();
-	// --- Выбор чата после загрузки списка ---
 	if (chats.length) {
 		let hashChatId = null;
 		if (window.location.hash && window.location.hash.startsWith('#chat-')) {
@@ -464,7 +462,6 @@ async function fetchChats() {
 		if (hashChatId) {
 			selectChat(hashChatId);
 		} else {
-			// Пробуем восстановить последний открытый чат
 			let lastChatId = null;
 			try {
 				lastChatId = localStorage.getItem('lastChatId');
@@ -480,7 +477,6 @@ async function fetchChats() {
 		const chat = chats.find(c => String(c.id) === String(currentChatId));
 		currentChatTitle = chat ? (chat.title || `Чат #${chat.id}`) : '';
 		chatTitle.textContent = currentChatTitle;
-		// Не вызываем selectChat, чтобы не триггерить повторную загрузку
 	}
 }
 
@@ -518,12 +514,10 @@ function renderChatList() {
 		const li = document.createElement('li');
 		li.className = chat.id === currentChatId ? 'active' : '';
 		li.onclick = () => selectChat(chat.id);
-		// Заголовок чата
 		const titleDiv = document.createElement('div');
 		titleDiv.textContent = chat.title || `Чат #${chat.id}`;
 		titleDiv.style.fontWeight = 'bold';
 		li.appendChild(titleDiv);
-		// --- Badge непрочитанных сообщений ---
 		if (chat.unread_count && chat.unread_count > 0) {
 			const badge = document.createElement('span');
 			badge.className = 'unread-badge';
@@ -531,7 +525,6 @@ function renderChatList() {
 			badge.title = 'Непрочитанные сообщения';
 			li.appendChild(badge);
 		}
-		// Превью последнего сообщения только если оно есть
 		if (chat.lastMsg) {
 			const preview = document.createElement('div');
 			preview.className = 'chat-preview';
@@ -572,7 +565,6 @@ function renderMessages() {
 	currentMessages.forEach(msg => {
 		const div = document.createElement('div');
 		div.className = 'tg-message' + (msg.sender_id === user.id ? ' out' : '');
-		// --- Парсинг файлов ---
 		let content = msg.content || '';
 		let files = [];
 		let fileBlock = '';
@@ -697,9 +689,7 @@ function renderMessages() {
 			replyBtn.title = 'Ответить';
 			replyBtn.onclick = (ev) => { ev.stopPropagation(); setReplyTo(msg); controlsDiv.remove(); };
 			controlsDiv.appendChild(replyBtn);
-			// Добавить меню к сообщению
 			div.appendChild(controlsDiv);
-			// Закрыть меню при клике вне
 			setTimeout(() => {
 				document.addEventListener('mousedown', function handler(ev) {
 					if (!controlsDiv.contains(ev.target)) {
@@ -723,16 +713,13 @@ function escapeHtml(text) {
 }
 
 async function selectChat(id) {
-	// Сохраняем черновик для текущего чата
 	if (currentChatId !== null) {
 		chatDrafts[currentChatId] = messageInput.value;
 		saveDrafts();
 	}
 	currentChatId = id;
 	connectChatWebSocket(id);
-	// Сохраняем последний открытый чат
 	try { localStorage.setItem('messenger_lastChat', String(id)); } catch(e) {}
-	// Обновляем hash в адресе
 	if (history.replaceState) {
 		history.replaceState(null, '', '#chat-' + id);
 	} else {
@@ -742,10 +729,8 @@ async function selectChat(id) {
 	currentChatTitle = chat ? (chat.title || `Чат #${chat.id}`) : '';
 	chatTitle.textContent = currentChatTitle;
 	await fetchMessages(id);
-	// --- Отмечаем чат как прочитанный ---
 	const user = getUser();
 	if (chat && user) {
-		// Найти максимальный id чужого сообщения
 		let maxOtherMsgId = 0;
 		for (let i = currentMessages.length - 1; i >= 0; i--) {
 			const msg = currentMessages[i];
@@ -762,9 +747,7 @@ async function selectChat(id) {
 					body: JSON.stringify({ chat_id: id, user_id: user.id, last_msg_id: maxOtherMsgId })
 				});
 			} catch(e) {}
-			// После отметки обновляем только список чатов и badge, не сбрасываем выбор
 			await fetchChats();
-			// Восстановить выбранный чат и заголовок
 			currentChatId = id;
 			chatTitle.textContent = currentChatTitle;
 		} else {
@@ -773,7 +756,6 @@ async function selectChat(id) {
 	} else {
 		renderChatList();
 	}
-	// Восстанавливаем черновик для выбранного чата
 	loadDrafts();
 	messageInput.value = chatDrafts[id] || '';
 }
@@ -794,7 +776,6 @@ messageForm.addEventListener('submit', async function(e) {
 			return;
 		}
 		const user = getUser();
-		// Если есть файлы — отправляем через FormData
 		if (attachedFiles.length > 0) {
 			const formData = new FormData();
 			formData.append('chat_id', currentChatId);
@@ -817,7 +798,6 @@ messageForm.addEventListener('submit', async function(e) {
 			});
 		}
 		clearReplyTo();
-		// Очищаем черновик для текущего чата
 		chatDrafts[currentChatId] = '';
 		saveDrafts();
 		messageInput.value = '';
@@ -828,7 +808,6 @@ messageForm.addEventListener('submit', async function(e) {
 		messageInput.disabled = false;
 	}
 });
-// --- Автосохранение черновика при вводе ---
 if (messageInput) {
 	messageInput.addEventListener('input', function() {
 		if (currentChatId !== null) {
@@ -838,7 +817,6 @@ if (messageInput) {
 	});
 }
 
-// --- Открытие чата по hash и восстановление последнего чата ---
 window.addEventListener('DOMContentLoaded', function() {
 	let chatIdFromHash = null;
 	if (location.hash && location.hash.startsWith('#chat-')) {
@@ -856,13 +834,11 @@ window.addEventListener('DOMContentLoaded', function() {
 		let chatSocket = null;
 		let wsReconnectTimeout = null;
 		function connectChatWebSocket(chatId) {
-			// Если уже есть соединение — корректно закрываем и ждем onclose
 			if (chatSocket) {
 				chatSocket.onclose = function() {
-					// Открываем новое соединение только после полного закрытия старого
 					wsReconnectTimeout = setTimeout(() => {
 						openNewWebSocket(chatId);
-					}, 120); // небольшая задержка
+					}, 120);
 				};
 				chatSocket.close();
 				chatSocket = null;
@@ -898,7 +874,6 @@ window.addEventListener('DOMContentLoaded', function() {
 
 });
 
-// --- Глобальный WebSocket для мессенджера ---
 let globalSocket = null;
 
 function connectGlobalWebSocket() {
@@ -932,7 +907,7 @@ function connectGlobalWebSocket() {
 
     globalSocket.onclose = function(event) {
         console.warn('Global WebSocket connection closed:', event);
-        setTimeout(connectGlobalWebSocket, 5000); // Повторное подключение через 5 секунд
+        setTimeout(connectGlobalWebSocket, 5000);
     };
 
     globalSocket.onerror = function(error) {
@@ -954,13 +929,11 @@ function showNotification(chatId, message) {
 
     setTimeout(() => {
         notification.remove();
-    }, 5000); // Уведомление исчезает через 5 секунд
+    }, 5000);
 }
 
-// Подключение глобального WebSocket при загрузке страницы
 window.addEventListener('DOMContentLoaded', function() {
 	connectGlobalWebSocket();
-	// Запись активности пользователя (вход в мессенджер)
 	const user = getUser && getUser();
 	if (user && user.id) {
 		fetch('/api/messenger/visit', {
@@ -971,7 +944,6 @@ window.addEventListener('DOMContentLoaded', function() {
 	}
 });
 
-// Пример создания приватного чата (вызывайте при выборе пользователя)
 async function createPrivateChatWith(user2id) {
 	const user = getUser();
 	if (!user || user.id === user2id) return;
@@ -985,25 +957,20 @@ async function createPrivateChatWith(user2id) {
 	selectChat(data.chat_id);
 }
 
-// Функция для обработки времени сообщений
 function formatMessageTime(timestamp) {
     const date = new Date(timestamp);
     if (isNaN(date)) return 'Invalid date';
     return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Обновление логики уведомлений
 function handleIncomingMessage(message) {
     if (message.chat_id === currentChatId || message.sender_id === currentUser.id) {
-        // Игнорируем уведомления от текущего чата или от самого себя
         return;
     }
 
-    // Отображение уведомления
     showNotification(message.content, formatMessageTime(message.created_at));
 }
 
-// Инициализация чатов только после получения пользователя
 window.addEventListener('user-session-changed', function() {
 	if (window.user) {
 		fetchChats();

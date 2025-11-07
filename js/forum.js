@@ -1,6 +1,5 @@
 const API_URL = "http://79.174.78.128:8080";
 
-// Синхронизация window.user из localStorage (гарантированно до любого использования)
 try {
   const savedUser = localStorage.getItem('user');
   if (savedUser) {
@@ -11,14 +10,12 @@ try {
 } catch (e) {
   window.user = null;
 }
-// Получить текущего пользователя (user должен быть определён глобально после логина)
 function getCurrentUser() {
   if (window.user && window.user.username && window.user.id) {
     return window.user;
   }
   return null;
 }
-// Обработка создания новой темы
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('forum-create-form');
   if (form) {
@@ -55,7 +52,6 @@ let currentTopic = null;
 
 async function loadTopics() {
   const section = document.getElementById("forum-topics");
-  // Не трогать форму создания темы
   const form = document.getElementById('forum-create-form');
   let html = '';
   if (form) html += form.outerHTML;
@@ -120,7 +116,6 @@ async function openTopic(id, title) {
       list.innerHTML = '<div class="about-text">Нет сообщений.</div>';
       return;
     }
-    // Для каждого сообщения — контейнер для лайков
     list.innerHTML = msgs.map(m => `
       <article class="news-card forum-message" data-id="${escapeHTML(m.id)}">
         <div class="forum-message-header">
@@ -141,7 +136,6 @@ async function openTopic(id, title) {
         </div>
       </article>
     `).join("");
-    // Загрузить лайки для каждого сообщения
     for (const m of msgs) {
       fetch(`${API_URL}/api/forum/message/${m.id}/likes`).then(r=>r.json()).then(likes => {
         document.getElementById(`forum-like-count-${m.id}`).textContent = likes.like || 0;
@@ -152,7 +146,6 @@ async function openTopic(id, title) {
     list.innerHTML = '<div class="about-text">Ошибка загрузки сообщений :(</div>';
     console.error(err);
   }
-// Обработка кликов по лайкам/дизлайкам сообщений форума
 document.addEventListener('click', async e => {
   if (e.target.classList.contains('forum-like-btn') || e.target.classList.contains('forum-dislike-btn')) {
     const user = getCurrentUser();
@@ -164,7 +157,6 @@ document.addEventListener('click', async e => {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({user_id: user.id, value})
     });
-    // обновить счетчики
     const likes = await fetch(`${API_URL}/api/forum/message/${msgId}/likes`).then(r=>r.json());
     document.getElementById(`forum-like-count-${msgId}`).textContent = likes.like || 0;
     document.getElementById(`forum-dislike-count-${msgId}`).textContent = likes.dislike || 0;
@@ -205,8 +197,6 @@ async function sendReply() {
   document.getElementById("send-reply").disabled = false;
 }
 
-
-// Блокировать форму ответа для гостей
 function updateReplyFormState() {
   const user = getCurrentUser();
   const textarea = document.getElementById("reply-text");
