@@ -1,9 +1,6 @@
-// user-session.js
-// Глобальная поддержка window.user и синхронизация с localStorage
 
 window.user = null;
 (function() {
-  // Получить пользователя из куки через /api/account/me
   async function fetchUserFromCookie() {
     try {
       const res = await fetch("/api/account/me", { credentials: "include" });
@@ -29,24 +26,18 @@ window.user = null;
     }
   }
 
-  // Инициализация window.user при загрузке страницы
   fetchUserFromCookie().then(() => {
     updateNavUser(window.user);
     window.dispatchEvent(new Event('user-session-changed'));
   });
 
-  // Следить за изменениями куки (логин/логаут в других вкладках)
   window.addEventListener('user-session-changed', function() {
     fetchUserFromCookie();
   });
 
-  // Для других скриптов
   window.getCurrentUser = function() {
     return window.user || null;
   };
-
-  // Для account.js: обновлять window.user при логине/логауте
-  // После логина/логаута всегда обновляем window.user из /api/account/me
   window.setUserSession = function() {
     fetchUserFromCookie();
   };

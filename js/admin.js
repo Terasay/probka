@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     return;
   }
 
-  // Кнопка раскрытия списка пользователей
   const toggleBtn = document.getElementById("toggle-users");
   const usersPanel = document.getElementById("users-panel");
   let expanded = false;
@@ -46,7 +45,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
-  // Кнопка раскрытия активности
   const toggleActivityBtn = document.getElementById("toggle-activity");
   const activityPanel = document.getElementById("activity-panel");
   let activityExpanded = false;

@@ -1,16 +1,13 @@
 const API_URL = "http://79.174.78.128:8080";
 
-// Получить текущего пользователя (user должен быть определён глобально после логина)
 function getCurrentUser() {
   if (window.user && window.user.username && window.user.id) {
-    // Вернуть всю структуру user, чтобы был доступ к role
     return window.user;
   }
   return null;
 }
 
 
-// Функция для экранирования HTML
 function escapeHTML(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -50,7 +47,6 @@ async function loadNews() {
         content = content.replace(/\[Файл: .*?\]/g, '').trim();
       }
 
-      // --- Новый дизайн карточки ---
       card.innerHTML = `
         <div class="news-header-row">
           <div class="news-title-block">
@@ -82,13 +78,11 @@ async function loadNews() {
 
       feed.appendChild(card);
 
-      // Загрузить лайки
       fetch(`${API_URL}/api/news/${item.id}/likes`).then(r=>r.json()).then(likes => {
         document.getElementById(`like-count-${item.id}`).textContent = likes.like || 0;
         document.getElementById(`dislike-count-${item.id}`).textContent = likes.dislike || 0;
       });
 
-      // Загрузить комментарии
       fetch(`${API_URL}/api/news/${item.id}/comments`).then(r=>r.json()).then(comments => {
         const commentsDiv = document.getElementById(`comments-${item.id}`);
         if (comments.length === 0) {
@@ -104,7 +98,6 @@ async function loadNews() {
         }
       });
 
-      // Отключить форму комментария если не залогинен
       const user = getCurrentUser();
       if (!user) {
         const form = card.querySelector('.comment-form');
@@ -114,7 +107,6 @@ async function loadNews() {
       }
     });
 
-    // Обработка лайков/дизлайков
     feed.addEventListener('click', async e => {
       if (e.target.classList.contains('like-btn') || e.target.classList.contains('dislike-btn')) {
         const user = getCurrentUser();
@@ -126,14 +118,12 @@ async function loadNews() {
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({user_id: user.id, value})
         });
-        // обновить счетчики
         const likes = await fetch(`${API_URL}/api/news/${newsId}/likes`).then(r=>r.json());
         document.getElementById(`like-count-${newsId}`).textContent = likes.like || 0;
         document.getElementById(`dislike-count-${newsId}`).textContent = likes.dislike || 0;
       }
     });
 
-    // Обработка отправки комментариев
     feed.addEventListener('submit', async e => {
       if (e.target.classList.contains('comment-form')) {
         e.preventDefault();
@@ -149,7 +139,6 @@ async function loadNews() {
           body: JSON.stringify({author: user.username, author_id: user.id, content})
         });
         input.value = '';
-        // обновить комментарии
         const comments = await fetch(`${API_URL}/api/news/${newsId}/comments`).then(r=>r.json());
         const commentsDiv = document.getElementById(`comments-${newsId}`);
         if (comments.length === 0) {
@@ -173,7 +162,6 @@ async function loadNews() {
 }
 
 
-// Показывать форму публикации только для админа
 function showAdminPanelIfNeeded() {
   const user = getCurrentUser();
   const panel = document.getElementById('news-admin-panel');
@@ -182,7 +170,6 @@ function showAdminPanelIfNeeded() {
   if (user && user.role === 'admin') {
     panel.style.display = '';
     if (btn && form) {
-      // Сбросить состояние: форма скрыта, кнопка "Создать новость"
       form.style.display = 'none';
       btn.textContent = 'Создать новость';
     }
@@ -195,7 +182,6 @@ function showAdminPanelIfNeeded() {
   }
 }
 
-// Обработка публикации новости
 function setupNewsCreateForm() {
   const form = document.getElementById('news-create-form');
   if (!form) return;
@@ -206,7 +192,6 @@ function setupNewsCreateForm() {
     const title = form.title.value.trim();
     const content = form.content.value.trim();
     if (!content) return;
-    // Формат: если есть заголовок, то ***Заголовок***\nТекст
     let fullContent = content;
     if (title) fullContent = `***${title}***\n${content}`;
     await fetch(`${API_URL}/api/news/create`, {
@@ -225,12 +210,10 @@ function setupNewsCreateForm() {
   });
 }
 
-// Инициализация
 document.addEventListener('DOMContentLoaded', () => {
   showAdminPanelIfNeeded();
   setupNewsCreateForm();
   loadNews();
 
-  // Поддержка динамического показа панели для админа после логина без перезагрузки
   window.addEventListener('user-session-changed', showAdminPanelIfNeeded);
 });
