@@ -134,26 +134,20 @@
   <script src="js/account.js"></script>
   <script src="js/theme.js"></script>
   <script>
-    // Показывать кнопку "Админ-панель" только для админов
-    document.addEventListener('DOMContentLoaded', function() {
-      function updateAdminLink() {
-        let user = null;
-        try {
-          const raw = localStorage.getItem('user');
-          if (raw) user = JSON.parse(raw);
-        } catch(e) {}
-        const adminLink = document.querySelector('.nav-link.admin-link');
-        if (adminLink) {
-          if (user && user.role === 'admin') {
-            adminLink.style.display = 'inline-block';
-          } else {
-            adminLink.style.display = 'none';
-          }
+    // Показывать кнопку "Админ-панель" только для админов через user-session.js
+    function updateAdminLink() {
+      const user = window.getCurrentUser ? window.getCurrentUser() : window.user;
+      const adminLink = document.querySelector('.nav-link.admin-link');
+      if (adminLink) {
+        if (user && user.role === 'admin') {
+          adminLink.style.display = 'inline-block';
+        } else {
+          adminLink.style.display = 'none';
         }
       }
-      updateAdminLink();
-      window.addEventListener('user-session-changed', updateAdminLink);
-    });
+    }
+    document.addEventListener('DOMContentLoaded', updateAdminLink);
+    window.addEventListener('user-session-changed', updateAdminLink);
   </script>
 </body>
 </html>

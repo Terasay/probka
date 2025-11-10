@@ -1,19 +1,8 @@
 const API_URL = "http://79.174.78.128:8080";
 
-try {
-  const savedUser = localStorage.getItem('user');
-  if (savedUser) {
-    window.user = JSON.parse(savedUser);
-  } else {
-    window.user = null;
-  }
-} catch (e) {
-  window.user = null;
-}
 function getCurrentUser() {
-  if (window.user && window.user.username && window.user.id) {
-    return window.user;
-  }
+  if (window.getCurrentUser) return window.getCurrentUser();
+  if (window.user && window.user.username && window.user.id) return window.user;
   return null;
 }
 document.addEventListener('DOMContentLoaded', () => {

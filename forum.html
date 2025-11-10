@@ -133,26 +133,16 @@
       }
     }
     function syncUserAndNavAndForm() {
-      let savedUser = null;
-      try {
-        savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          window.user = JSON.parse(savedUser);
-        } else {
-          window.user = null;
-        }
-      } catch (e) {
-        window.user = null;
-      }
+      const user = window.getCurrentUser ? window.getCurrentUser() : window.user;
       // Обновить ник в шапке
       const navBtn = document.querySelector('.nav-link.account-link');
       if (navBtn) {
-        navBtn.innerText = (window.user && window.user.username) ? window.user.username : 'Аккаунт';
+        navBtn.innerText = (user && user.username) ? user.username : 'Аккаунт';
       }
       // Показать/скрыть форму создания темы
       const form = document.getElementById('forum-create-form');
       if (form) {
-        if (window.user && window.user.username) {
+        if (user && user.username) {
           form.style.display = 'block';
           attachForumCreateHandler();
         } else {
@@ -162,12 +152,6 @@
     }
     document.addEventListener('DOMContentLoaded', syncUserAndNavAndForm);
     window.addEventListener('user-session-changed', syncUserAndNavAndForm);
-    // Слушать изменения localStorage для синхронизации между вкладками
-    window.addEventListener('storage', function(e) {
-      if (e.key === 'user') {
-        window.dispatchEvent(new Event('user-session-changed'));
-      }
-    });
   </script>
   <script src="js/user-session.js"></script>
   <script src="js/forum.js"></script>
