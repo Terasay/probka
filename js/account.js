@@ -11,7 +11,116 @@ const COUNTRIES = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-  // --- Панель своей заявки на страну ---
+  // --- Регистрация с email ---
+  const registerBtn = document.getElementById("register-btn");
+  const loginBtn = document.getElementById("login-btn");
+  const registerEmailInput = document.getElementById("register-email");
+  const registerStep2 = document.getElementById("register-step2");
+  const registerCodeInput = document.getElementById("register-code");
+  const confirmEmailBtn = document.getElementById("confirm-email-btn");
+  const registerStatus = document.getElementById("register-status");
+
+  let pendingEmail = null;
+  let pendingUsername = null;
+  let pendingPassword = null;
+
+  if (registerBtn) {
+    registerBtn.addEventListener("click", async () => {
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value.trim();
+      const emailInput = document.getElementById("register-email");
+      if (emailInput.style.display === "none") {
+        // Первый этап: показать поле email
+        emailInput.style.display = "block";
+        registerStatus.textContent = "Введите email и повторно нажмите 'Регистрация'";
+        return;
+      }
+      const email = emailInput.value.trim();
+      if (!username || !password || !email) {
+        registerStatus.textContent = "Заполните все поля";
+        return;
+      }
+      try {
+        const data = await apiFetch("/api/register", {
+          method: "POST",
+          body: JSON.stringify({ username, password, email })
+        });
+        if (data.status === "pending") {
+          registerStatus.textContent = data.message || "Код отправлен на почту";
+          registerStep2.style.display = "block";
+          pendingEmail = email;
+          pendingUsername = username;
+          pendingPassword = password;
+        } else if (data.status === "ok" && data.user && data.token) {
+          registerStatus.textContent = "Регистрация успешна!";
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.user = data.user;
+          window.dispatchEvent(new Event("user-session-changed"));
+          updateUI(data.user);
+        } else {
+          registerStatus.textContent = data.error || "Ошибка регистрации";
+        }
+      } catch (err) {
+        registerStatus.textContent = err.message;
+      }
+    });
+  }
+
+  if (confirmEmailBtn) {
+    confirmEmailBtn.addEventListener("click", async () => {
+      const code = registerCodeInput.value.trim();
+      if (!pendingEmail || !code) {
+        registerStatus.textContent = "Введите код из письма";
+        return;
+      }
+      try {
+        const data = await apiFetch("/api/confirm_email", {
+          method: "POST",
+          body: JSON.stringify({ email: pendingEmail, code })
+        });
+        if (data.status === "ok" && data.user && data.token) {
+          registerStatus.textContent = "Регистрация завершена!";
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.user = data.user;
+          window.dispatchEvent(new Event("user-session-changed"));
+          updateUI(data.user);
+          registerStep2.style.display = "none";
+          registerEmailInput.style.display = "none";
+        } else {
+          registerStatus.textContent = data.error || "Ошибка подтверждения";
+        }
+      } catch (err) {
+        registerStatus.textContent = err.message;
+      }
+    });
+  }
+
+  if (loginBtn) {
+    loginBtn.addEventListener("click", async () => {
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value.trim();
+      if (!username || !password) {
+        alert("Введите логин и пароль");
+        return;
+      }
+      try {
+        const data = await apiFetch("/api/login", {
+          method: "POST",
+          body: JSON.stringify({ username, password })
+        });
+        if (data && data.user && data.token) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.user = data.user;
+          window.dispatchEvent(new Event("user-session-changed"));
+          updateUI(data.user);
+        } else {
+          alert("Ошибка входа");
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
   async function fetchMyCountryRequest() {
     if (!window.user) return null;
     const userId = window.user.id;
