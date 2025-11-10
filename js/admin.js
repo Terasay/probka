@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
-  // Кнопка раскрытия активности
   const toggleActivityBtn = document.getElementById("toggle-activity");
   const activityPanel = document.getElementById("activity-panel");
   let activityExpanded = false;
