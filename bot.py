@@ -10,14 +10,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from passlib.hash import bcrypt
 import uvicorn
+import smtplib
+import random
+import string
+from fastapi import WebSocket, WebSocketDisconnect
+from typing import Dict, List
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-
-from fastapi import WebSocket, WebSocketDisconnect
-from typing import Dict, List
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI()
 
@@ -698,7 +701,17 @@ def init_db():
             role TEXT DEFAULT 'user',
             created_at TEXT,
             avatar TEXT DEFAULT '',
-            country TEXT DEFAULT NULL
+            country TEXT DEFAULT NULL,
+            email TEXT UNIQUE,
+            email_confirmed INTEGER DEFAULT 0
+        )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS email_confirmations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            password_hash TEXT,
+            email TEXT,
+            code TEXT,
+            created_at TEXT
         )""")
         try:
             cur.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
@@ -788,8 +801,6 @@ def init_db():
             last_read_msg_id INTEGER,
             PRIMARY KEY (user_id, chat_id)
         )""")
-import os
-from fastapi import UploadFile, File, Form
 
 # --- API: отправить сообщение с файлами ---
 @app.post("/api/messenger/send_file")
@@ -903,29 +914,101 @@ async def like_forum_message(message_id: str, request: Request):
     return {"status": "ok"}
 
 
-# --- Регистрация ---
+
+# --- Регистрация с email и подтверждением ---
+def generate_code(length=6):
+    return ''.join(random.choices(string.digits, k=length))
+
+def send_email_code(to_email, code):
+    # Настройки SMTP
+    SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.yandex.ru")
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
+    SMTP_USER = os.environ.get("SMTP_USER", "your_email@yandex.ru")
+    SMTP_PASS = os.environ.get("SMTP_PASS", "your_password")
+    from email.mime.text import MIMEText
+    msg = MIMEText(f"Ваш код подтверждения: {code}")
+    msg["Subject"] = "Код подтверждения регистрации"
+    msg["From"] = SMTP_USER
+    msg["To"] = to_email
+    try:
+        import smtplib, ssl
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(SMTP_USER, to_email, msg.as_string())
+        return True
+    except Exception as e:
+        logger.error(f"Ошибка отправки email: {e}")
+        return False
+
 @app.post("/api/register")
 async def register(request: Request):
     data = await request.json()
     username = data.get("username", "").strip()
     password = data.get("password", "").strip()
-    if not username or not password:
-        return JSONResponse({"error": "Пустой логин или пароль"}, status_code=400)
+    email = data.get("email", "").strip().lower()
+    if not username or not password or not email:
+        return JSONResponse({"error": "Пустой логин, пароль или email"}, status_code=400)
     if len(username) < 3 or len(password) < 4:
         return JSONResponse({"error": "Слишком короткий логин или пароль"}, status_code=400)
+    if "@" not in email or "." not in email:
+        return JSONResponse({"error": "Некорректный email"}, status_code=400)
     with sqlite3.connect("site.db") as conn:
         cur = conn.cursor()
         cur.execute("SELECT id FROM users WHERE username = ?", (username,))
         if cur.fetchone():
             return JSONResponse({"error": "Пользователь уже существует"}, status_code=400)
+        cur.execute("SELECT id FROM users WHERE email = ?", (email,))
+        if cur.fetchone():
+            return JSONResponse({"error": "Email уже используется"}, status_code=400)
+        cur.execute("SELECT id FROM email_confirmations WHERE email = ?", (email,))
+        if cur.fetchone():
+            return JSONResponse({"error": "На этот email уже отправлен код. Проверьте почту."}, status_code=400)
         password_hash = bcrypt.hash(password)
-        cur.execute(
-            "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
-            (username, password_hash, "user", datetime.now(timezone.utc).isoformat())
-        )
+        code = generate_code()
+        cur.execute("INSERT INTO email_confirmations (username, password_hash, email, code, created_at) VALUES (?, ?, ?, ?, ?)",
+            (username, password_hash, email, code, datetime.now(timezone.utc).isoformat()))
         conn.commit()
+    # Отправить email
+    if not send_email_code(email, code):
+        return JSONResponse({"error": "Ошибка отправки email. Попробуйте позже."}, status_code=500)
+    return {"status": "pending", "message": "Код отправлен на почту. Введите его для подтверждения.", "email": email}
+
+# --- Подтверждение email ---
+@app.post("/api/confirm_email")
+async def confirm_email(request: Request):
+    data = await request.json()
+    email = data.get("email", "").strip().lower()
+    code = data.get("code", "").strip()
+    if not email or not code:
+        return JSONResponse({"error": "Email и код обязательны"}, status_code=400)
+    with sqlite3.connect("site.db") as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT username, password_hash FROM email_confirmations WHERE email = ? AND code = ?", (email, code))
+        row = cur.fetchone()
+        if not row:
+            return JSONResponse({"error": "Неверный код или email"}, status_code=400)
+        username, password_hash = row
+        # Проверить, что email и username не заняты
+        cur.execute("SELECT id FROM users WHERE username = ?", (username,))
+        if cur.fetchone():
+            cur.execute("DELETE FROM email_confirmations WHERE email = ?", (email,))
+            conn.commit()
+            return JSONResponse({"error": "Пользователь уже существует"}, status_code=400)
+        cur.execute("SELECT id FROM users WHERE email = ?", (email,))
+        if cur.fetchone():
+            cur.execute("DELETE FROM email_confirmations WHERE email = ?", (email,))
+            conn.commit()
+            return JSONResponse({"error": "Email уже используется"}, status_code=400)
+        # Создать пользователя
+        cur.execute(
+            "INSERT INTO users (username, password_hash, role, created_at, email, email_confirmed) VALUES (?, ?, ?, ?, ?, 1)",
+            (username, password_hash, "user", datetime.now(timezone.utc).isoformat(), email)
+        )
         user_id = cur.lastrowid
-    user = {"id": user_id, "username": username, "role": "user"}
+        cur.execute("DELETE FROM email_confirmations WHERE email = ?", (email,))
+        conn.commit()
+    user = {"id": user_id, "username": username, "role": "user", "email": email}
     token = create_jwt_token(user)
     return {"status": "ok", "user": user, "token": token}
 
