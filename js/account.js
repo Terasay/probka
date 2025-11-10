@@ -632,35 +632,25 @@ async function apiFetch(path, options = {}) {
 async function login() {
   const username = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value.trim();
-  if (!username || !password) {
-    alert("Введите логин и пароль");
+  const email = document.getElementById("register-email").value.trim();
+  if (!username || !password || !email) {
+    alert("Введите логин, пароль и email");
     return;
   }
 
   try {
-    const data = await apiFetch("/api/login", {
+    const data = await apiFetch("/api/register", {
       method: "POST",
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password, email })
     });
 
-    if (data && data.user && data.token) {
-      const userWithToken = { ...data.user, token: data.token };
-      if (window.setUserSession) {
-        window.setUserSession(userWithToken);
-      } else {
-        localStorage.setItem("user", JSON.stringify(userWithToken));
-        window.user = userWithToken;
-      }
-      updateUI(window.user);
-      console.log("[login] ok user:", window.user);
-    } else {
-      throw new Error("Неправильный ответ сервера при логине");
-    }
+    if (data && data.status === "ok" && data.user && data.token) {/* Lines 680-691 omitted */} else {/* Lines 692-693 omitted */}
   } catch (err) {
     alert(err.message);
-    console.error("[login] error:", err);
+    console.error("[register] error:", err);
   }
 }
+
 
 async function registerHandler() {
   const username = document.getElementById("login-username").value.trim();
